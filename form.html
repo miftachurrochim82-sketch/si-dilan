@@ -125,25 +125,51 @@
           <button @click="switchTab('pengaduan')" :class="tab === 'pengaduan' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Pengaduan</button>
           <button @click="switchTab('st')" :class="tab === 'st' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Surat Tugas</button>
         </div>
-
-        <!-- Form Pengaduan -->
+        
+        <!-- Form Pengaduan (DIPERKAYA) -->
         <form v-if="tab === 'pengaduan'" @submit.prevent="simpanPengaduan" class="glass-card rounded-2xl p-6 space-y-3">
           <h2 class="text-lg font-bold text-gray-700">📢 Form Pengaduan Masyarakat</h2>
-          <input v-model="aduan.nama" placeholder="Nama Pelapor *" required class="w-full border rounded-lg px-3 py-2 text-sm">
-          <input v-model="aduan.kontak" placeholder="Kontak (HP/WA)" class="w-full border rounded-lg px-3 py-2 text-sm">
+          
+          <div class="grid grid-cols-2 gap-3">
+            <input v-model="aduan.nama" placeholder="Nama Pelapor *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+            <input v-model="aduan.kontak" placeholder="Kontak (HP/WA)" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+        
           <select v-model="aduan.kategori_id" class="w-full border rounded-lg px-3 py-2 text-sm">
             <option value="">-- Pilih Kategori Pengaduan --</option>
             <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">{{ kat.permasalahan }} ({{ kat.bidang }})</option>
           </select>
+        
+          <select v-model="aduan.sumber_aduan" class="w-full border rounded-lg px-3 py-2 text-sm">
+            <option value="">-- Sumber Aduan --</option>
+            <option value="WhatsApp">WhatsApp</option>
+            <option value="Website">Website</option>
+            <option value="Telepon">Telepon</option>
+            <option value="Surat">Surat</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        
           <textarea v-model="aduan.deskripsi" placeholder="Deskripsi Pengaduan *" required class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+          
           <div class="grid grid-cols-2 gap-3">
-            <input v-model="aduan.lokasi" placeholder="Lokasi Kejadian" class="w-full border rounded-lg px-3 py-2 text-sm">
+            <select v-model="aduan.kecamatan" @change="onKecamatanAduanChange" class="w-full border rounded-lg px-3 py-2 text-sm">
+              <option value="">-- Kecamatan --</option>
+              <option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
+            </select>
+            <select v-model="aduan.desa" :disabled="!aduan.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm">
+              <option value="">-- Desa/Kelurahan --</option>
+              <option v-for="desa in filteredDesaAduan" :key="desa" :value="desa">{{ desa }}</option>
+            </select>
+          </div>
+        
+          <div class="grid grid-cols-2 gap-3">
+            <input v-model="aduan.lokasi" placeholder="Lokasi Spesifik" class="w-full border rounded-lg px-3 py-2 text-sm">
             <input v-model="aduan.tgl_kejadian" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
           </div>
+          
           <button type="submit" class="btn-primary w-full text-white px-6 py-3 rounded-xl font-bold text-sm">Kirim Pengaduan</button>
           <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
         </form>
-
         <!-- Form Surat Tugas -->
         <form v-if="tab === 'st'" @submit.prevent="simpanST" class="glass-card rounded-2xl p-6 space-y-3">
           <h2 class="text-lg font-bold text-gray-700">📋 Form Surat Tugas</h2>
