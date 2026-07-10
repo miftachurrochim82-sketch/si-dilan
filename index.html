@@ -5,26 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SI DILAN Terpadu - Dashboard</title>
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Vue 3 -->
   <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-  
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <!-- Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  
-  <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14' font-size='14'>📋</text></svg>">
 
   <style>
-    /* ========== GLOBAL STYLE ========== */
     body {
       background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      margin: 0;
       min-height: 100vh;
     }
 
@@ -48,7 +39,6 @@
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
     }
 
-    /* Stat Card */
     .stat-card {
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
@@ -57,7 +47,6 @@
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
     }
 
-    /* Tabel */
     table thead th {
       background: #f8fafc;
       font-weight: 600;
@@ -66,18 +55,12 @@
       top: 0;
       z-index: 10;
     }
-    tbody tr {
-      transition: background 0.15s ease;
-    }
-    tbody tr:hover {
-      background: #f0f7ff;
-    }
+    tbody tr { transition: background 0.15s ease; }
+    tbody tr:hover { background: #f0f7ff; }
 
-    /* Tombol */
     .btn-primary {
       background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      border: none;
-      transition: all 0.2s ease;
+      border: none; transition: all 0.2s ease;
     }
     .btn-primary:hover {
       background: linear-gradient(135deg, #1d4ed8, #1e40af);
@@ -85,15 +68,45 @@
     }
     .btn-danger {
       background: linear-gradient(135deg, #dc2626, #b91c1c);
-      border: none;
-      transition: all 0.2s ease;
+      border: none; transition: all 0.2s ease;
     }
     .btn-danger:hover {
       background: linear-gradient(135deg, #b91c1c, #991b1b);
       box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
     }
 
-    /* Toast */
+    /* Sidebar */
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 260px; background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+      color: white; z-index: 40; transition: transform 0.3s ease;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+    }
+    .sidebar.collapsed { transform: translateX(-100%); }
+    .sidebar-header {
+      padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-menu { padding: 16px 12px; flex: 1; }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-radius: 12px; font-size: 14px;
+      font-weight: 500; cursor: pointer; transition: background 0.2s;
+    }
+    .sidebar-item:hover { background: rgba(255,255,255,0.1); }
+    .sidebar-item.active { background: rgba(255,255,255,0.2); }
+
+    .main-content {
+      margin-left: 260px; padding: 24px; min-height: 100vh;
+      transition: margin-left 0.3s ease;
+    }
+    .main-content.expanded { margin-left: 0; }
+
+    .mobile-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 35; display: none;
+    }
+    .mobile-overlay.show { display: block; }
+
     .toast {
       position: fixed; bottom: 20px; right: 20px; z-index: 100;
       animation: slideUp 0.3s ease;
@@ -104,11 +117,17 @@
     }
 
     [v-cloak] { display: none !important; }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 280px; transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+      .main-content.shifted { margin-left: 280px; }
+    }
   </style>
 </head>
 <body>
 
-  <!-- Loading Screen -->
   <div id="app-loading">
     <div style="font-size: 28px; font-weight: 700; letter-spacing: 2px;">SI DILAN TERPADU</div>
     <div style="font-size: 12px; margin-top: 12px; opacity: 0.8;">Menyambungkan ke database...</div>
@@ -117,28 +136,50 @@
     </div>
   </div>
 
-  <!-- Vue App -->
   <div id="app" v-cloak>
-    <div class="max-w-5xl mx-auto p-6">
-      
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-8">
-        <div>
-          <h1 class="text-3xl font-extrabold text-blue-900">SI DILAN Terpadu</h1>
-          <p class="text-sm text-blue-500 mt-1">Sistem Informasi Digital Melayani – Satpol PP & Kebakaran Kab. Trenggalek</p>
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+      <div class="sidebar-header">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <i class="bi bi-shield-shaded text-2xl"></i>
+            <span class="font-bold text-lg">SI DILAN</span>
+          </div>
+          <button @click="sidebarOpen = !sidebarOpen" class="text-white/70 hover:text-white p-1">
+            <i :class="sidebarOpen ? 'bi bi-chevron-left' : 'bi bi-chevron-right'" class="text-xl"></i>
+          </button>
         </div>
-        <a href="form.html" class="btn-primary px-5 py-3 rounded-xl text-white font-semibold text-sm flex items-center gap-2 shadow-lg">
-          <i class="bi bi-plus-lg"></i> Input Data
+        <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+      </div>
+      <nav class="sidebar-menu">
+        <a href="index.html" class="sidebar-item active">
+          <i class="bi bi-speedometer2 text-lg"></i> Dashboard
         </a>
+        <a href="form.html?tab=pengaduan" class="sidebar-item">
+          <i class="bi bi-megaphone text-lg"></i> Pengaduan
+        </a>
+        <a href="form.html?tab=st" class="sidebar-item">
+          <i class="bi bi-envelope-paper text-lg"></i> Surat Tugas
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-extrabold text-blue-900">Dashboard</h1>
+          <p class="text-sm text-blue-500">Ringkasan operasional Satpol PPK Trenggalek</p>
+        </div>
+        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden btn-primary px-4 py-2 rounded-lg text-white text-sm">
+          <i class="bi bi-list"></i> Menu
+        </button>
       </div>
 
-      <!-- Toast Notifikasi -->
-      <div v-if="toast.show" class="toast" :class="toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'" class="text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-semibold">
-        <i :class="toast.type === 'success' ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i>
-        {{ toast.message }}
-      </div>
-
-      <!-- Error Alert -->
       <div v-if="error" class="bg-red-50 border border-red-300 text-red-700 px-5 py-4 rounded-xl mb-6 flex items-center gap-2">
         <i class="bi bi-exclamation-triangle"></i> {{ error }}
       </div>
@@ -156,7 +197,6 @@
             </div>
           </div>
         </div>
-
         <div class="glass-card stat-card rounded-2xl p-6">
           <div class="flex items-center gap-4">
             <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
@@ -168,7 +208,6 @@
             </div>
           </div>
         </div>
-
         <div class="glass-card stat-card rounded-2xl p-6">
           <div class="flex items-center gap-4">
             <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -182,7 +221,7 @@
         </div>
       </div>
 
-      <!-- Tabel Pengaduan Terbaru -->
+      <!-- Tabel Pengaduan -->
       <div class="glass-card rounded-2xl p-5 mb-6">
         <h2 class="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2">
           <i class="bi bi-megaphone"></i> Pengaduan Terbaru
@@ -219,14 +258,14 @@
                 </td>
               </tr>
               <tr v-if="!pengaduan.length">
-                <td colspan="5" class="p-6 text-center text-gray-400">Belum ada pengaduan. <a href="form.html" class="text-blue-500 underline">Kirim pengaduan pertama →</a></td>
+                <td colspan="5" class="p-6 text-center text-gray-400">Belum ada pengaduan. <a href="form.html?tab=pengaduan" class="text-blue-500 underline">Kirim pengaduan pertama →</a></td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Tabel Surat Tugas Terbaru -->
+      <!-- Tabel Surat Tugas -->
       <div class="glass-card rounded-2xl p-5">
         <h2 class="text-lg font-bold text-emerald-800 mb-4 flex items-center gap-2">
           <i class="bi bi-envelope-paper"></i> Surat Tugas Terbaru
@@ -259,29 +298,26 @@
                 </td>
               </tr>
               <tr v-if="!suratTugas.length">
-                <td colspan="5" class="p-6 text-center text-gray-400">Belum ada surat tugas. <a href="form.html" class="text-blue-500 underline">Buat surat tugas pertama →</a></td>
+                <td colspan="5" class="p-6 text-center text-gray-400">Belum ada surat tugas. <a href="form.html?tab=st" class="text-blue-500 underline">Buat surat tugas pertama →</a></td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Footer -->
       <div class="text-center text-xs text-gray-400 mt-8 py-4">
         © 2026 SI DILAN Terpadu — Satpol PP & Kebakaran Kab. Trenggalek
       </div>
-
-    </div>
+    </main>
   </div>
 
-  <!-- Script Supabase + Vue -->
   <script>
     (function() {
       const supabaseUrl = 'https://msdacugqzxprxajdudsx.supabase.co';
       const supabaseKey = 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      const { createApp, ref, reactive, onMounted } = Vue;
+      const { createApp, ref, reactive, onMounted, computed } = Vue;
 
       createApp({
         setup() {
@@ -290,26 +326,29 @@
           const personil = ref([]);
           const error = ref(null);
           const toast = reactive({ show: false, type: 'success', message: '' });
+          const sidebarOpen = ref(true);
+          const isMobile = ref(window.innerWidth < 768);
+
+          window.addEventListener('resize', () => {
+            isMobile.value = window.innerWidth < 768;
+            if (!isMobile.value) sidebarOpen.value = true;
+          });
 
           function showToast(message, type = 'success') {
-            toast.show = true;
-            toast.type = type;
-            toast.message = message;
+            toast.show = true; toast.type = type; toast.message = message;
             setTimeout(() => { toast.show = false; }, 3000);
           }
 
           async function loadData() {
             try {
-            const [aduRes, stRes, personilRes] = await Promise.all([
-              supabase.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang)').order('tanggal_lapor', { ascending: false }),
-              supabase.from('surat_tugas').select('*').order('created_at', { ascending: false }),
-              supabase.from('personil').select('*').eq('status', 'Aktif')
-            ]);
-
+              const [aduRes, stRes, personilRes] = await Promise.all([
+                supabase.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang)').order('tanggal_lapor', { ascending: false }),
+                supabase.from('surat_tugas').select('*').order('created_at', { ascending: false }),
+                supabase.from('personil').select('*').eq('status', 'Aktif')
+              ]);
               if (aduRes.error) throw new Error('Pengaduan: ' + aduRes.error.message);
               if (stRes.error) throw new Error('Surat Tugas: ' + stRes.error.message);
               if (personilRes.error) throw new Error('Personil: ' + personilRes.error.message);
-
               pengaduan.value = aduRes.data || [];
               suratTugas.value = stRes.data || [];
               personil.value = personilRes.data || [];
@@ -324,67 +363,51 @@
           }
 
           async function updateStatus(id, newStatus) {
-            const { error } = await supabase
-              .from('pengaduan')
-              .update({ status: newStatus })
-              .eq('id', id);
-            if (error) {
-              showToast('Gagal update status: ' + error.message, 'error');
-            } else {
-              showToast('Status berhasil diubah menjadi ' + newStatus, 'success');
-              await loadData(); // Refresh data
-            }
+            const { error } = await supabase.from('pengaduan').update({ status: newStatus }).eq('id', id);
+            if (error) { showToast('Gagal: ' + error.message, 'error'); }
+            else { showToast('Status diubah menjadi ' + newStatus); await loadData(); }
           }
 
           async function hapusPengaduan(id) {
-            if (!confirm('Yakin ingin menghapus pengaduan ini?')) return;
-            const { error } = await supabase
-              .from('pengaduan')
-              .delete()
-              .eq('id', id);
-            if (error) {
-              showToast('Gagal menghapus: ' + error.message, 'error');
-            } else {
-              showToast('Pengaduan berhasil dihapus', 'success');
-              pengaduan.value = pengaduan.value.filter(p => p.id !== id);
-            }
+            if (!confirm('Hapus pengaduan ini?')) return;
+            const { error } = await supabase.from('pengaduan').delete().eq('id', id);
+            if (error) { showToast('Gagal: ' + error.message, 'error'); }
+            else { pengaduan.value = pengaduan.value.filter(p => p.id !== id); showToast('Dihapus'); }
           }
 
           async function hapusST(id) {
-            if (!confirm('Yakin ingin menghapus surat tugas ini?')) return;
-            const { error } = await supabase
-              .from('surat_tugas')
-              .delete()
-              .eq('id', id);
-            if (error) {
-              showToast('Gagal menghapus: ' + error.message, 'error');
-            } else {
-              showToast('Surat Tugas berhasil dihapus', 'success');
-              suratTugas.value = suratTugas.value.filter(st => st.id !== id);
-            }
+            if (!confirm('Hapus surat tugas ini?')) return;
+            const { error } = await supabase.from('surat_tugas').delete().eq('id', id);
+            if (error) { showToast('Gagal: ' + error.message, 'error'); }
+            else { suratTugas.value = suratTugas.value.filter(st => st.id !== id); showToast('Dihapus'); }
           }
 
           function formatDate(dateStr) {
             if (!dateStr) return '-';
-            return new Date(dateStr).toLocaleDateString('id-ID', {
-              day: 'numeric', month: 'long', year: 'numeric'
-            });
+            return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
           }
 
           function statusBadge(status) {
-            const map = {
+            return {
               'Baru': 'bg-amber-100 text-amber-700 border-amber-300',
               'Diverifikasi': 'bg-sky-100 text-sky-700 border-sky-300',
               'Diproses': 'bg-violet-100 text-violet-700 border-violet-300',
               'Selesai': 'bg-emerald-100 text-emerald-700 border-emerald-300',
               'Ditolak': 'bg-rose-100 text-rose-700 border-rose-300'
-            };
-            return map[status] || 'bg-gray-100 text-gray-600 border-gray-300';
+            }[status] || 'bg-gray-100 text-gray-600 border-gray-300';
           }
 
-          onMounted(() => loadData());
+          onMounted(() => {
+            if (isMobile.value) sidebarOpen.value = false;
+            loadData();
+          });
 
-          return { pengaduan, suratTugas, personil, error, toast, updateStatus, hapusPengaduan, hapusST, formatDate, statusBadge };
+          return {
+            pengaduan, suratTugas, personil, error, toast,
+            sidebarOpen, isMobile, showToast,
+            updateStatus, hapusPengaduan, hapusST,
+            formatDate, statusBadge
+          };
         }
       }).mount('#app');
     })();
