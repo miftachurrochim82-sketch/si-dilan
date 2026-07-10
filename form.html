@@ -170,34 +170,75 @@
           <button type="submit" class="btn-primary w-full text-white px-6 py-3 rounded-xl font-bold text-sm">Kirim Pengaduan</button>
           <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
         </form>
-        <!-- Form Surat Tugas -->
-        <form v-if="tab === 'st'" @submit.prevent="simpanST" class="glass-card rounded-2xl p-6 space-y-3">
-          <h2 class="text-lg font-bold text-gray-700">📋 Form Surat Tugas</h2>
-          <input v-model="st.kegiatan" placeholder="Kegiatan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
-          <select v-model="st.unit_kerja" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <option value="">-- Pilih Unit Kerja --</option>
-            <option v-for="u in unitKerjaList" :key="u.id" :value="u.nama_unit">{{ u.nama_unit }}</option>
-          </select>
-          <select v-model="st.kecamatan" @change="onKecamatanChange" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <option value="">-- Pilih Kecamatan --</option>
-            <option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
-          </select>
-          <select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <option value="">-- Pilih Desa/Kelurahan --</option>
-            <option v-for="desa in filteredDesa" :key="desa" :value="desa">{{ desa }}</option>
-          </select>
-          <input v-model="st.lokasi" placeholder="Lokasi Spesifik (RT/RW/Nama Tempat)" class="w-full border rounded-lg px-3 py-2 text-sm">
-          <select v-model="st.petugas_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
-            <option v-for="p in personilList" :key="p.id" :value="p.id">{{ p.nama }} ({{ p.jabatan }})</option>
-          </select>
-          <p class="text-xs text-gray-400">Pilih petugas (tekan Ctrl/Cmd untuk multi-pilih)</p>
-          <div class="grid grid-cols-2 gap-3">
-            <input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="st.tgl_mulai" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
-          </div>
-          <button type="submit" class="btn-primary w-full text-white px-6 py-3 rounded-xl font-bold text-sm">Simpan Surat Tugas</button>
-          <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
-        </form>
+
+<!-- Form Surat Tugas (DIPERKAYA) -->
+<form v-if="tab === 'st'" @submit.prevent="simpanST" class="glass-card rounded-2xl p-6 space-y-3">
+  <h2 class="text-lg font-bold text-gray-700">📋 Form Surat Tugas</h2>
+  
+  <!-- Unit Kerja + Layanan -->
+  <div class="grid grid-cols-2 gap-3">
+    <select v-model="st.unit_kerja" @change="onUnitKerjaChange" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <option value="">-- Pilih Unit Kerja --</option>
+      <option v-for="u in unitKerjaList" :key="u.id" :value="u.nama_unit">{{ u.nama_unit }}</option>
+    </select>
+    <select v-model="st.layanan" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <option value="">-- Pilih Layanan --</option>
+      <option v-for="l in filteredLayanan" :key="l.id" :value="l.nama_layanan">{{ l.nama_layanan }}</option>
+    </select>
+  </div>
+
+  <!-- SOP (multi-select) -->
+  <select v-model="st.sop_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
+    <option v-for="s in filteredSOP" :key="s.id" :value="s.id">{{ s.kode_sop }} - {{ s.nama_sop }}</option>
+  </select>
+  <p class="text-xs text-gray-400">Pilih SOP yang relevan (tekan Ctrl/Cmd untuk multi-pilih)</p>
+
+  <input v-model="st.kegiatan" placeholder="Kegiatan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+  
+  <!-- Kecamatan + Desa -->
+  <div class="grid grid-cols-2 gap-3">
+    <select v-model="st.kecamatan" @change="onKecamatanChange" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <option value="">-- Pilih Kecamatan --</option>
+      <option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
+    </select>
+    <select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <option value="">-- Pilih Desa/Kelurahan --</option>
+      <option v-for="desa in filteredDesa" :key="desa" :value="desa">{{ desa }}</option>
+    </select>
+  </div>
+
+  <input v-model="st.lokasi" placeholder="Lokasi Spesifik *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+  
+  <!-- Petugas + Kendaraan + Peralatan -->
+  <select v-model="st.petugas_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
+    <option v-for="p in personilList" :key="p.id" :value="p.id">{{ p.nama }} ({{ p.jabatan }})</option>
+  </select>
+  <p class="text-xs text-gray-400">Petugas (tekan Ctrl/Cmd untuk multi-pilih)</p>
+
+  <div class="grid grid-cols-2 gap-3">
+    <select v-model="st.kendaraan_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
+      <option v-for="k in kendaraanList" :key="k.id" :value="k.id">{{ k.nama }} ({{ k.plat || '-' }})</option>
+    </select>
+    <select v-model="st.peralatan_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
+      <option v-for="a in peralatanList" :key="a.id" :value="a.id">{{ a.nama }}</option>
+    </select>
+  </div>
+  <p class="text-xs text-gray-400">Kendaraan & Peralatan (tekan Ctrl/Cmd untuk multi-pilih)</p>
+
+  <!-- Waktu -->
+  <div class="grid grid-cols-4 gap-3">
+    <input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
+    <input v-model="st.tgl_mulai" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
+    <input v-model="st.jam_mulai" type="time" class="w-full border rounded-lg px-3 py-2 text-sm" value="08:00">
+    <input v-model="st.jam_selesai" type="time" class="w-full border rounded-lg px-3 py-2 text-sm" value="16:00">
+  </div>
+
+  <!-- Instruksi -->
+  <textarea v-model="st.instruksi" placeholder="Instruksi Khusus (opsional)" class="w-full border rounded-lg px-3 py-2 text-sm" rows="2"></textarea>
+  
+  <button type="submit" class="btn-primary w-full text-white px-6 py-3 rounded-xl font-bold text-sm">Simpan Surat Tugas</button>
+  <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
+</form>
       </div>
     </main>
   </div>
