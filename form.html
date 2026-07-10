@@ -46,61 +46,63 @@
   </div>
 
   <script>
-    // Hanya satu kali deklarasi supabase di sini
-    const SUPABASE_URL = 'https://msdacugqzxprxajdudsx.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // IIFE – variabel di dalamnya tidak bocor ke global
+    (function() {
+      const SUPABASE_URL = 'https://msdacugqzxprxajdudsx.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf';
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    Vue.createApp({
-      data() {
-        return {
-          tab: 'pengaduan',
-          aduan: { nama: '', kontak: '', deskripsi: '' },
-          st: { kegiatan: '', lokasi: '', tanggal_st: '' },
-          pesan: { teks: '', warna: '' }
-        }
-      },
-      methods: {
-        async simpanPengaduan() {
-          this.pesan = { teks: '', warna: '' };
-          if (!this.aduan.nama || !this.aduan.deskripsi) {
-            this.pesan = { teks: 'Nama dan Deskripsi wajib diisi!', warna: 'text-red-500' };
-            return;
-          }
-          const { error } = await supabase.from('pengaduan').insert({
-            nama_pelapor: this.aduan.nama,
-            kontak: this.aduan.kontak,
-            deskripsi: this.aduan.deskripsi,
-            status: 'Baru'
-          });
-          if (error) {
-            this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
-          } else {
-            this.pesan = { teks: '✅ Pengaduan berhasil dikirim!', warna: 'text-green-600' };
-            this.aduan = { nama: '', kontak: '', deskripsi: '' };
+      Vue.createApp({
+        data() {
+          return {
+            tab: 'pengaduan',
+            aduan: { nama: '', kontak: '', deskripsi: '' },
+            st: { kegiatan: '', lokasi: '', tanggal_st: '' },
+            pesan: { teks: '', warna: '' }
           }
         },
-        async simpanST() {
-          this.pesan = { teks: '', warna: '' };
-          if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) {
-            this.pesan = { teks: 'Semua field wajib diisi!', warna: 'text-red-500' };
-            return;
-          }
-          const { error } = await supabase.from('surat_tugas').insert({
-            kegiatan: this.st.kegiatan,
-            lokasi: this.st.lokasi,
-            tanggal_st: this.st.tanggal_st,
-            status: 'Aktif'
-          });
-          if (error) {
-            this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
-          } else {
-            this.pesan = { teks: '✅ Surat Tugas berhasil disimpan!', warna: 'text-green-600' };
-            this.st = { kegiatan: '', lokasi: '', tanggal_st: '' };
+        methods: {
+          async simpanPengaduan() {
+            this.pesan = { teks: '', warna: '' };
+            if (!this.aduan.nama || !this.aduan.deskripsi) {
+              this.pesan = { teks: 'Nama dan Deskripsi wajib diisi!', warna: 'text-red-500' };
+              return;
+            }
+            const { error } = await supabase.from('pengaduan').insert({
+              nama_pelapor: this.aduan.nama,
+              kontak: this.aduan.kontak,
+              deskripsi: this.aduan.deskripsi,
+              status: 'Baru'
+            });
+            if (error) {
+              this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
+            } else {
+              this.pesan = { teks: '✅ Pengaduan berhasil dikirim!', warna: 'text-green-600' };
+              this.aduan = { nama: '', kontak: '', deskripsi: '' };
+            }
+          },
+          async simpanST() {
+            this.pesan = { teks: '', warna: '' };
+            if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) {
+              this.pesan = { teks: 'Semua field wajib diisi!', warna: 'text-red-500' };
+              return;
+            }
+            const { error } = await supabase.from('surat_tugas').insert({
+              kegiatan: this.st.kegiatan,
+              lokasi: this.st.lokasi,
+              tanggal_st: this.st.tanggal_st,
+              status: 'Aktif'
+            });
+            if (error) {
+              this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
+            } else {
+              this.pesan = { teks: '✅ Surat Tugas berhasil disimpan!', warna: 'text-green-600' };
+              this.st = { kegiatan: '', lokasi: '', tanggal_st: '' };
+            }
           }
         }
-      }
-    }).mount('#app');
+      }).mount('#app');
+    })();
   </script>
 </body>
 </html>
