@@ -5,16 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SI DILAN Terpadu - Dashboard</title>
   
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Vue 3 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-  
-  <!-- Supabase JS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   
   <style>
@@ -35,7 +28,7 @@
   <!-- Loading Screen -->
   <div id="app-loading">
     <div style="font-size: 24px; font-weight: bold;">SI DILAN TERPADU</div>
-    <div style="font-size: 12px; margin-top: 8px;">Menyambungkan ke database...</div>
+    <div style="font-size: 12px; margin-top: 8px;" id="loading-text">Menyambungkan ke database...</div>
   </div>
 
   <!-- Vue App -->
@@ -45,6 +38,11 @@
       <p class="text-sm text-gray-500 mb-6">
         Sistem Informasi Digital Melayani – Satpol PP & Kebakaran Kab. Trenggalek
       </p>
+
+      <!-- Error Alert -->
+      <div v-if="error" class="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg mb-4">
+        ⚠️ {{ error }}
+      </div>
 
       <!-- Stat Cards -->
       <div class="grid grid-cols-3 gap-4 mb-8">
@@ -140,6 +138,7 @@
         const pengaduan = ref([]);
         const suratTugas = ref([]);
         const personil = ref([]);
+        const error = ref(null);
 
         async function loadData() {
           try {
@@ -149,13 +148,22 @@
               supabase.from('personil').select('*').eq('status', 'Aktif')
             ]);
 
+            if (aduRes.error) throw new Error('Pengaduan: ' + aduRes.error.message);
+            if (stRes.error) throw new Error('Surat Tugas: ' + stRes.error.message);
+            if (personilRes.error) throw new Error('Personil: ' + personilRes.error.message);
+
             pengaduan.value = aduRes.data || [];
             suratTugas.value = stRes.data || [];
             personil.value = personilRes.data || [];
           } catch (e) {
-            console.error('Gagal load data:', e.message);
+            error.value = 'Gagal memuat data: ' + e.message;
+            console.error(e);
           } finally {
-            document.getElementById('app-loading').classList.add('hide');
+            // Pastikan loading screen hilang setelah maksimal 5 detik
+            setTimeout(() => {
+              const loader = document.getElementById('app-loading');
+              if (loader) loader.classList.add('hide');
+            }, 500);
           }
         }
 
@@ -179,7 +187,7 @@
 
         onMounted(() => loadData());
 
-        return { pengaduan, suratTugas, personil, formatDate, statusBadge };
+        return { pengaduan, suratTugas, personil, error, formatDate, statusBadge };
       }
     }).mount('#app');
   </script>
