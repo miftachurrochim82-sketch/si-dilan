@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Form Input - SI DILAN</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14' font-size='14'>📝</text></svg>">
+</head>
+<body class="bg-gray-50">
+
+<div id="app" class="max-w-2xl mx-auto p-4">
+<div class="flex items-center gap-3 mb-4">
+<a href="index.html" class="text-blue-600 hover:underline text-sm">← Dashboard</a>
+<h1 class="text-2xl font-bold text-blue-800">Form Input SI DILAN</h1>
+</div>
+
+<!-- Tab navigasi -->
+<div class="flex gap-2 mb-4">
+<button @click="tab = 'pengaduan'" :class="tab === 'pengaduan' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Pengaduan</button>
+<button @click="tab = 'st'" :class="tab === 'st' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Surat Tugas</button>
+</div>
+
+<!-- ========== FORM PENGADUAN ========== -->
+<form v-if="tab === 'pengaduan'" @submit.prevent="simpanPengaduan" class="bg-white rounded-2xl shadow p-6 space-y-3">
+<h2 class="text-lg font-bold text-gray-700">Form Pengaduan Masyarakat</h2>
+
+<input v-model="aduan.nama" placeholder="Nama Pelapor *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+<input v-model="aduan.kontak" placeholder="Kontak (HP/WA)" class="w-full border rounded-lg px-3 py-2 text-sm">
+
+<select v-model="aduan.kategori_id" class="w-full border rounded-lg px-3 py-2 text-sm">
+<option value="">-- Pilih Kategori Pengaduan --</option>
+<option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">{{ kat.permasalahan }} ({{ kat.bidang }})</option>
+</select>
+
+<textarea v-model="aduan.deskripsi" placeholder="Deskripsi Pengaduan *" required class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+
+<input v-model="aduan.lokasi" placeholder="Lokasi Kejadian" class="w-full border rounded-lg px-3 py-2 text-sm">
+<input v-model="aduan.tgl_kejadian" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
+
+<button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm">Kirim Pengaduan</button>
+<p v-if="pesan.teks" class="text-sm" :class="pesan.warna">{{ pesan.teks }}</p>
+</form>
+
+<!-- ========== FORM SURAT TUGAS ========== -->
+<form v-if="tab === 'st'" @submit.prevent="simpanST" class="bg-white rounded-2xl shadow p-6 space-y-3">
+<h2 class="text-lg font-bold text-gray-700">Form Surat Tugas</h2>
+
+<input v-model="st.kegiatan" placeholder="Kegiatan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+<input v-model="st.lokasi" placeholder="Lokasi Penugasan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+
+<select v-model="st.petugas_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
+<option v-for="p in personilList" :key="p.id" :value="p.id">{{ p.nama }} ({{ p.jabatan }})</option>
+</select>
+<p class="text-xs text-gray-400">Pilih petugas (tekan Ctrl/Cmd untuk multi-pilih)</p>
+
+<input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
+
+<button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm">Simpan Surat Tugas</button>
+<p v-if="pesan.teks" class="text-sm" :class="pesan.warna">{{ pesan.teks }}</p>
+</form>
+</div>
+
+<script>
+const supabaseUrl = 'https://msdacugqzxprxajdudsx.supabase.co';
+const supabaseKey = 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf';
+const supa = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+Vue.createApp({
+data() {
+return {
+tab: 'pengaduan',
+aduan: { nama: '', kontak: '', kategori_id: '', deskripsi: '', lokasi: '', tgl_kejadian: '' },
+st: { kegiatan: '', lokasi: '', petugas_ids: [], tanggal_st: '' },
+pesan: { teks: '', warna: '' },
+kategoriList: [],
+personilList: []
+}
+},
+async mounted() {
+// Ambil daftar kategori pengaduan
+const { data: kat } = await supa.from('kategori_pengaduan').select('*').eq('status', 'Aktif');
+this.kategoriList = kat || [];
+
+// Ambil daftar personil
+const { data: pet } = await supa.from('personil').select('*').eq('status', 'Aktif');
+this.personilList = pet || [];
+},
+methods: {
+async simpanPengaduan() {
+this.pesan = { teks: '', warna: '' };
+if (!this.aduan.nama || !this.aduan.deskripsi) {
+this.pesan = { teks: 'Nama dan Deskripsi wajib diisi!', warna: 'text-red-500' };
+return;
+}
+const { error } = await supa.from('pengaduan').insert({
+nama_pelapor: this.aduan.nama,
+kontak: this.aduan.kontak,
+kategori_id: this.aduan.kategori_id || null,
+deskripsi: this.aduan.deskripsi,
+lokasi: this.aduan.lokasi,
+tgl_kejadian: this.aduan.tgl_kejadian || null,
+status: 'Baru'
+});
+if (error) {
+this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
+} else {
+this.pesan = { teks: '✅ Pengaduan berhasil dikirim!', warna: 'text-green-600' };
+this.aduan = { nama: '', kontak: '', kategori_id: '', deskripsi: '', lokasi: '', tgl_kejadian: '' };
+}
+},
+async simpanST() {
+this.pesan = { teks: '', warna: '' };
+if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) {
+this.pesan = { teks: 'Kegiatan, Lokasi, dan Tanggal wajib diisi!', warna: 'text-red-500' };
+return;
+}
+const payload = {
+kegiatan: this.st.kegiatan,
+lokasi: this.st.lokasi,
+tanggal_st: this.st.tanggal_st,
+status: 'Aktif'
+};
+if (this.st.petugas_ids.length > 0) {
+payload.petugas_ids = this.st.petugas_ids;
+}
+const { error } = await supa.from('surat_tugas').insert(payload);
+if (error) {
+this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
+} else {
+this.pesan = { teks: '✅ Surat Tugas berhasil disimpan!', warna: 'text-green-600' };
+this.st = { kegiatan: '', lokasi: '', petugas_ids: [], tanggal_st: '' };
+}
+}
+}
+}).mount('#app');
+</script>
+</body>
+</html>
