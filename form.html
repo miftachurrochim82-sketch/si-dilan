@@ -1,142 +1,230 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Form Input - SI DILAN</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14' font-size='14'>📝</text></svg>">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Form Input - SI DILAN</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14' font-size='14'>📝</text></svg>">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border: none;
+      transition: all 0.2s ease;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+  </style>
 </head>
 <body class="bg-gray-50">
 
-<div id="app" class="max-w-2xl mx-auto p-4">
-<div class="flex items-center gap-3 mb-4">
-<a href="index.html" class="text-blue-600 hover:underline text-sm">← Dashboard</a>
-<h1 class="text-2xl font-bold text-blue-800">Form Input SI DILAN</h1>
-</div>
+  <div id="app" class="max-w-2xl mx-auto p-4">
+    <div class="flex items-center gap-3 mb-4">
+      <a href="index.html" class="text-blue-600 hover:underline text-sm">← Dashboard</a>
+      <h1 class="text-2xl font-bold text-blue-800">Form Input SI DILAN</h1>
+    </div>
 
-<!-- Tab navigasi -->
-<div class="flex gap-2 mb-4">
-<button @click="tab = 'pengaduan'" :class="tab === 'pengaduan' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Pengaduan</button>
-<button @click="tab = 'st'" :class="tab === 'st' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Surat Tugas</button>
-</div>
+    <!-- Tab navigasi -->
+    <div class="flex gap-2 mb-4">
+      <button @click="tab = 'pengaduan'" :class="tab === 'pengaduan' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Pengaduan</button>
+      <button @click="tab = 'st'" :class="tab === 'st' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Surat Tugas</button>
+    </div>
 
-<!-- ========== FORM PENGADUAN ========== -->
-<form v-if="tab === 'pengaduan'" @submit.prevent="simpanPengaduan" class="bg-white rounded-2xl shadow p-6 space-y-3">
-<h2 class="text-lg font-bold text-gray-700">Form Pengaduan Masyarakat</h2>
+    <!-- ========== FORM PENGADUAN ========== -->
+    <form v-if="tab === 'pengaduan'" @submit.prevent="simpanPengaduan" class="glass-card rounded-2xl p-6 space-y-3">
+      <h2 class="text-lg font-bold text-gray-700">📢 Form Pengaduan Masyarakat</h2>
+      
+      <input v-model="aduan.nama" placeholder="Nama Pelapor *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+      <input v-model="aduan.kontak" placeholder="Kontak (HP/WA)" class="w-full border rounded-lg px-3 py-2 text-sm">
+      
+      <select v-model="aduan.kategori_id" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <option value="">-- Pilih Kategori Pengaduan --</option>
+        <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">{{ kat.permasalahan }} ({{ kat.bidang }})</option>
+      </select>
 
-<input v-model="aduan.nama" placeholder="Nama Pelapor *" required class="w-full border rounded-lg px-3 py-2 text-sm">
-<input v-model="aduan.kontak" placeholder="Kontak (HP/WA)" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <textarea v-model="aduan.deskripsi" placeholder="Deskripsi Pengaduan *" required class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+      
+      <div class="grid grid-cols-2 gap-3">
+        <input v-model="aduan.lokasi" placeholder="Lokasi Kejadian" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <input v-model="aduan.tgl_kejadian" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      
+      <button type="submit" class="btn-primary w-full text-white px-6 py-3 rounded-xl font-bold text-sm">
+        Kirim Pengaduan
+      </button>
+      <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
+    </form>
 
-<select v-model="aduan.kategori_id" class="w-full border rounded-lg px-3 py-2 text-sm">
-<option value="">-- Pilih Kategori Pengaduan --</option>
-<option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">{{ kat.permasalahan }} ({{ kat.bidang }})</option>
-</select>
+    <!-- ========== FORM SURAT TUGAS ========== -->
+    <form v-if="tab === 'st'" @submit.prevent="simpanST" class="glass-card rounded-2xl p-6 space-y-3">
+      <h2 class="text-lg font-bold text-gray-700">📋 Form Surat Tugas</h2>
+      
+      <input v-model="st.kegiatan" placeholder="Kegiatan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+      
+      <!-- Unit Kerja -->
+      <select v-model="st.unit_kerja" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <option value="">-- Pilih Unit Kerja --</option>
+        <option v-for="u in unitKerjaList" :key="u.id" :value="u.nama_unit">{{ u.nama_unit }}</option>
+      </select>
 
-<textarea v-model="aduan.deskripsi" placeholder="Deskripsi Pengaduan *" required class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+      <!-- Kecamatan -->
+      <select v-model="st.kecamatan" @change="onKecamatanChange" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <option value="">-- Pilih Kecamatan --</option>
+        <option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
+      </select>
 
-<input v-model="aduan.lokasi" placeholder="Lokasi Kejadian" class="w-full border rounded-lg px-3 py-2 text-sm">
-<input v-model="aduan.tgl_kejadian" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <!-- Desa (terfilter) -->
+      <select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm">
+        <option value="">-- Pilih Desa/Kelurahan --</option>
+        <option v-for="desa in filteredDesa" :key="desa" :value="desa">{{ desa }}</option>
+      </select>
 
-<button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm">Kirim Pengaduan</button>
-<p v-if="pesan.teks" class="text-sm" :class="pesan.warna">{{ pesan.teks }}</p>
-</form>
+      <input v-model="st.lokasi" placeholder="Lokasi Spesifik (RT/RW/Nama Tempat)" class="w-full border rounded-lg px-3 py-2 text-sm">
+      
+      <!-- Petugas (multi-select) -->
+      <select v-model="st.petugas_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
+        <option v-for="p in personilList" :key="p.id" :value="p.id">{{ p.nama }} ({{ p.jabatan }})</option>
+      </select>
+      <p class="text-xs text-gray-400">Pilih petugas (tekan Ctrl/Cmd untuk multi-pilih)</p>
 
-<!-- ========== FORM SURAT TUGAS ========== -->
-<form v-if="tab === 'st'" @submit.prevent="simpanST" class="bg-white rounded-2xl shadow p-6 space-y-3">
-<h2 class="text-lg font-bold text-gray-700">Form Surat Tugas</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
+        <input v-model="st.tgl_mulai" type="date" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Tgl Mulai">
+      </div>
+      
+      <button type="submit" class="btn-primary w-full text-white px-6 py-3 rounded-xl font-bold text-sm">
+        Simpan Surat Tugas
+      </button>
+      <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
+    </form>
+  </div>
 
-<input v-model="st.kegiatan" placeholder="Kegiatan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
-<input v-model="st.lokasi" placeholder="Lokasi Penugasan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+  <script>
+    const supabaseUrl = 'https://msdacugqzxprxajdudsx.supabase.co';
+    const supabaseKey = 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf';
+    const supa = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-<select v-model="st.petugas_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
-<option v-for="p in personilList" :key="p.id" :value="p.id">{{ p.nama }} ({{ p.jabatan }})</option>
-</select>
-<p class="text-xs text-gray-400">Pilih petugas (tekan Ctrl/Cmd untuk multi-pilih)</p>
+    // Data statis kecamatan Trenggalek
+    const DATA_KECAMATAN = [
+      'Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan',
+      'Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'
+    ];
 
-<input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
+    // Data desa per kecamatan
+    const DATA_DESA = {
+      'Bendungan':['Botoputih','Depok','Masaran','Sengon','Surenlor'],
+      'Dongko':['Dongko','Pandean','Petung','Pringapus','Salam'],
+      'Durenan':['Durenan','Gador','Kamulan','Pakis','Pandean'],
+      'Gandusari':['Gandusari','Jajar','Krandegan','Sukorame','Widoro'],
+      'Kampak':['Bogoran','Karangrejo','Ngadimulyo','Senden','Timahan'],
+      'Karangan':['Buluagung','Jati','Karangan','Kayen','Sumber'],
+      'Munjungan':['Besuki','Munjungan','Sobo','Tawing','Bangun'],
+      'Panggul':['Banjar','Depok','Manggis','Panggul','Wonocoyo'],
+      'Pogalan':['Bendorejo','Kedunglurah','Ngadirejo','Pogalan','Wonocoyo'],
+      'Pule':['Joho','Kembangan','Pule','Puyung','Sidomulyo'],
+      'Suruh':['Gamping','Mlinjon','Ngrandu','Suruh','Wonokerto'],
+      'Trenggalek':['Kelutan','Ngantru','Sumbergedong','Surondakan','Tamanan'],
+      'Tugu':['Duren','Gading','Prambon','Tumpuk','Winong'],
+      'Watulimo':['Dukuh','Gemaharjo','Prigi','Slawe','Watulimo']
+    };
 
-<button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm">Simpan Surat Tugas</button>
-<p v-if="pesan.teks" class="text-sm" :class="pesan.warna">{{ pesan.teks }}</p>
-</form>
-</div>
-
-<script>
-const supabaseUrl = 'https://msdacugqzxprxajdudsx.supabase.co';
-const supabaseKey = 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf';
-const supa = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-Vue.createApp({
-data() {
-return {
-tab: 'pengaduan',
-aduan: { nama: '', kontak: '', kategori_id: '', deskripsi: '', lokasi: '', tgl_kejadian: '' },
-st: { kegiatan: '', lokasi: '', petugas_ids: [], tanggal_st: '' },
-pesan: { teks: '', warna: '' },
-kategoriList: [],
-personilList: []
-}
-},
-async mounted() {
-// Ambil daftar kategori pengaduan
-const { data: kat } = await supa.from('kategori_pengaduan').select('*').eq('status', 'Aktif');
-this.kategoriList = kat || [];
-
-// Ambil daftar personil
-const { data: pet } = await supa.from('personil').select('*').eq('status', 'Aktif');
-this.personilList = pet || [];
-},
-methods: {
-async simpanPengaduan() {
-this.pesan = { teks: '', warna: '' };
-if (!this.aduan.nama || !this.aduan.deskripsi) {
-this.pesan = { teks: 'Nama dan Deskripsi wajib diisi!', warna: 'text-red-500' };
-return;
-}
-const { error } = await supa.from('pengaduan').insert({
-nama_pelapor: this.aduan.nama,
-kontak: this.aduan.kontak,
-kategori_id: this.aduan.kategori_id || null,
-deskripsi: this.aduan.deskripsi,
-lokasi: this.aduan.lokasi,
-tgl_kejadian: this.aduan.tgl_kejadian || null,
-status: 'Baru'
-});
-if (error) {
-this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
-} else {
-this.pesan = { teks: '✅ Pengaduan berhasil dikirim!', warna: 'text-green-600' };
-this.aduan = { nama: '', kontak: '', kategori_id: '', deskripsi: '', lokasi: '', tgl_kejadian: '' };
-}
-},
-async simpanST() {
-this.pesan = { teks: '', warna: '' };
-if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) {
-this.pesan = { teks: 'Kegiatan, Lokasi, dan Tanggal wajib diisi!', warna: 'text-red-500' };
-return;
-}
-const payload = {
-kegiatan: this.st.kegiatan,
-lokasi: this.st.lokasi,
-tanggal_st: this.st.tanggal_st,
-status: 'Aktif'
-};
-if (this.st.petugas_ids.length > 0) {
-payload.petugas_ids = this.st.petugas_ids;
-}
-const { error } = await supa.from('surat_tugas').insert(payload);
-if (error) {
-this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
-} else {
-this.pesan = { teks: '✅ Surat Tugas berhasil disimpan!', warna: 'text-green-600' };
-this.st = { kegiatan: '', lokasi: '', petugas_ids: [], tanggal_st: '' };
-}
-}
-}
-}).mount('#app');
-</script>
+    Vue.createApp({
+      data() {
+        return {
+          tab: 'pengaduan',
+          aduan: { nama: '', kontak: '', kategori_id: '', deskripsi: '', lokasi: '', tgl_kejadian: '' },
+          st: { kegiatan: '', unit_kerja: '', kecamatan: '', desa: '', lokasi: '', petugas_ids: [], tanggal_st: '', tgl_mulai: '' },
+          pesan: { teks: '', warna: '' },
+          kategoriList: [],
+          personilList: [],
+          unitKerjaList: [],
+          listKecamatan: DATA_KECAMATAN,
+          filteredDesa: []
+        }
+      },
+      methods: {
+        onKecamatanChange() {
+          this.st.desa = '';
+          this.filteredDesa = DATA_DESA[this.st.kecamatan] || [];
+        },
+        async simpanPengaduan() {
+          this.pesan = { teks: '', warna: '' };
+          if (!this.aduan.nama || !this.aduan.deskripsi) {
+            this.pesan = { teks: 'Nama dan Deskripsi wajib diisi!', warna: 'text-red-500' };
+            return;
+          }
+          const { error } = await supa.from('pengaduan').insert({
+            nama_pelapor: this.aduan.nama,
+            kontak: this.aduan.kontak,
+            kategori_id: this.aduan.kategori_id || null,
+            deskripsi: this.aduan.deskripsi,
+            lokasi: this.aduan.lokasi,
+            tgl_kejadian: this.aduan.tgl_kejadian || null,
+            status: 'Baru'
+          });
+          if (error) {
+            this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
+          } else {
+            this.pesan = { teks: '✅ Pengaduan berhasil dikirim!', warna: 'text-green-600' };
+            this.aduan = { nama: '', kontak: '', kategori_id: '', deskripsi: '', lokasi: '', tgl_kejadian: '' };
+          }
+        },
+        async simpanST() {
+          this.pesan = { teks: '', warna: '' };
+          if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) {
+            this.pesan = { teks: 'Kegiatan, Lokasi, dan Tanggal wajib diisi!', warna: 'text-red-500' };
+            return;
+          }
+          const payload = {
+            kegiatan: this.st.kegiatan,
+            lokasi: this.st.lokasi,
+            kecamatan: this.st.kecamatan,
+            desa: this.st.desa,
+            unit_kerja: this.st.unit_kerja,
+            tanggal_st: this.st.tanggal_st,
+            tgl_mulai: this.st.tgl_mulai || this.st.tanggal_st,
+            status: 'Aktif'
+          };
+          if (this.st.petugas_ids.length > 0) {
+            payload.petugas_ids = this.st.petugas_ids;
+          }
+          const { error } = await supa.from('surat_tugas').insert(payload);
+          if (error) {
+            this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
+          } else {
+            this.pesan = { teks: '✅ Surat Tugas berhasil disimpan!', warna: 'text-green-600' };
+            this.st = { kegiatan: '', unit_kerja: '', kecamatan: '', desa: '', lokasi: '', petugas_ids: [], tanggal_st: '', tgl_mulai: '' };
+          }
+        }
+      },
+      async mounted() {
+        const [{ data: kat }, { data: pet }, { data: unit }] = await Promise.all([
+          supa.from('kategori_pengaduan').select('*').eq('status', 'Aktif'),
+          supa.from('personil').select('*').eq('status', 'Aktif'),
+          supa.from('unit_kerja').select('*').eq('status', 'Aktif')
+        ]);
+        this.kategoriList = kat || [];
+        this.personilList = pet || [];
+        this.unitKerjaList = unit || [];
+      }
+    }).mount('#app');
+  </script>
 </body>
 </html>
