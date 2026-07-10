@@ -90,7 +90,7 @@
         <option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
       </select>
 
-      <!-- Desa (terfilter) -->
+      <!-- Desa -->
       <select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm">
         <option value="">-- Pilih Desa/Kelurahan --</option>
         <option v-for="desa in filteredDesa" :key="desa" :value="desa">{{ desa }}</option>
@@ -98,7 +98,7 @@
 
       <input v-model="st.lokasi" placeholder="Lokasi Spesifik (RT/RW/Nama Tempat)" class="w-full border rounded-lg px-3 py-2 text-sm">
       
-      <!-- Petugas (multi-select) -->
+      <!-- Petugas -->
       <select v-model="st.petugas_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
         <option v-for="p in personilList" :key="p.id" :value="p.id">{{ p.nama }} ({{ p.jabatan }})</option>
       </select>
@@ -106,7 +106,7 @@
 
       <div class="grid grid-cols-2 gap-3">
         <input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
-        <input v-model="st.tgl_mulai" type="date" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Tgl Mulai">
+        <input v-model="st.tgl_mulai" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
       </div>
       
       <button type="submit" class="btn-primary w-full text-white px-6 py-3 rounded-xl font-bold text-sm">
@@ -127,7 +127,6 @@
       'Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'
     ];
 
-    // Data desa per kecamatan
     const DATA_DESA = {
       'Bendungan':['Botoputih','Depok','Masaran','Sengon','Surenlor'],
       'Dongko':['Dongko','Pandean','Petung','Pringapus','Salam'],
@@ -144,6 +143,16 @@
       'Tugu':['Duren','Gading','Prambon','Tumpuk','Winong'],
       'Watulimo':['Dukuh','Gemaharjo','Prigi','Slawe','Watulimo']
     };
+
+    // Fungsi untuk generate no_pengaduan otomatis
+    function generateNoPengaduan() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const rand = Math.floor(Math.random() * 9000) + 1000; // 4 digit acak
+      return `ADU-${y}${m}${d}-${rand}`;
+    }
 
     Vue.createApp({
       data() {
@@ -171,6 +180,7 @@
             return;
           }
           const { error } = await supa.from('pengaduan').insert({
+            no_pengaduan: generateNoPengaduan(), // <-- auto-generate
             nama_pelapor: this.aduan.nama,
             kontak: this.aduan.kontak,
             kategori_id: this.aduan.kategori_id || null,
