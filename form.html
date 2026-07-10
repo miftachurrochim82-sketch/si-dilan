@@ -243,11 +243,12 @@
     </main>
   </div>
 
-  <script>
+<script>
     const supabaseUrl = 'https://msdacugqzxprxajdudsx.supabase.co';
     const supabaseKey = 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf';
     const supa = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+    // Data statis kecamatan & desa
     const DATA_KECAMATAN = [
       'Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan',
       'Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'
@@ -278,6 +279,15 @@
       return `ADU-${y}${m}${d}-${rand}`;
     }
 
+    function generateNomorST(unit) {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const rand = Math.floor(Math.random() * 900) + 100;
+      const kode = unit ? unit.substring(0, 3).toUpperCase() : 'OPS';
+      return `${rand}/ST/${kode}/${y}`;
+    }
+
     // Baca query string ?tab=
     const params = new URLSearchParams(window.location.search);
     const initialTab = params.get('tab') === 'st' ? 'st' : 'pengaduan';
@@ -286,29 +296,51 @@
       data() {
         return {
           tab: initialTab,
-          aduan: { nama: '', kontak: '', kategori_id: '', deskripsi: '', lokasi: '', tgl_kejadian: '' },
-          st: { kegiatan: '', unit_kerja: '', kecamatan: '', desa: '', lokasi: '', petugas_ids: [], tanggal_st: '', tgl_mulai: '' },
+          aduan: { nama: '', kontak: '', kategori_id: '', sumber_aduan: '', kecamatan: '', desa: '', deskripsi: '', lokasi: '', tgl_kejadian: '' },
+          st: { kegiatan: '', unit_kerja: '', layanan: '', sop_ids: [], kecamatan: '', desa: '', lokasi: '', petugas_ids: [], kendaraan_ids: [], peralatan_ids: [], tanggal_st: '', tgl_mulai: '', jam_mulai: '08:00', jam_selesai: '16:00', instruksi: '' },
           pesan: { teks: '', warna: '' },
           kategoriList: [],
           personilList: [],
           unitKerjaList: [],
+          layananList: [],
+          sopList: [],
+          kendaraanList: [],
+          peralatanList: [],
           listKecamatan: DATA_KECAMATAN,
           filteredDesa: [],
+          filteredDesaAduan: [],
           sidebarOpen: true,
           isMobile: window.innerWidth < 768
+        }
+      },
+      computed: {
+        filteredLayanan() {
+          if (!this.st.unit_kerja) return [];
+          return this.layananList.filter(l => l.unit_kerja === this.st.unit_kerja);
+        },
+        filteredSOP() {
+          if (!this.st.layanan) return [];
+          return this.sopList.filter(s => s.layanan === this.st.layanan);
         }
       },
       methods: {
         switchTab(t) {
           this.tab = t;
-          // Update URL tanpa reload
           const url = new URL(window.location);
           url.searchParams.set('tab', t);
           window.history.replaceState({}, '', url);
         },
+        onUnitKerjaChange() {
+          this.st.layanan = '';
+          this.st.sop_ids = [];
+        },
         onKecamatanChange() {
           this.st.desa = '';
           this.filteredDesa = DATA_DESA[this.st.kecamatan] || [];
+        },
+        onKecamatanAduanChange() {
+          this.aduan.desa = '';
+          this.filteredDesaAduan = DATA_DESA[this.aduan.kecamatan] || [];
         },
         async simpanPengaduan() {
           this.pesan = { teks: '', warna: '' };
@@ -321,15 +353,18 @@
             nama_pelapor: this.aduan.nama,
             kontak: this.aduan.kontak,
             kategori_id: this.aduan.kategori_id || null,
+            sumber_aduan: this.aduan.sumber_aduan || null,
+            kecamatan: this.aduan.kecamatan || null,
+            desa: this.aduan.desa || null,
             deskripsi: this.aduan.deskripsi,
-            lokasi: this.aduan.lokasi,
+            lokasi: this.aduan.lokasi || null,
             tgl_kejadian: this.aduan.tgl_kejadian || null,
             status: 'Baru'
           });
           if (error) { this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' }; }
           else {
             this.pesan = { teks: '✅ Pengaduan berhasil dikirim!', warna: 'text-green-600' };
-            this.aduan = { nama: '', kontak: '', kategori_id: '', deskripsi: '', lokasi: '', tgl_kejadian: '' };
+            this.aduan = { nama: '', kontak: '', kategori_id: '', sumber_aduan: '', kecamatan: '', desa: '', deskripsi: '', lokasi: '', tgl_kejadian: '' };
           }
         },
         async simpanST() {
@@ -339,21 +374,29 @@
             return;
           }
           const payload = {
+            nomor_st: generateNomorST(this.st.unit_kerja),
             kegiatan: this.st.kegiatan,
+            unit_kerja: this.st.unit_kerja || null,
+            layanan: this.st.layanan || null,
+            sop_ids: this.st.sop_ids.length > 0 ? this.st.sop_ids : null,
+            kecamatan: this.st.kecamatan || null,
+            desa: this.st.desa || null,
             lokasi: this.st.lokasi,
-            kecamatan: this.st.kecamatan,
-            desa: this.st.desa,
-            unit_kerja: this.st.unit_kerja,
+            petugas_ids: this.st.petugas_ids.length > 0 ? this.st.petugas_ids : null,
+            kendaraan_ids: this.st.kendaraan_ids.length > 0 ? this.st.kendaraan_ids : null,
+            peralatan_ids: this.st.peralatan_ids.length > 0 ? this.st.peralatan_ids : null,
             tanggal_st: this.st.tanggal_st,
             tgl_mulai: this.st.tgl_mulai || this.st.tanggal_st,
+            jam_mulai: this.st.jam_mulai || '08:00',
+            jam_selesai: this.st.jam_selesai || '16:00',
+            instruksi: this.st.instruksi || null,
             status: 'Aktif'
           };
-          if (this.st.petugas_ids.length > 0) { payload.petugas_ids = this.st.petugas_ids; }
           const { error } = await supa.from('surat_tugas').insert(payload);
           if (error) { this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' }; }
           else {
             this.pesan = { teks: '✅ Surat Tugas berhasil disimpan!', warna: 'text-green-600' };
-            this.st = { kegiatan: '', unit_kerja: '', kecamatan: '', desa: '', lokasi: '', petugas_ids: [], tanggal_st: '', tgl_mulai: '' };
+            this.st = { kegiatan: '', unit_kerja: '', layanan: '', sop_ids: [], kecamatan: '', desa: '', lokasi: '', petugas_ids: [], kendaraan_ids: [], peralatan_ids: [], tanggal_st: '', tgl_mulai: '', jam_mulai: '08:00', jam_selesai: '16:00', instruksi: '' };
           }
         }
       },
@@ -363,16 +406,25 @@
           this.isMobile = window.innerWidth < 768;
           if (!this.isMobile) this.sidebarOpen = true;
         });
-        const [{ data: kat }, { data: pet }, { data: unit }] = await Promise.all([
+        const [
+          { data: kat }, { data: pet }, { data: unit },
+          { data: lay }, { data: sop }, { data: ken }, { data: alt }
+        ] = await Promise.all([
           supa.from('kategori_pengaduan').select('*').eq('status', 'Aktif'),
           supa.from('personil').select('*').eq('status', 'Aktif'),
-          supa.from('unit_kerja').select('*').eq('status', 'Aktif')
+          supa.from('unit_kerja').select('*').eq('status', 'Aktif'),
+          supa.from('layanan').select('*').eq('status', 'Aktif'),
+          supa.from('sop').select('*').eq('status', 'Aktif'),
+          supa.from('kendaraan').select('*'),
+          supa.from('peralatan').select('*')
         ]);
         this.kategoriList = kat || [];
         this.personilList = pet || [];
         this.unitKerjaList = unit || [];
+        this.layananList = lay || [];
+        this.sopList = sop || [];
+        this.kendaraanList = ken || [];
+        this.peralatanList = alt || [];
       }
     }).mount('#app');
   </script>
-</body>
-</html>
