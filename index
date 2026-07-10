@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SI DILAN Terpadu - Dashboard</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Vue 3 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <style>
+    #app-loading {
+      position: fixed; inset: 0; z-index: 9999;
+      background: radial-gradient(120% 120% at 50% 0%, #1e3a8a, #1e40af);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: white; font-family: 'Segoe UI', system-ui, sans-serif;
+      transition: opacity 0.7s ease;
+    }
+    #app-loading.hide { opacity: 0; pointer-events: none; }
+    [v-cloak] { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Loading Screen -->
+  <div id="app-loading">
+    <div style="font-size: 24px; font-weight: bold;">SI DILAN TERPADU</div>
+    <div style="font-size: 12px; margin-top: 8px;">Menyambungkan ke database...</div>
+  </div>
+
+  <!-- Vue App -->
+  <div id="app" v-cloak>
+    <div class="p-6 max-w-4xl mx-auto">
+      <h1 class="text-3xl font-bold text-blue-800 mb-2">SI DILAN Terpadu</h1>
+      <p class="text-sm text-gray-500 mb-6">
+        Sistem Informasi Digital Melayani – Satpol PP & Kebakaran Kab. Trenggalek
+      </p>
+
+      <!-- Stat Cards -->
+      <div class="grid grid-cols-3 gap-4 mb-8">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl p-5 shadow-lg">
+          <i class="bi bi-file-earmark-text text-2xl"></i>
+          <div class="text-3xl font-black mt-2">{{ pengaduan.length }}</div>
+          <div class="text-xs opacity-80">Pengaduan</div>
+        </div>
+        <div class="bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-2xl p-5 shadow-lg">
+          <i class="bi bi-envelope-paper text-2xl"></i>
+          <div class="text-3xl font-black mt-2">{{ suratTugas.length }}</div>
+          <div class="text-xs opacity-80">Surat Tugas</div>
+        </div>
+        <div class="bg-gradient-to-br from-purple-500 to-indigo-500 text-white rounded-2xl p-5 shadow-lg">
+          <i class="bi bi-people text-2xl"></i>
+          <div class="text-3xl font-black mt-2">{{ personil.length }}</div>
+          <div class="text-xs opacity-80">Personil</div>
+        </div>
+      </div>
+
+      <!-- Tabel Pengaduan Terbaru -->
+      <div class="bg-white rounded-2xl shadow border p-5 mb-6">
+        <h2 class="text-lg font-bold text-gray-700 mb-3">Pengaduan Terbaru</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="p-2 text-left">Tanggal</th>
+                <th class="p-2 text-left">Pelapor</th>
+                <th class="p-2 text-left">Kategori</th>
+                <th class="p-2 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in pengaduan.slice(0,5)" :key="p.id" class="border-t hover:bg-gray-50">
+                <td class="p-2">{{ formatDate(p.tanggal_lapor) }}</td>
+                <td class="p-2">{{ p.nama_pelapor }}</td>
+                <td class="p-2">{{ p.kategori_nama || '-' }}</td>
+                <td class="p-2">
+                  <span :class="statusBadge(p.status)" class="px-2 py-1 rounded-full text-xs font-bold">
+                    {{ p.status }}
+                  </span>
+                </td>
+              </tr>
+              <tr v-if="!pengaduan.length">
+                <td colspan="4" class="p-4 text-center text-gray-400">Belum ada pengaduan</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tabel Surat Tugas Terbaru -->
+      <div class="bg-white rounded-2xl shadow border p-5">
+        <h2 class="text-lg font-bold text-gray-700 mb-3">Surat Tugas Terbaru</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="p-2 text-left">Nomor ST</th>
+                <th class="p-2 text-left">Kegiatan</th>
+                <th class="p-2 text-left">Lokasi</th>
+                <th class="p-2 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="st in suratTugas.slice(0,5)" :key="st.id" class="border-t hover:bg-gray-50">
+                <td class="p-2">{{ st.nomor_st || '-' }}</td>
+                <td class="p-2">{{ st.kegiatan }}</td>
+                <td class="p-2">{{ st.lokasi }}</td>
+                <td class="p-2">{{ st.status }}</td>
+              </tr>
+              <tr v-if="!suratTugas.length">
+                <td colspan="4" class="p-4 text-center text-gray-400">Belum ada surat tugas</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://msdacugqzxprxajdudsx.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const { createApp, ref, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const pengaduan = ref([]);
+        const suratTugas = ref([]);
+        const personil = ref([]);
+
+        async function loadData() {
+          try {
+            const [aduRes, stRes, personilRes] = await Promise.all([
+              supabase.from('pengaduan').select('*').order('tanggal_lapor', { ascending: false }).limit(10),
+              supabase.from('surat_tugas').select('*').order('created_at', { ascending: false }).limit(10),
+              supabase.from('personil').select('*').eq('status', 'Aktif')
+            ]);
+
+            pengaduan.value = aduRes.data || [];
+            suratTugas.value = stRes.data || [];
+            personil.value = personilRes.data || [];
+          } catch (e) {
+            console.error('Gagal load data:', e.message);
+          } finally {
+            document.getElementById('app-loading').classList.add('hide');
+          }
+        }
+
+        function formatDate(dateStr) {
+          if (!dateStr) return '-';
+          return new Date(dateStr).toLocaleDateString('id-ID', {
+            day: 'numeric', month: 'long', year: 'numeric'
+          });
+        }
+
+        function statusBadge(status) {
+          const map = {
+            'Baru': 'bg-amber-100 text-amber-700',
+            'Diverifikasi': 'bg-sky-100 text-sky-700',
+            'Diproses': 'bg-violet-100 text-violet-700',
+            'Selesai': 'bg-emerald-100 text-emerald-700',
+            'Ditolak': 'bg-rose-100 text-rose-700'
+          };
+          return map[status] || 'bg-gray-100 text-gray-600';
+        }
+
+        onMounted(() => loadData());
+
+        return { pengaduan, suratTugas, personil, formatDate, statusBadge };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
