@@ -202,7 +202,7 @@
               <tr v-for="p in pengaduan" :key="p.id" class="border-t border-gray-100">
                 <td class="p-3">{{ formatDate(p.tanggal_lapor) }}</td>
                 <td class="p-3 font-medium">{{ p.nama_pelapor }}</td>
-                <td class="p-3">{{ p.kategori_nama || '-' }}</td>
+                <td class="p-3">{{ p.kategori_pengaduan?.permasalahan || '-' }}</td>
                 <td class="p-3">
                   <select @change="updateStatus(p.id, $event.target.value)" class="text-xs border rounded-lg px-2 py-1 font-bold" :class="statusBadge(p.status)">
                     <option value="Baru" :selected="p.status === 'Baru'">Baru</option>
@@ -300,11 +300,11 @@
 
           async function loadData() {
             try {
-              const [aduRes, stRes, personilRes] = await Promise.all([
-                supabase.from('pengaduan').select('*').order('tanggal_lapor', { ascending: false }),
-                supabase.from('surat_tugas').select('*').order('created_at', { ascending: false }),
-                supabase.from('personil').select('*').eq('status', 'Aktif')
-              ]);
+            const [aduRes, stRes, personilRes] = await Promise.all([
+              supabase.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang)').order('tanggal_lapor', { ascending: false }),
+              supabase.from('surat_tugas').select('*').order('created_at', { ascending: false }),
+              supabase.from('personil').select('*').eq('status', 'Aktif')
+            ]);
 
               if (aduRes.error) throw new Error('Pengaduan: ' + aduRes.error.message);
               if (stRes.error) throw new Error('Surat Tugas: ' + stRes.error.message);
