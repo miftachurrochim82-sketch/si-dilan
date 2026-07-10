@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Form Input - SI DILAN</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-gray-50">
+
+  <div id="app" class="max-w-2xl mx-auto p-4">
+    <h1 class="text-2xl font-bold text-blue-800 mb-4">Form Input SI DILAN</h1>
+
+    <!-- Tab navigasi -->
+    <div class="flex gap-2 mb-4">
+      <button @click="tab = 'pengaduan'" :class="tab === 'pengaduan' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Pengaduan</button>
+      <button @click="tab = 'st'" :class="tab === 'st' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Surat Tugas</button>
+    </div>
+
+    <!-- Form Pengaduan -->
+    <form v-if="tab === 'pengaduan'" @submit.prevent="simpanPengaduan" class="bg-white rounded-2xl shadow p-6 space-y-3">
+      <h2 class="text-lg font-bold text-gray-700">Form Pengaduan Masyarakat</h2>
+      <input v-model="aduan.nama" placeholder="Nama Pelapor *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+      <input v-model="aduan.kontak" placeholder="Kontak (HP/WA)" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <textarea v-model="aduan.deskripsi" placeholder="Deskripsi Pengaduan *" required class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+      <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm">Kirim Pengaduan</button>
+      <p v-if="pesan" class="text-sm" :class="pesan.warna">{{ pesan.teks }}</p>
+    </form>
+
+    <!-- Form Surat Tugas -->
+    <form v-if="tab === 'st'" @submit.prevent="simpanST" class="bg-white rounded-2xl shadow p-6 space-y-3">
+      <h2 class="text-lg font-bold text-gray-700">Form Surat Tugas</h2>
+      <input v-model="st.kegiatan" placeholder="Kegiatan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+      <input v-model="st.lokasi" placeholder="Lokasi *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+      <input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
+      <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm">Simpan Surat Tugas</button>
+      <p v-if="pesan" class="text-sm" :class="pesan.warna">{{ pesan.teks }}</p>
+    </form>
+  </div>
+
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://msdacugqzxprxajdudsx.supabase.co',
+      'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf'
+    );
+
+    Vue.createApp({
+      data() {
+        return {
+          tab: 'pengaduan',
+          aduan: { nama: '', kontak: '', deskripsi: '' },
+          st: { kegiatan: '', lokasi: '', tanggal_st: '' },
+          pesan: null
+        }
+      },
+      methods: {
+        async simpanPengaduan() {
+          this.pesan = null;
+          const { error } = await supabase.from('pengaduan').insert({
+            nama_pelapor: this.aduan.nama,
+            kontak: this.aduan.kontak,
+            deskripsi: this.aduan.deskripsi,
+            status: 'Baru'
+          });
+          if (error) {
+            this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
+          } else {
+            this.pesan = { teks: 'Pengaduan berhasil dikirim!', warna: 'text-green-600' };
+            this.aduan = { nama: '', kontak: '', deskripsi: '' };
+          }
+        },
+        async simpanST() {
+          this.pesan = null;
+          const { error } = await supabase.from('surat_tugas').insert({
+            kegiatan: this.st.kegiatan,
+            lokasi: this.st.lokasi,
+            tanggal_st: this.st.tanggal_st,
+            status: 'Aktif'
+          });
+          if (error) {
+            this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
+          } else {
+            this.pesan = { teks: 'Surat Tugas berhasil disimpan!', warna: 'text-green-600' };
+            this.st = { kegiatan: '', lokasi: '', tanggal_st: '' };
+          }
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
