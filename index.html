@@ -21,10 +21,11 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14' font-size='14'>📋</text></svg>">
 
   <style>
-    /* ========== STYLE CUSTOM ========== */
+    /* ========== GLOBAL STYLE ========== */
     body {
       background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
     }
 
     /* Loading Screen */
@@ -63,10 +64,13 @@
       color: #1e40af;
       position: sticky;
       top: 0;
+      z-index: 10;
+    }
+    tbody tr {
+      transition: background 0.15s ease;
     }
     tbody tr:hover {
       background: #f0f7ff;
-      transition: background 0.15s ease;
     }
 
     /* Tombol */
@@ -115,7 +119,7 @@
       </div>
 
       <!-- Stat Cards -->
-      <div class="grid grid-cols-3 gap-5 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
         <div class="glass-card stat-card rounded-2xl p-6">
           <div class="flex items-center gap-4">
             <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -155,7 +159,9 @@
 
       <!-- Tabel Pengaduan Terbaru -->
       <div class="glass-card rounded-2xl p-5 mb-6">
-        <h2 class="text-lg font-bold text-blue-800 mb-4">📢 Pengaduan Terbaru</h2>
+        <h2 class="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2">
+          <i class="bi bi-megaphone"></i> Pengaduan Terbaru
+        </h2>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
@@ -187,7 +193,9 @@
 
       <!-- Tabel Surat Tugas Terbaru -->
       <div class="glass-card rounded-2xl p-5">
-        <h2 class="text-lg font-bold text-emerald-800 mb-4">📋 Surat Tugas Terbaru</h2>
+        <h2 class="text-lg font-bold text-emerald-800 mb-4 flex items-center gap-2">
+          <i class="bi bi-envelope-paper"></i> Surat Tugas Terbaru
+        </h2>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
@@ -215,6 +223,11 @@
             </tbody>
           </table>
         </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="text-center text-xs text-gray-400 mt-8 py-4">
+        © 2026 SI DILAN Terpadu — Satpol PP & Kebakaran Kab. Trenggalek
       </div>
 
     </div>
