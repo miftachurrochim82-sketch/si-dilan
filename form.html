@@ -12,7 +12,10 @@
 <body class="bg-gray-50">
 
   <div id="app" class="max-w-2xl mx-auto p-4">
-    <h1 class="text-2xl font-bold text-blue-800 mb-4">Form Input SI DILAN</h1>
+    <div class="flex items-center gap-3 mb-4">
+      <a href="index.html" class="text-blue-600 hover:underline text-sm">← Dashboard</a>
+      <h1 class="text-2xl font-bold text-blue-800">Form Input SI DILAN</h1>
+    </div>
 
     <!-- Tab navigasi -->
     <div class="flex gap-2 mb-4">
@@ -27,7 +30,7 @@
       <input v-model="aduan.kontak" placeholder="Kontak (HP/WA)" class="w-full border rounded-lg px-3 py-2 text-sm">
       <textarea v-model="aduan.deskripsi" placeholder="Deskripsi Pengaduan *" required class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
       <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm">Kirim Pengaduan</button>
-      <p v-if="pesan" class="text-sm" :class="pesan.warna">{{ pesan.teks }}</p>
+      <p v-if="pesan.teks" class="text-sm" :class="pesan.warna">{{ pesan.teks }}</p>
     </form>
 
     <!-- Form Surat Tugas -->
@@ -37,11 +40,12 @@
       <input v-model="st.lokasi" placeholder="Lokasi *" required class="w-full border rounded-lg px-3 py-2 text-sm">
       <input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
       <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm">Simpan Surat Tugas</button>
-      <p v-if="pesan" class="text-sm" :class="pesan.warna">{{ pesan.teks }}</p>
+      <p v-if="pesan.teks" class="text-sm" :class="pesan.warna">{{ pesan.teks }}</p>
     </form>
   </div>
 
   <script>
+    // Inisialisasi Supabase
     const supabase = window.supabase.createClient(
       'https://msdacugqzxprxajdudsx.supabase.co',
       'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf'
@@ -53,12 +57,16 @@
           tab: 'pengaduan',
           aduan: { nama: '', kontak: '', deskripsi: '' },
           st: { kegiatan: '', lokasi: '', tanggal_st: '' },
-          pesan: null
+          pesan: { teks: '', warna: '' }
         }
       },
       methods: {
         async simpanPengaduan() {
-          this.pesan = null;
+          this.pesan = { teks: '', warna: '' };
+          if (!this.aduan.nama || !this.aduan.deskripsi) {
+            this.pesan = { teks: 'Nama dan Deskripsi wajib diisi!', warna: 'text-red-500' };
+            return;
+          }
           const { error } = await supabase.from('pengaduan').insert({
             nama_pelapor: this.aduan.nama,
             kontak: this.aduan.kontak,
@@ -68,12 +76,16 @@
           if (error) {
             this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
           } else {
-            this.pesan = { teks: 'Pengaduan berhasil dikirim!', warna: 'text-green-600' };
+            this.pesan = { teks: '✅ Pengaduan berhasil dikirim!', warna: 'text-green-600' };
             this.aduan = { nama: '', kontak: '', deskripsi: '' };
           }
         },
         async simpanST() {
-          this.pesan = null;
+          this.pesan = { teks: '', warna: '' };
+          if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) {
+            this.pesan = { teks: 'Semua field wajib diisi!', warna: 'text-red-500' };
+            return;
+          }
           const { error } = await supabase.from('surat_tugas').insert({
             kegiatan: this.st.kegiatan,
             lokasi: this.st.lokasi,
@@ -83,7 +95,7 @@
           if (error) {
             this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' };
           } else {
-            this.pesan = { teks: 'Surat Tugas berhasil disimpan!', warna: 'text-green-600' };
+            this.pesan = { teks: '✅ Surat Tugas berhasil disimpan!', warna: 'text-green-600' };
             this.st = { kegiatan: '', lokasi: '', tanggal_st: '' };
           }
         }
