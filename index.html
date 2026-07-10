@@ -83,6 +83,25 @@
       background: linear-gradient(135deg, #1d4ed8, #1e40af);
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
+    .btn-danger {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      border: none;
+      transition: all 0.2s ease;
+    }
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #b91c1c, #991b1b);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; z-index: 100;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
 
     [v-cloak] { display: none !important; }
   </style>
@@ -111,6 +130,12 @@
         <a href="form.html" class="btn-primary px-5 py-3 rounded-xl text-white font-semibold text-sm flex items-center gap-2 shadow-lg">
           <i class="bi bi-plus-lg"></i> Input Data
         </a>
+      </div>
+
+      <!-- Toast Notifikasi -->
+      <div v-if="toast.show" class="toast" :class="toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'" class="text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-semibold">
+        <i :class="toast.type === 'success' ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i>
+        {{ toast.message }}
       </div>
 
       <!-- Error Alert -->
@@ -169,22 +194,32 @@
                 <th class="p-3 text-left rounded-tl-lg">Tanggal</th>
                 <th class="p-3 text-left">Pelapor</th>
                 <th class="p-3 text-left">Kategori</th>
-                <th class="p-3 text-left rounded-tr-lg">Status</th>
+                <th class="p-3 text-left">Status</th>
+                <th class="p-3 text-center rounded-tr-lg">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="p in pengaduan.slice(0,5)" :key="p.id" class="border-t border-gray-100">
+              <tr v-for="p in pengaduan" :key="p.id" class="border-t border-gray-100">
                 <td class="p-3">{{ formatDate(p.tanggal_lapor) }}</td>
                 <td class="p-3 font-medium">{{ p.nama_pelapor }}</td>
                 <td class="p-3">{{ p.kategori_nama || '-' }}</td>
                 <td class="p-3">
-                  <span :class="statusBadge(p.status)" class="px-3 py-1 rounded-full text-xs font-bold">
-                    {{ p.status }}
-                  </span>
+                  <select @change="updateStatus(p.id, $event.target.value)" class="text-xs border rounded-lg px-2 py-1 font-bold" :class="statusBadge(p.status)">
+                    <option value="Baru" :selected="p.status === 'Baru'">Baru</option>
+                    <option value="Diverifikasi" :selected="p.status === 'Diverifikasi'">Diverifikasi</option>
+                    <option value="Diproses" :selected="p.status === 'Diproses'">Diproses</option>
+                    <option value="Selesai" :selected="p.status === 'Selesai'">Selesai</option>
+                    <option value="Ditolak" :selected="p.status === 'Ditolak'">Ditolak</option>
+                  </select>
+                </td>
+                <td class="p-3 text-center">
+                  <button @click="hapusPengaduan(p.id)" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" title="Hapus">
+                    <i class="bi bi-trash"></i>
+                  </button>
                 </td>
               </tr>
               <tr v-if="!pengaduan.length">
-                <td colspan="4" class="p-6 text-center text-gray-400">Belum ada pengaduan. <a href="form.html" class="text-blue-500 underline">Kirim pengaduan pertama →</a></td>
+                <td colspan="5" class="p-6 text-center text-gray-400">Belum ada pengaduan. <a href="form.html" class="text-blue-500 underline">Kirim pengaduan pertama →</a></td>
               </tr>
             </tbody>
           </table>
@@ -203,11 +238,12 @@
                 <th class="p-3 text-left rounded-tl-lg">Tanggal</th>
                 <th class="p-3 text-left">Kegiatan</th>
                 <th class="p-3 text-left">Lokasi</th>
-                <th class="p-3 text-left rounded-tr-lg">Status</th>
+                <th class="p-3 text-left">Status</th>
+                <th class="p-3 text-center rounded-tr-lg">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="st in suratTugas.slice(0,5)" :key="st.id" class="border-t border-gray-100">
+              <tr v-for="st in suratTugas" :key="st.id" class="border-t border-gray-100">
                 <td class="p-3">{{ formatDate(st.tanggal_st) }}</td>
                 <td class="p-3 font-medium">{{ st.kegiatan }}</td>
                 <td class="p-3">{{ st.lokasi }}</td>
@@ -216,9 +252,14 @@
                     {{ st.status }}
                   </span>
                 </td>
+                <td class="p-3 text-center">
+                  <button @click="hapusST(st.id)" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" title="Hapus">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
               </tr>
               <tr v-if="!suratTugas.length">
-                <td colspan="4" class="p-6 text-center text-gray-400">Belum ada surat tugas. <a href="form.html" class="text-blue-500 underline">Buat surat tugas pertama →</a></td>
+                <td colspan="5" class="p-6 text-center text-gray-400">Belum ada surat tugas. <a href="form.html" class="text-blue-500 underline">Buat surat tugas pertama →</a></td>
               </tr>
             </tbody>
           </table>
@@ -240,7 +281,7 @@
       const supabaseKey = 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf';
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      const { createApp, ref, onMounted } = Vue;
+      const { createApp, ref, reactive, onMounted } = Vue;
 
       createApp({
         setup() {
@@ -248,12 +289,20 @@
           const suratTugas = ref([]);
           const personil = ref([]);
           const error = ref(null);
+          const toast = reactive({ show: false, type: 'success', message: '' });
+
+          function showToast(message, type = 'success') {
+            toast.show = true;
+            toast.type = type;
+            toast.message = message;
+            setTimeout(() => { toast.show = false; }, 3000);
+          }
 
           async function loadData() {
             try {
               const [aduRes, stRes, personilRes] = await Promise.all([
-                supabase.from('pengaduan').select('*').order('tanggal_lapor', { ascending: false }).limit(10),
-                supabase.from('surat_tugas').select('*').order('created_at', { ascending: false }).limit(10),
+                supabase.from('pengaduan').select('*').order('tanggal_lapor', { ascending: false }),
+                supabase.from('surat_tugas').select('*').order('created_at', { ascending: false }),
                 supabase.from('personil').select('*').eq('status', 'Aktif')
               ]);
 
@@ -274,6 +323,47 @@
             }
           }
 
+          async function updateStatus(id, newStatus) {
+            const { error } = await supabase
+              .from('pengaduan')
+              .update({ status: newStatus })
+              .eq('id', id);
+            if (error) {
+              showToast('Gagal update status: ' + error.message, 'error');
+            } else {
+              showToast('Status berhasil diubah menjadi ' + newStatus, 'success');
+              await loadData(); // Refresh data
+            }
+          }
+
+          async function hapusPengaduan(id) {
+            if (!confirm('Yakin ingin menghapus pengaduan ini?')) return;
+            const { error } = await supabase
+              .from('pengaduan')
+              .delete()
+              .eq('id', id);
+            if (error) {
+              showToast('Gagal menghapus: ' + error.message, 'error');
+            } else {
+              showToast('Pengaduan berhasil dihapus', 'success');
+              pengaduan.value = pengaduan.value.filter(p => p.id !== id);
+            }
+          }
+
+          async function hapusST(id) {
+            if (!confirm('Yakin ingin menghapus surat tugas ini?')) return;
+            const { error } = await supabase
+              .from('surat_tugas')
+              .delete()
+              .eq('id', id);
+            if (error) {
+              showToast('Gagal menghapus: ' + error.message, 'error');
+            } else {
+              showToast('Surat Tugas berhasil dihapus', 'success');
+              suratTugas.value = suratTugas.value.filter(st => st.id !== id);
+            }
+          }
+
           function formatDate(dateStr) {
             if (!dateStr) return '-';
             return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -283,18 +373,18 @@
 
           function statusBadge(status) {
             const map = {
-              'Baru': 'bg-amber-100 text-amber-700',
-              'Diverifikasi': 'bg-sky-100 text-sky-700',
-              'Diproses': 'bg-violet-100 text-violet-700',
-              'Selesai': 'bg-emerald-100 text-emerald-700',
-              'Ditolak': 'bg-rose-100 text-rose-700'
+              'Baru': 'bg-amber-100 text-amber-700 border-amber-300',
+              'Diverifikasi': 'bg-sky-100 text-sky-700 border-sky-300',
+              'Diproses': 'bg-violet-100 text-violet-700 border-violet-300',
+              'Selesai': 'bg-emerald-100 text-emerald-700 border-emerald-300',
+              'Ditolak': 'bg-rose-100 text-rose-700 border-rose-300'
             };
-            return map[status] || 'bg-gray-100 text-gray-600';
+            return map[status] || 'bg-gray-100 text-gray-600 border-gray-300';
           }
 
           onMounted(() => loadData());
 
-          return { pengaduan, suratTugas, personil, error, formatDate, statusBadge };
+          return { pengaduan, suratTugas, personil, error, toast, updateStatus, hapusPengaduan, hapusST, formatDate, statusBadge };
         }
       }).mount('#app');
     })();
