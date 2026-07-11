@@ -1,4 +1,4 @@
-Vue.component('ToastContainer', {
+const ToastContainer = {
   template: `
     <div class="toast-container">
       <div v-for="t in toasts" :key="t.id" class="toast" :style="{ background: t.type === 'success' ? '#10b981' : t.type === 'error' ? '#ef4444' : '#3b82f6' }">
@@ -14,41 +14,9 @@ Vue.component('ToastContainer', {
     addToast(message, type = 'success') {
       const id = Date.now();
       this.toasts.push({ id, message, type });
-      setTimeout(() => {
-        this.toasts = this.toasts.filter(t => t.id !== id);
-      }, 3000);
-    }
-  }
-});
-
-Vue.prototype.$toast = {
-  success(message) {
-    const app = document.getElementById('app')?.__vue_app__;
-    if (app) {
-      const root = app._instance?.proxy;
-      if (root && root.$refs && root.$refs.toastContainer) {
-        root.$refs.toastContainer.addToast(message, 'success');
-      }
-    }
-  },
-  error(message) {
-    const app = document.getElementById('app')?.__vue_app__;
-    if (app) {
-      const root = app._instance?.proxy;
-      if (root && root.$refs && root.$refs.toastContainer) {
-        root.$refs.toastContainer.addToast(message, 'error');
-      }
-    }
-  },
-  info(message) {
-    const app = document.getElementById('app')?.__vue_app__;
-    if (app) {
-      const root = app._instance?.proxy;
-      if (root && root.$refs && root.$refs.toastContainer) {
-        root.$refs.toastContainer.addToast(message, 'info');
-      }
+      setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000);
     }
   }
 };
 
-console.log('✅ Toast system registered');
+console.log('✅ ToastContainer ready');
