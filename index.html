@@ -140,6 +140,12 @@
           <a href="form.html?tab=laporan" class="sidebar-item">
             <i class="bi bi-file-earmark-bar-graph"></i> Laporan
           </a>
+          <a href="peta.html" class="sidebar-item">
+            <i class="bi bi-geo-alt"></i> Peta & Crosstab
+          </a>
+          <a href="sppd.html" class="sidebar-item">
+            <i class="bi bi-file-earmark-pdf"></i> Cetak SPPD
+          </a>
         </div>
 
         <div class="sidebar-divider"></div>
@@ -207,7 +213,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <a href="form.html?tab=pengaduan" class="glass-card rounded-xl p-4 flex items-center gap-3 hover:shadow-lg transition cursor-pointer"><div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow"><i class="bi bi-journal-plus text-white text-lg"></i></div><div><h3 class="font-bold text-xs" style="color: var(--text)">Buat Pengaduan</h3><p class="text-[10px]" style="color: var(--text2)">Form input baru</p></div></a>
         <a href="form.html?tab=st" class="glass-card rounded-xl p-4 flex items-center gap-3 hover:shadow-lg transition cursor-pointer"><div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow"><i class="bi bi-envelope-paper text-white text-lg"></i></div><div><h3 class="font-bold text-xs" style="color: var(--text)">Buat Surat Tugas</h3><p class="text-[10px]" style="color: var(--text2)">Form input baru</p></div></a>
-        <div class="glass-card rounded-xl p-4 flex items-center gap-3 opacity-50 cursor-not-allowed"><div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center shadow"><i class="bi bi-file-earmark-pdf text-white text-lg"></i></div><div><h3 class="font-bold text-xs" style="color: var(--text)">Cetak SPPD</h3><p class="text-[10px]" style="color: var(--text2)">Segera hadir</p></div></div>
+        <a href="sppd.html" class="glass-card rounded-xl p-4 flex items-center gap-3 hover:shadow-lg transition cursor-pointer"><div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center shadow"><i class="bi bi-file-earmark-pdf text-white text-lg"></i></div><div><h3 class="font-bold text-xs" style="color: var(--text)">Cetak SPPD</h3><p class="text-[10px]" style="color: var(--text2)">SPPD & Kwitansi</p></div></a>
       </div>
 
       <!-- Charts -->
@@ -277,7 +283,7 @@
           const isMobile = ref(window.innerWidth < 768);
           const dashFilterTahun = ref(String(new Date().getFullYear()));
           const isDark = ref(localStorage.getItem('darkMode') === 'true');
-          const expandedGroup = ref('operasional'); // Grup yang terbuka default
+          const expandedGroup = ref('operasional');
 
           function toggleDarkMode() {
             isDark.value = !isDark.value;
