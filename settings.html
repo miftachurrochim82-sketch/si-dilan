@@ -1,137 +1,219 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pengaturan - SI DILAN</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<style>
-body { background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
-.glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
-.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white; z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); }
-.sidebar.collapsed { transform: translateX(-100%); }
-.sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; color: white; text-decoration: none; transition: background 0.2s; }
-.sidebar-item:hover { background: rgba(255,255,255,0.1); }
-.sidebar-item.active { background: rgba(255,255,255,0.2); }
-.main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
-.main-content.expanded { margin-left: 0; }
-.btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; }
-@media (max-width: 768px) {
-.sidebar { width: 280px; transform: translateX(-100%); }
-.sidebar.open { transform: translateX(0); }
-.main-content { margin-left: 0; }
-.main-content.shifted { margin-left: 280px; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengaturan - SI DILAN</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    body { background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
+    .glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white; z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); }
+    .sidebar.collapsed { transform: translateX(-100%); }
+    .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; color: white; text-decoration: none; transition: background 0.2s; }
+    .sidebar-item:hover { background: rgba(255,255,255,0.1); }
+    .sidebar-item.active { background: rgba(255,255,255,0.2); }
+    .main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
+    .main-content.expanded { margin-left: 0; }
+    .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    .section-title { font-size: 16px; font-weight: 700; color: #1e3a8a; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+    @media (max-width: 768px) {
+      .sidebar { width: 280px; transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+      .main-content.shifted { margin-left: 280px; }
+    }
+  </style>
 </head>
 <body>
 
 <div id="app">
-<!-- SIDEBAR -->
-<aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
-<div class="sidebar-header">
-<div class="flex items-center justify-between mb-4">
-<div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
-<button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button>
-</div>
-<p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
-</div>
-<nav class="p-4 space-y-1">
-<a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
-<a href="form.html?tab=pengaduan" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
-<a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
-<a href="master.html" class="sidebar-item"><i class="bi bi-server"></i> Master Data</a>
-<a href="settings.html" class="sidebar-item active"><i class="bi bi-gear"></i> Pengaturan</a>
-</nav>
-</aside>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+    <div class="sidebar-header">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
+        <button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button>
+      </div>
+      <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+    </div>
+    <nav class="p-4 space-y-1">
+      <a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="form.html?tab=pengaduan" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
+      <a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+      <a href="master.html" class="sidebar-item"><i class="bi bi-server"></i> Master Data</a>
+      <a href="settings.html" class="sidebar-item active"><i class="bi bi-gear"></i> Pengaturan</a>
+    </nav>
+  </aside>
 
-<!-- MAIN -->
-<main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
-<div class="max-w-2xl mx-auto">
-<div class="flex justify-between items-center mb-6">
-<div><h1 class="text-2xl font-bold text-blue-800">Pengaturan</h1><p class="text-sm text-blue-500">Konfigurasi identitas instansi dan kontak</p></div>
-<button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
-</div>
+  <!-- MAIN -->
+  <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+    <div class="max-w-2xl mx-auto">
+      <div class="flex justify-between items-center mb-6">
+        <div><h1 class="text-2xl font-bold text-blue-800">Pengaturan</h1><p class="text-sm text-blue-500">Konfigurasi identitas, pejabat, dan kontak</p></div>
+        <button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
+      </div>
 
-<div class="glass-card rounded-2xl p-6 space-y-4">
-<div v-for="item in settingsList" :key="item.key" class="space-y-1">
-<label class="text-xs font-bold text-gray-600">{{ item.label }}</label>
-<input v-model="item.value" class="w-full border rounded-lg px-3 py-2 text-sm">
-</div>
+      <div class="space-y-6">
+        <!-- Identitas Instansi -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="section-title"><i class="bi bi-building"></i> Identitas Instansi</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs font-bold text-gray-600">Nama Kabupaten</label>
+              <input v-model="settings.SETTING_NAMA_KABUPATEN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-600">Nama Satuan</label>
+              <input v-model="settings.SETTING_NAMA_SATUAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-600">Alamat</label>
+              <textarea v-model="settings.SETTING_ALAMAT" class="w-full border rounded-lg px-3 py-2 text-sm mt-1" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
 
-<div class="flex justify-end gap-2 pt-4">
-<button @click="loadSettings" class="bg-gray-200 px-4 py-2 rounded-lg text-sm font-bold">Muat Ulang</button>
-<button @click="saveSettings" class="btn-primary">Simpan Pengaturan</button>
-</div>
-<p v-if="message" class="text-sm text-center" :class="messageColor">{{ message }}</p>
-</div>
-</div>
-</main>
+        <!-- Data Pejabat -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="section-title"><i class="bi bi-person-badge"></i> Data Pejabat</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-bold text-gray-600">Nama Kepala Satuan</label>
+              <input v-model="settings.SETTING_NAMA_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-600">NIP Kepala Satuan</label>
+              <input v-model="settings.SETTING_NIP_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-600">Pangkat Kepala Satuan</label>
+              <input v-model="settings.SETTING_PANGKAT_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-600">Nama Bendahara</label>
+              <input v-model="settings.SETTING_NAMA_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+            <div class="col-span-2">
+              <label class="text-xs font-bold text-gray-600">NIP Bendahara</label>
+              <input v-model="settings.SETTING_NIP_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+          </div>
+        </div>
+
+        <!-- Default & Kontak -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="section-title"><i class="bi bi-gear-wide"></i> Default & Kontak</h3>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs font-bold text-gray-600">Default Jenis Perjalanan</label>
+              <select v-model="settings.SETTING_JENIS_PERJALANAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+                <option value="Dalam Daerah">Dalam Daerah</option>
+                <option value="Luar Daerah (Prov)">Luar Daerah (Prov)</option>
+                <option value="Luar Provinsi">Luar Provinsi</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-bold text-gray-600">WhatsApp Satpol PP</label>
+                <input v-model="settings.SETTING_WA_SATPOL" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600">WhatsApp Damkar</label>
+                <input v-model="settings.SETTING_WA_DAMKAR" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600">Instagram</label>
+                <input v-model="settings.SETTING_IG" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600">Facebook</label>
+                <input v-model="settings.SETTING_FB" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="flex justify-end gap-3">
+          <button @click="loadSettings" class="bg-gray-200 px-5 py-2.5 rounded-lg text-sm font-bold">Muat Ulang</button>
+          <button @click="saveSettings" class="btn-primary">Simpan Pengaturan</button>
+        </div>
+        <p v-if="message" class="text-sm text-center" :class="messageColor">{{ message }}</p>
+      </div>
+    </div>
+  </main>
 </div>
 
 <script>
-const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+  const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
 
-Vue.createApp({
-data() {
-return {
-settingsList: [
-{ key: 'SETTING_NAMA_KABUPATEN', label: 'Nama Kabupaten', value: '' },
-{ key: 'SETTING_NAMA_SATUAN', label: 'Nama Satuan', value: '' },
-{ key: 'SETTING_ALAMAT', label: 'Alamat', value: '' },
-{ key: 'SETTING_WA_SATPOL', label: 'WhatsApp Satpol PP', value: '' },
-{ key: 'SETTING_WA_DAMKAR', label: 'WhatsApp Damkar', value: '' },
-{ key: 'SETTING_IG', label: 'Instagram', value: '' },
-{ key: 'SETTING_FB', label: 'Facebook', value: '' }
-],
-sidebarOpen: true,
-isMobile: window.innerWidth < 768,
-message: '',
-messageColor: 'text-green-600'
-}
-},
-methods: {
-async loadSettings() {
-const { data } = await supa.from('settings').select('*');
-if (data) {
-data.forEach(s => {
-const item = this.settingsList.find(i => i.key === s.key);
-if (item) item.value = s.value || '';
-});
-}
-},
-async saveSettings() {
-try {
-for (const item of this.settingsList) {
-// Cek apakah sudah ada, kalau ada update, kalau tidak insert
-const { data: existing } = await supa.from('settings').select('*').eq('key', item.key).maybeSingle();
-if (existing) {
-await supa.from('settings').update({ value: item.value }).eq('key', item.key);
-} else {
-await supa.from('settings').insert({ key: item.key, value: item.value });
-}
-}
-this.message = '✅ Pengaturan berhasil disimpan!';
-this.messageColor = 'text-green-600';
-} catch (e) {
-this.message = '❌ Gagal menyimpan: ' + e.message;
-this.messageColor = 'text-red-500';
-}
-}
-},
-mounted() {
-if (this.isMobile) this.sidebarOpen = false;
-window.addEventListener('resize', () => {
-this.isMobile = window.innerWidth < 768;
-if (!this.isMobile) this.sidebarOpen = true;
-});
-this.loadSettings();
-}
-}).mount('#app');
+  Vue.createApp({
+    data() {
+      return {
+        settings: {
+          SETTING_NAMA_KABUPATEN: '',
+          SETTING_NAMA_SATUAN: '',
+          SETTING_ALAMAT: '',
+          SETTING_NAMA_KEPALA: '',
+          SETTING_NIP_KEPALA: '',
+          SETTING_PANGKAT_KEPALA: '',
+          SETTING_NAMA_BENDAHARA: '',
+          SETTING_NIP_BENDAHARA: '',
+          SETTING_JENIS_PERJALANAN: 'Dalam Daerah',
+          SETTING_WA_SATPOL: '',
+          SETTING_WA_DAMKAR: '',
+          SETTING_IG: '',
+          SETTING_FB: ''
+        },
+        sidebarOpen: true,
+        isMobile: window.innerWidth < 768,
+        message: '',
+        messageColor: 'text-green-600'
+      }
+    },
+    methods: {
+      async loadSettings() {
+        const { data } = await supa.from('settings').select('*');
+        if (data) {
+          data.forEach(s => {
+            if (this.settings.hasOwnProperty(s.key)) {
+              this.settings[s.key] = s.value || '';
+            }
+          });
+        }
+      },
+      async saveSettings() {
+        try {
+          for (const [key, value] of Object.entries(this.settings)) {
+            const { data: existing } = await supa.from('settings').select('*').eq('key', key).maybeSingle();
+            if (existing) {
+              await supa.from('settings').update({ value: value }).eq('key', key);
+            } else {
+              await supa.from('settings').insert({ key, value });
+            }
+          }
+          this.message = '✅ Pengaturan berhasil disimpan!';
+          this.messageColor = 'text-green-600';
+        } catch (e) {
+          this.message = '❌ Gagal menyimpan: ' + e.message;
+          this.messageColor = 'text-red-500';
+        }
+      }
+    },
+    mounted() {
+      if (this.isMobile) this.sidebarOpen = false;
+      window.addEventListener('resize', () => {
+        this.isMobile = window.innerWidth < 768;
+        if (!this.isMobile) this.sidebarOpen = true;
+      });
+      this.loadSettings();
+    }
+  }).mount('#app');
 </script>
 </body>
 </html>
