@@ -2,49 +2,44 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Form Input - SI DILAN</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Form & Data - SI DILAN</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
-  <!-- ========== GAYA GABUNGAN (File 2 + kustomisasi) ========== -->
   <style>
-    /* Variabel & Reset */
     :root {
-      --color-primary: #0d6efd; --color-primary-dark: #0a58ca; --color-primary-light: #e7f1ff; --color-primary-rgb: 13,110,253;
-      --color-accent: #f59e0b; --color-accent-light: #fffbeb; --color-accent-dark: #b45309;
-      --color-bg: #f1f5f9; --color-bg-white: #ffffff; --color-bg-hover: #f8fafc;
-      --color-text: #1e293b; --color-text-secondary: #475569; --color-text-muted: #94a3b8;
-      --color-border: #cbd5e1; --color-border-light: #e2e8f0;
-      --color-success: #198754; --color-warning: #f59e0b; --color-danger: #dc3545; --color-info: #0dcaf0;
-      --radius-lg: 12px; --radius-xl: 16px; --radius-full: 9999px;
-      --shadow-md: 0 4px 6px rgba(0,0,0,0.07); --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
-      --transition-fast: 0.15s ease; --transition-slow: 0.35s ease;
+      --bg: #f0f4ff; --bg2: #e8f0fe; --card-bg: rgba(255,255,255,0.7);
+      --text: #1e293b; --text2: #3b82f6; --border: rgba(255,255,255,0.3);
+      --table-hover: #f0f7ff;
     }
-    [data-theme="dark"] {
-      --color-bg: #0f172a; --color-bg-white: #1e293b; --color-bg-hover: #1e3a5f;
-      --color-text: #e2e8f0; --color-text-secondary: #94a3b8; --color-text-muted: #64748b;
-      --color-border: #334155; --color-border-light: #1e293b;
+    .dark {
+      --bg: #0f172a; --bg2: #1e293b; --card-bg: rgba(30,41,59,0.85);
+      --text: #e2e8f0; --text2: #93c5fd; --border: rgba(255,255,255,0.08);
+      --table-hover: #1e3a5f;
     }
     body {
-      background: linear-gradient(135deg, var(--color-bg), #e8f0fe);
-      font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; color: var(--color-text);
+      background: linear-gradient(135deg, var(--bg), var(--bg2));
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin: 0; min-height: 100vh; color: var(--text);
       transition: background 0.3s, color 0.3s;
     }
     .glass-card {
-      background: rgba(255,255,255,0.75); backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.05);
-      transition: background 0.3s;
+      background: var(--card-bg); backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
     }
-    /* Sidebar */
     .sidebar {
       position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
       background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white;
       z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2);
       overflow-y: auto;
     }
+    .dark .sidebar { background: linear-gradient(180deg, #0f172a, #1e293b); }
+    .sidebar.collapsed { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
     .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .sidebar-item {
       display: flex; align-items: center; gap: 10px; padding: 10px 16px;
@@ -57,737 +52,162 @@
       display: flex; align-items: center; justify-content: space-between;
       padding: 10px 16px; font-size: 11px; font-weight: 700;
       text-transform: uppercase; letter-spacing: 1px;
-      color: rgba(255,255,255,0.5); cursor: pointer;
+      color: rgba(255,255,255,0.5); cursor: pointer; user-select: none;
     }
+    .sidebar-group-title:hover { color: rgba(255,255,255,0.8); }
+    .sidebar-sub { padding-left: 12px; }
     .sidebar-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 12px; }
     .main-content {
       margin-left: 260px; padding: 24px; min-height: 100vh;
       transition: margin-left 0.3s;
     }
+    .main-content.expanded { margin-left: 0; }
+    .mobile-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 35; display: none;
+    }
+    .mobile-overlay.show { display: block; }
     .btn-primary {
       background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white;
       border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer;
-      transition: all 0.2s;
     }
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #1d4ed8, #1e40af);
-      box-shadow: 0 4px 12px rgba(37,99,235,0.3);
-    }
-    table { width: 100%; border-collapse: collapse; }
-    th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 12px; color: #1e40af; }
-    td { padding: 8px 10px; border-top: 1px solid var(--color-border-light); font-size: 13px; }
+    .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+    .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+    table th { background: var(--bg2); color: var(--text2); font-weight: 600; position: sticky; top: 0; }
+    table td { border-top: 1px solid var(--border); }
+    tbody tr:hover { background: var(--table-hover); }
+    [v-cloak] { display: none !important; }
     @media (max-width: 768px) {
       .sidebar { width: 280px; transform: translateX(-100%); }
-      .sidebar.open { transform: translateX(0); }
       .main-content { margin-left: 0; }
       .main-content.shifted { margin-left: 280px; }
     }
-    /* Tambahan dari File 2 */
-    .fade-in { animation: fadeIn 0.3s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .responsive-table { overflow-x: auto; }
-    .toggle-switch {
-      width: 48px; height: 28px; border-radius: 14px; display: flex; align-items: center;
-      padding: 2px; cursor: pointer; transition: background 0.25s; border: none;
-    }
-    .toggle-switch.on { background: var(--color-primary); }
-    .toggle-switch.off { background: #cbd5e1; }
-    .toggle-switch .toggle-knob {
-      width: 24px; height: 24px; border-radius: 50%; background: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.25s;
-    }
-    .toggle-switch.on .toggle-knob { transform: translateX(20px); }
-    .toggle-switch.off .toggle-knob { transform: translateX(0); }
   </style>
 </head>
 <body>
+<div id="app" v-cloak>
+  <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
 
-<div id="app">
-  <!-- SIDEBAR -->
-  <aside class="sidebar" :class="{ open: sidebarOpen && isMobile, collapsed: !sidebarOpen && !isMobile }">
-    <div class="sidebar-header">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
-        <button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button>
-      </div>
-      <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
-    </div>
-    <nav class="p-3 space-y-1">
-      <a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='ops'?'':'ops'"><span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span><i :class="expandedGroup==='ops'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
-      <div v-show="expandedGroup==='ops'" class="space-y-1 pl-3">
-        <a href="form.html?tab=pengaduan" class="sidebar-item" :class="{ active: tab==='pengaduan' }"><i class="bi bi-megaphone"></i> Pengaduan</a>
-        <a href="form.html?tab=st" class="sidebar-item" :class="{ active: tab==='st' }"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
-        <a href="form.html?tab=laporan" class="sidebar-item" :class="{ active: tab==='laporan' }"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
-      </div>
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='adm'?'':'adm'"><span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span><i :class="expandedGroup==='adm'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
-      <div v-show="expandedGroup==='adm'" class="space-y-1 pl-3">
-        <a href="master.html" class="sidebar-item"><i class="bi bi-server"></i> Master Data</a>
-        <a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i> Pengaturan</a>
-      </div>
-      <div class="sidebar-divider"></div>
-      <a href="about.html" class="sidebar-item"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
-      <button @click="toggleDarkMode" class="sidebar-item w-full"><i :class="isDark?'bi bi-sun-fill':'bi bi-moon-fill'"></i> {{ isDark?'Mode Terang':'Mode Gelap' }}</button>
-    </nav>
-  </aside>
+  <app-sidebar 
+    :sidebar-open="sidebarOpen" :is-mobile="isMobile" current-page="form"
+    :dark-mode="isDark" @toggle-sidebar="sidebarOpen = !sidebarOpen" @toggle-dark="toggleDarkMode"
+  ></app-sidebar>
 
-  <!-- MAIN CONTENT -->
-  <main class="main-content" :class="{ shifted: sidebarOpen && isMobile, expanded: !sidebarOpen && !isMobile }">
+  <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
     <div class="flex justify-between items-center mb-6">
-      <div><h1 class="text-2xl font-bold text-blue-800">Form & Data</h1><p class="text-sm text-blue-500">Input pengaduan, surat tugas, dan laporan</p></div>
-      <button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
+      <div>
+        <h1 class="text-2xl font-bold" style="color: var(--text)">Form & Data</h1>
+        <p class="text-sm" style="color: var(--text2)">Input pengaduan, surat tugas, dan laporan</p>
+      </div>
+      <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
+    </div>
+
+    <!-- Toast Container -->
+    <div style="position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column-reverse;gap:8px;align-items:flex-end;">
+      <div v-for="t in toasts" :key="t.id" style="padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;color:white;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-width:360px;" :style="{ background: t.type === 'success' ? '#10b981' : '#ef4444' }">
+        <i :class="t.type === 'success' ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i> {{ t.message }}
+      </div>
     </div>
 
     <!-- TAB -->
     <div class="flex gap-2 mb-4 flex-wrap">
-      <button @click="switchTab('pengaduan')" class="px-4 py-2 rounded-lg font-bold text-sm" :class="tab==='pengaduan'?'bg-blue-500 text-white':'bg-gray-200'">📢 Pengaduan</button>
-      <button @click="switchTab('st')" class="px-4 py-2 rounded-lg font-bold text-sm" :class="tab==='st'?'bg-emerald-500 text-white':'bg-gray-200'">📋 Surat Tugas</button>
-      <button @click="switchTab('laporan')" class="px-4 py-2 rounded-lg font-bold text-sm" :class="tab==='laporan'?'bg-purple-500 text-white':'bg-gray-200'">📊 Laporan</button>
+      <button @click="tab = 'pengaduan'" class="px-4 py-2 rounded-lg font-bold text-sm" :class="tab==='pengaduan'?'bg-blue-500 text-white':'bg-gray-200 dark:bg-gray-600 dark:text-white'">📢 Pengaduan</button>
+      <button @click="tab = 'st'" class="px-4 py-2 rounded-lg font-bold text-sm" :class="tab==='st'?'bg-emerald-500 text-white':'bg-gray-200 dark:bg-gray-600 dark:text-white'">📋 Surat Tugas</button>
+      <button @click="tab = 'laporan'" class="px-4 py-2 rounded-lg font-bold text-sm" :class="tab==='laporan'?'bg-purple-500 text-white':'bg-gray-200 dark:bg-gray-600 dark:text-white'">📊 Laporan</button>
     </div>
 
-<!-- ========== TAB PENGADUAN ========== -->
-<div v-if="tab==='pengaduan'" class="space-y-6 fade-in">
-
-  <!-- Header -->
-  <div class="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl p-5 text-white shadow-xl">
-    <div class="flex items-center justify-between">
-      <div>
-        <h2 class="text-xl font-bold flex items-center gap-2"><i class="bi bi-journal-text"></i> Pengaduan</h2>
-        <p class="text-blue-200 text-xs mt-1">Kirim pengaduan baru dan pantau riwayat</p>
-      </div>
-      <span class="bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-semibold">{{ filteredPengaduan.length }} data</span>
-    </div>
-  </div>
-
-  <!-- Sub-tab Pengaduan: Form vs Riwayat -->
-  <div class="bg-white rounded-2xl shadow-sm p-1.5 border border-slate-200 flex gap-1.5">
-    <button @click="pengaduanSubTab = 'form'"
-      :class="pengaduanSubTab==='form' ? 'bg-blue-500 text-white shadow' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'"
-      class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
-      <i class="bi bi-pencil-square"></i> Form Baru
-    </button>
-    <button @click="pengaduanSubTab = 'riwayat'"
-      :class="pengaduanSubTab==='riwayat' ? 'bg-blue-500 text-white shadow' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'"
-      class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
-      <i class="bi bi-list-ul"></i> Riwayat ({{ filteredPengaduan.length }})
-    </button>
-  </div>
-
-  <!-- ========== SUB-TAB: FORM ========== -->
-  <div v-show="pengaduanSubTab === 'form'">
-    <div class="glass-card rounded-2xl shadow-lg overflow-hidden" style="border:2px solid #dbeafe">
-      <div class="flex justify-between items-center px-5 py-3" style="background:linear-gradient(to right,#eff6ff,#eef2ff);border-bottom:2px solid #bfdbfe">
-        <h3 class="font-bold text-sm" style="color:#1e40af">📝 Kirim Pengaduan Baru</h3>
-        <button @click="resetFormPengaduan()" class="text-xs bg-white border border-blue-200 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
-      </div>
-      <div class="p-5">
-        <form @submit.prevent="simpanPengaduan">
-
-          <!-- 1. DATA PELAPOR -->
-          <div class="border border-teal-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-teal-50 to-emerald-50/20">
-            <h4 class="text-sm font-bold mb-3 flex items-center gap-2" style="color:#0f766e"><span class="w-6 h-6 bg-teal-500 text-white rounded-full inline-flex items-center justify-center text-xs">1</span>DATA PELAPOR</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-600 mb-1 block">Nama <span style="color:#ef4444">*</span></label><input v-model="aduan.nama" required placeholder="Nama lengkap pelapor" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-teal-200 focus:border-teal-500 transition"></div>
-              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">No. HP</label><input v-model="aduan.kontak" placeholder="0812-xxxx-xxxx" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-teal-200 focus:border-teal-500 transition"></div>
-              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Alamat</label><input v-model="aduan.alamat_pelapor" placeholder="Alamat lengkap pelapor" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-teal-200 focus:border-teal-500 transition"></div>
-            </div>
-          </div>
-
-          <!-- 2. DATA KEJADIAN -->
-          <div class="border border-slate-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-slate-50 to-gray-50/20">
-            <h4 class="text-sm font-bold mb-3 flex items-center gap-2" style="color:#475569"><span class="w-6 h-6 bg-slate-500 text-white rounded-full inline-flex items-center justify-center text-xs">2</span>DATA KEJADIAN</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <!-- Bidang (dropdown dari kategoriList) -->
-              <div>
-                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Bidang</label>
-                <select v-model="selectedBidang" @change="onBidangChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition">
-                  <option value="">-- Pilih Bidang --</option>
-                  <option v-for="b in bidangList" :key="b" :value="b">{{ b }}</option>
-                </select>
-              </div>
-              <!-- Kategori (terfilter berdasarkan bidang) -->
-              <div>
-                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Kategori</label>
-                <select v-model="aduan.kategori_id" :disabled="!selectedBidang" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition">
-                  <option value="">-- Pilih Kategori --</option>
-                  <option v-for="k in filteredKategoriByBidang" :key="k.id" :value="k.id">{{ k.permasalahan || k.nama }}</option>
-                </select>
-              </div>
-              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Tgl Kejadian</label><input type="date" v-model="aduan.tgl_kejadian" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition"></div>
-              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Waktu</label><input type="time" v-model="aduan.waktu_kejadian" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition"></div>
-              <div>
-                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Kecamatan</label>
-                <select v-model="aduan.kecamatan" @change="aduan.desa=''" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition">
-                  <option value="">-- Pilih Kecamatan --</option>
-                  <option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
-                </select>
-              </div>
-              <div>
-                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Desa</label>
-                <select v-model="aduan.desa" :disabled="!aduan.kecamatan" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition">
-                  <option value="">-- Pilih Desa --</option>
-                  <option v-for="desa in filteredDesaAduan" :key="desa" :value="desa">{{ desa }}</option>
-                </select>
-              </div>
-              <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-600 mb-1 block">Lokasi Spesifik</label><input v-model="aduan.lokasi" placeholder="Alamat lengkap / tempat kejadian" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition"></div>
-              <div>
-                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Sumber Aduan</label>
-                <select v-model="aduan.sumber_aduan" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition">
-                  <option value="">-- Pilih Sumber --</option>
-                  <option>WhatsApp</option><option>Website</option><option>Telepon</option><option>Surat</option><option>Lainnya</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- 3. DESKRIPSI & DOKUMENTASI -->
-          <div class="border border-amber-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-amber-50 to-orange-50/20">
-            <h4 class="text-sm font-bold mb-3 flex items-center gap-2" style="color:#b45309"><span class="w-6 h-6 bg-amber-500 text-white rounded-full inline-flex items-center justify-center text-xs">3</span>DESKRIPSI & DOKUMENTASI</h4>
-            <div class="mb-4"><label class="text-[10px] font-bold text-slate-600 mb-1 block">Deskripsi <span style="color:#ef4444">*</span></label><textarea v-model="aduan.deskripsi" rows="5" required placeholder="Ceritakan kronologi kejadian secara jelas dan lengkap..." class="w-full border border-slate-300 rounded-lg p-3 text-xs focus:ring-2 focus:ring-amber-200 focus:border-amber-500 transition"></textarea></div>
-            <div>
-              <label class="text-[10px] font-bold text-slate-600 mb-1 block">Bukti Foto (maks 2)</label>
-              <div class="flex gap-2 mt-1 mb-2">
-                <label class="bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-bold px-3 py-2.5 rounded-lg cursor-pointer transition"><i class="bi bi-camera"></i> Pilih Foto<input type="file" @change="onFileChange" accept="image/*" multiple class="hidden"></label>
-                <button type="button" @click="aduan.gambar=[]; previewGambar=[]" v-if="aduan.gambar.length>0" class="bg-red-100 text-red-700 text-[11px] font-bold px-3 py-2.5 rounded-lg hover:bg-red-200 transition"><i class="bi bi-trash"></i> Hapus Semua</button>
-                <span v-if="aduan.gambar.length>0" class="text-[10px] text-slate-400 flex items-center gap-1"><i class="bi bi-image"></i> {{ aduan.gambar.length }}/2</span>
-              </div>
-              <div v-if="previewGambar.length>0" class="flex gap-2 flex-wrap mt-2">
-                <div v-for="(img,i) in previewGambar" :key="i" class="relative w-[100px] h-[75px] border-2 border-slate-300 rounded-lg overflow-hidden bg-slate-50 shadow-sm">
-                  <img :src="img.data" class="w-full h-full object-cover">
-                  <button @click="hapusGambar(i)" class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] transition">✕</button>
-                  <div class="absolute bottom-0 left-0 right-0 bg-white/90 px-1.5 py-0.5 text-[8px] text-slate-500">{{ (img.size/1024).toFixed(1) }}KB</div>
-                </div>
-              </div>
-              <p class="text-[9px] text-slate-400 mt-2"><i class="bi bi-info-circle"></i> Format JPG/PNG, maks 5MB (dikompresi otomatis)</p>
-            </div>
-          </div>
-
-          <div class="flex justify-end gap-2" style="border-top:2px solid #e2e8f0;padding-top:12px">
-            <button type="button" @click="resetFormPengaduan()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-lg transition" style="border:2px solid #cbd5e1">Reset</button>
-            <button type="submit" :disabled="loading" class="bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm transition" style="border:2px solid #2563eb">{{ loading?'Mengirim...':'Kirim Pengaduan' }}</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== SUB-TAB: RIWAYAT ========== -->
-  <div v-show="pengaduanSubTab === 'riwayat'">
-    <div class="glass-card rounded-2xl shadow-lg overflow-hidden border-2 border-blue-100">
-      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200 px-5 py-3 flex justify-between items-center">
-        <h3 class="font-bold text-sm text-blue-800">📋 Riwayat Pengaduan ({{ filteredPengaduan.length }})</h3>
-        <div class="flex gap-2">
-          <button @click="exportExcel" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition"><i class="bi bi-file-earmark-excel"></i> Excel</button>
-          <button @click="exportCSV" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition"><i class="bi bi-filetype-csv"></i> CSV</button>
-        </div>
-      </div>
-
-      <!-- Filter -->
-      <div class="bg-white p-4 border-b">
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
-          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Tahun</label><select v-model="fAduTahun" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"><option value="">Semua</option><option v-for="t in listTahunAdu" :key="t" :value="t">{{ t }}</option></select></div>
-          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Bulan</label><select v-model="fAduBulan" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"><option value="">Semua</option><option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">Mei</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Agt</option><option value="09">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select></div>
-          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Bidang</label><select v-model="fAduBidang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"><option value="">Semua</option><option v-for="b in bidangList" :key="b" :value="b">{{ b }}</option></select></div>
-          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Status</label><select v-model="fAduStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"><option value="">Semua</option><option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option></select></div>
-          <div><button @click="resetFilterAdu" class="w-full bg-amber-400 hover:bg-amber-500 text-white font-bold text-xs rounded-lg px-4 py-2 transition"><i class="bi bi-arrow-counterclockwise mr-1"></i>Reset</button></div>
-        </div>
-      </div>
-
-      <!-- Info Pagination -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-2 bg-slate-50 border-b text-xs text-slate-400">
-        <p>Menampilkan <strong class="text-slate-600">{{ paginatedAdu.length>0 ? (pageAdu-1)*perPageAdu+1 : 0 }}</strong>-<strong class="text-slate-600">{{ Math.min(pageAdu*perPageAdu, filteredPengaduan.length) }}</strong> dari <strong class="text-slate-600">{{ filteredPengaduan.length }}</strong></p>
-        <div class="flex items-center gap-2"><span>Tampil</span><select v-model="perPageAdu" @change="pageAdu=1" class="text-xs border border-slate-300 rounded-lg px-2 py-1"><option :value="15">15</option><option :value="25">25</option><option :value="50">50</option></select></div>
-      </div>
-
-      <!-- Tabel -->
-      <div class="responsive-table overflow-x-auto">
-        <table class="w-full text-xs">
-          <thead>
-            <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[10px] tracking-wider">
-              <th class="p-2.5 text-center w-10">#</th>
-              <th class="p-2.5 text-left w-20">Tanggal</th>
-              <th class="p-2.5 text-left w-28">Pelapor</th>
-              <th class="p-2.5 text-left w-36">Bidang / Kategori</th>
-              <th class="p-2.5 text-left w-44">Lokasi</th>
-              <th class="p-2.5 text-center w-12">Prio</th>
-              <th class="p-2.5 text-center w-24">Status</th>
-              <th class="p-2.5 text-center w-10">Foto</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-if="filteredPengaduan.length===0">
-              <td colspan="8" class="p-8 text-center text-slate-400">Tidak ada pengaduan</td>
-            </tr>
-            <tr v-for="(item, idx) in paginatedAdu" :key="item.id" class="hover:bg-blue-50/30 transition">
-              <td class="p-2.5 text-center text-slate-400 text-[10px]">{{ (pageAdu-1)*perPageAdu + idx + 1 }}</td>
-              <td class="p-2.5 text-left whitespace-nowrap text-[10px]">{{ item.tanggal_lapor || item.Tanggal || '-' }}</td>
-              <td class="p-2.5 text-left font-medium text-[11px] truncate max-w-[100px]">{{ item.nama_pelapor || item.Nama || '-' }}</td>
-              <td class="p-2.5 text-left text-[10px]">
-                <div class="font-semibold text-slate-700">{{ item.kategori_pengaduan?.bidang || item.Bidang || '-' }}</div>
-                <div class="text-slate-500 text-[9px]">{{ item.kategori_pengaduan?.permasalahan || item.Kategori || '-' }}</div>
-              </td>
-              <td class="p-2.5 text-left text-[10px]">
-                <div class="truncate max-w-[150px]">{{ item.lokasi || item.Lokasi || '-' }}</div>
-                <div v-if="item.desa || item.kecamatan || item.Desa || item.Kecamatan" class="text-[9px] text-slate-400 truncate max-w-[150px]">{{ [item.desa||item.Desa, item.kecamatan||item.Kecamatan].filter(Boolean).join(', ') }}</div>
-              </td>
-              <td class="p-2.5 text-center">
-                <span v-if="getPrioritas(item) === 'Tinggi'" class="text-red-500" title="Prioritas Tinggi">🔴</span>
-                <span v-else-if="getPrioritas(item) === 'Sedang'" class="text-amber-500" title="Prioritas Sedang">🟡</span>
-                <span v-else class="text-emerald-500" title="Prioritas Rendah">🟢</span>
-              </td>
-              <td class="p-2.5 text-center">
-                <select @change="updateStatus(item.id, $event.target.value)" class="text-xs border rounded-lg px-2 py-1 font-bold" :class="statusBadge(item.status || item.Status)">
-                  <option v-for="s in statusOptions" :key="s" :value="s" :selected="(item.status||item.Status)===s">{{ s }}</option>
-                </select>
-              </td>
-              <td class="p-2.5 text-center">
-                <div v-if="getGambarArray(item).length>0" class="flex items-center justify-center">
-                  <img :src="getGambarArray(item)[0]" class="w-8 h-8 object-cover rounded-lg border-2 border-slate-100 shadow-sm" :title="getGambarCount(item)+' foto'">
-                </div>
-                <span v-else class="text-slate-300 text-xs">-</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      <div v-if="filteredPengaduan.length>0" class="flex items-center justify-between gap-3 p-4 border-t">
-        <span class="text-[10px] text-slate-400">Hal <strong class="text-slate-600">{{ pageAdu }}</strong>/<strong class="text-slate-600">{{ totalPageAdu }}</strong></span>
-        <div class="flex items-center gap-1">
-          <button @click="pageAdu=1" :disabled="pageAdu===1" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition" :class="pageAdu===1?'text-slate-300':'text-slate-600 hover:bg-blue-50'">«</button>
-          <button @click="pageAdu--" :disabled="pageAdu===1" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition" :class="pageAdu===1?'text-slate-300':'text-slate-600 hover:bg-blue-50'">‹</button>
-          <template v-for="hal in totalPageAdu" :key="hal">
-            <button v-if="hal===1||hal===totalPageAdu||(hal>=pageAdu-1&&hal<=pageAdu+1)" @click="pageAdu=hal" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition" :class="pageAdu===hal?'bg-blue-500 text-white':'text-slate-600 hover:bg-blue-50'">{{ hal }}</button>
-            <span v-else-if="hal===pageAdu-2||hal===pageAdu+2" class="text-slate-300 text-xs">...</span>
-          </template>
-          <button @click="pageAdu++" :disabled="pageAdu===totalPageAdu" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition" :class="pageAdu===totalPageAdu?'text-slate-300':'text-slate-600 hover:bg-blue-50'">›</button>
-          <button @click="pageAdu=totalPageAdu" :disabled="pageAdu===totalPageAdu" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition" :class="pageAdu===totalPageAdu?'text-slate-300':'text-slate-600 hover:bg-blue-50'">»</button>
-        </div>
-      </div>
-    </div>
-  </div>
+    <!-- Komponen Dinamis -->
+    <form-pengaduan v-if="tab === 'pengaduan'" :kategori-list="kategoriList" :personil-list="personilList"
+      :pengaduan-list="pengaduanList" :list-kecamatan="listKecamatan" :desa-map="desaMap"
+      @data-updated="loadPengaduan"></form-pengaduan>
+    <form-st v-if="tab === 'st'" :unit-kerja-list="unitKerjaList" :layanan-list="layananList"
+      :sop-list="sopList" :personil-list="personilList" :kendaraan-list="kendaraanList"
+      :peralatan-list="peralatanList" :lokasi-list="lokasiList" :surat-tugas-list="suratTugasList"
+      :list-kecamatan="listKecamatan" :desa-map="desaMap" @data-updated="loadST"></form-st>
+    <form-laporan v-if="tab === 'laporan'" :surat-tugas-list="suratTugasList" :personil-list="personilList"
+      :laporan-list="laporanList" @data-updated="loadLaporan"></form-laporan>
+  </main>
 </div>
 
-<!-- ========== TAB SURAT TUGAS ========== -->
-<div v-if="tab==='st'" class="space-y-6 fade-in">
-
-  <!-- Header -->
-  <div class="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-5 text-white shadow-xl">
-    <div class="flex items-center justify-between">
-      <div><h2 class="text-xl font-bold flex items-center gap-2"><i class="bi bi-envelope-paper"></i> Surat Tugas</h2><p class="text-emerald-200 text-xs mt-1">Buat surat tugas dan pantau riwayat</p></div>
-      <span class="bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-semibold">{{ filteredST.length }} data</span>
-    </div>
-  </div>
-
-  <!-- Sub-tab: Form vs Riwayat -->
-  <div class="bg-white rounded-2xl shadow-sm p-1.5 border border-slate-200 flex gap-1.5">
-    <button @click="stSubTab = 'form'" :class="stSubTab==='form' ? 'bg-emerald-500 text-white shadow' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"><i class="bi bi-pencil-square"></i> Form Baru</button>
-    <button @click="stSubTab = 'riwayat'" :class="stSubTab==='riwayat' ? 'bg-emerald-500 text-white shadow' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"><i class="bi bi-list-ul"></i> Riwayat ({{ filteredST.length }})</button>
-  </div>
-
-  <!-- ========== SUB-TAB: FORM ST ========== -->
-  <div v-show="stSubTab === 'form'" class="space-y-4">
-    <div class="glass-card rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
-      <div class="bg-gradient-to-r from-emerald-50 to-teal-50/30 border-b border-emerald-200 px-5 py-3 flex items-center justify-between">
-        <h3 class="font-bold text-emerald-700 text-sm">📝 Buat Surat Tugas</h3>
-        <button type="button" @click="resetSTForm()" class="bg-slate-100 hover:bg-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg transition"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
-      </div>
-      <div class="p-4">
-        <form @submit.prevent="simpanST">
-
-          <!-- I. ADMINISTRASI -->
-          <div class="border border-emerald-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-emerald-50 to-green-50/20">
-            <h4 class="text-xs font-extrabold text-emerald-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-emerald-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">I</span>Administrasi Surat</h4>
-            <div class="grid grid-cols-2 gap-3">
-              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Nomor ST</label><input v-model="st.nomor_st" placeholder="Auto‑generate" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
-              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Tanggal ST <span class="text-red-500">*</span></label><input type="date" v-model="st.tanggal_st" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
-            </div>
-          </div>
-
-          <!-- II. DASAR HUKUM -->
-          <div class="border border-cyan-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-cyan-50 to-teal-50/20">
-            <h4 class="text-xs font-extrabold text-cyan-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-cyan-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">II</span>Dasar Hukum</h4>
-            <div class="text-[10px] text-slate-600 space-y-1 mb-3">
-              <p>1. Permendagri Nomor 26 Tahun 2020</p>
-              <p>2. Permendagri Nomor 16 Tahun 2023</p>
-              <p>3. Perda Trenggalek Nomor 03 Tahun 2019</p>
-            </div>
-            <button type="button" @click="st.dasarManual = st.dasarManual === null ? '' : null" class="text-[11px] bg-cyan-100 hover:bg-cyan-200 text-cyan-700 font-bold px-3 py-2 rounded-lg transition mb-2 border border-cyan-200">{{ st.dasarManual === null ? '+ Tambah Dasar Manual' : '- Hapus Dasar Manual' }}</button>
-            <textarea v-show="st.dasarManual !== null" v-model="st.dasarManual" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs" placeholder="Tulis dasar tambahan..."></textarea>
-          </div>
-
-          <!-- III. KLASIFIKASI & LOKASI -->
-          <div class="border border-teal-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-teal-50 to-emerald-50/20">
-            <h4 class="text-xs font-extrabold text-teal-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-teal-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">III</span>Klasifikasi & Lokasi</h4>
-            <div class="space-y-3">
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="text-[10px] font-bold text-slate-600 mb-1 block">Unit Kerja</label>
-                  <select v-model="st.unit_kerja" @change="onUnitChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="">-- Pilih --</option><option v-for="u in unitKerjaList" :key="u.id" :value="u.nama_unit">{{ u.nama_unit }}</option></select>
-                </div>
-                <div v-if="st.unit_kerja">
-                  <label class="text-[10px] font-bold text-slate-600 mb-1 block">Layanan</label>
-                  <select v-model="st.layanan" @change="onLayananChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="">-- Pilih --</option><option v-for="l in filteredLayanan" :key="l.id" :value="l.nama_layanan">{{ l.nama_layanan }}</option></select>
-                </div>
-              </div>
-              <div>
-                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Kegiatan</label>
-                <select v-model="st.kegiatan" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="">-- Pilih --</option><option v-if="st.layanan" :value="st.layanan">{{ st.layanan }} (Auto)</option><option value="__manual__">Isi Manual...</option></select>
-                <input v-if="st.kegiatan==='__manual__'" v-model="st.kegiatanManual" placeholder="Tulis nama kegiatan..." class="w-full mt-2 border border-amber-300 rounded-lg px-3 py-2.5 text-xs bg-amber-50">
-              </div>
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="text-[10px] font-bold text-slate-600 mb-1 block">Kecamatan</label>
-                  <select v-model="st.kecamatan" @change="st.desa=''" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="">-- Semua --</option><option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option></select>
-                </div>
-                <div>
-                  <label class="text-[10px] font-bold text-slate-600 mb-1 block">Desa</label>
-                  <select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="">-- Pilih --</option><option v-for="desa in filteredDesaST" :key="desa" :value="desa">{{ desa }}</option></select>
-                </div>
-              </div>
-              <div>
-                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Lokasi <span class="text-red-500">*</span></label>
-                <select v-model="st.lokasi" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="" disabled>-- Pilih --</option><option v-for="lok in filteredLokasi" :key="lok.id" :value="lok.nama_lokasi">{{ lok.nama_lokasi }}</option><option value="__manual__">Manual...</option></select>
-                <input v-if="st.lokasi==='__manual__'" v-model="st.lokasiManual" placeholder="Tulis lokasi..." class="w-full mt-2 border border-amber-300 rounded-lg px-3 py-2.5 text-xs bg-amber-50">
-              </div>
-            </div>
-          </div>
-
-          <!-- IV. WAKTU -->
-          <div class="border border-orange-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-orange-50 to-amber-50/20">
-            <h4 class="text-xs font-extrabold text-orange-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-orange-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">IV</span>Waktu Pelaksanaan</h4>
-            <div class="grid grid-cols-4 gap-3">
-              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Tgl Mulai</label><input type="date" v-model="st.tgl_mulai" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
-              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Jam Mulai</label><input type="time" v-model="st.jam_mulai" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
-              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Tgl Selesai</label><input type="date" v-model="st.tgl_selesai" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
-              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Jam Selesai</label><input type="time" v-model="st.jam_selesai" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
-            </div>
-          </div>
-
-          <!-- V. SUMBER DAYA -->
-          <div class="border border-pink-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-pink-50 to-rose-50/20">
-            <h4 class="text-xs font-extrabold text-pink-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-pink-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">V</span>Sumber Daya</h4>
-            <div class="mb-3">
-              <label class="text-[10px] font-bold text-slate-600 mb-1 block">Petugas <span class="text-red-500">*</span> ({{ st.petugas_ids.length }})</label>
-              <div class="grid grid-cols-2 gap-1 max-h-[150px] overflow-y-auto p-2 border border-slate-300 rounded-lg">
-                <label v-for="p in personilList" :key="p.id" class="flex items-center gap-2 text-[11px] cursor-pointer hover:bg-pink-50 rounded p-1.5"><input type="checkbox" :value="p.id" v-model="st.petugas_ids" class="rounded text-pink-600"><span class="truncate">{{ p.nama }}</span></label>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Kendaraan ({{ st.kendaraan_ids.length }})</label>
-                <div class="max-h-[120px] overflow-y-auto p-2 border border-slate-300 rounded-lg space-y-1">
-                  <label v-for="k in kendaraanList" :key="k.id" class="flex items-center gap-2 text-[10px] cursor-pointer hover:bg-pink-50 rounded p-1"><input type="checkbox" :value="k.id" v-model="st.kendaraan_ids" class="rounded text-pink-600"><span class="truncate">{{ k.nama }} ({{ k.plat || '-' }})</span></label>
-                  <p v-if="!kendaraanList.length" class="text-[9px] text-slate-400 p-1">Tidak ada kendaraan</p>
-                </div>
-              </div>
-              <div>
-                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Peralatan ({{ st.peralatan_ids.length }})</label>
-                <div class="max-h-[120px] overflow-y-auto p-2 border border-slate-300 rounded-lg space-y-1">
-                  <label v-for="a in peralatanList" :key="a.id" class="flex items-center gap-2 text-[10px] cursor-pointer hover:bg-pink-50 rounded p-1"><input type="checkbox" :value="a.id" v-model="st.peralatan_ids" class="rounded text-pink-600"><span class="truncate">{{ a.nama }}</span></label>
-                  <p v-if="!peralatanList.length" class="text-[9px] text-slate-400 p-1">Tidak ada peralatan</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- VI. SOP & VII. INSTRUKSI -->
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
-            <div class="md:col-span-2 border border-purple-300 rounded-xl p-3 bg-purple-50/40">
-              <h4 class="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider mb-2"><span class="w-5 h-5 bg-purple-500 text-white rounded-lg inline-flex items-center justify-center text-[9px] font-bold mr-1">VI</span>SOP ({{ st.sop_ids.length }})</h4>
-              <div class="max-h-[120px] overflow-y-auto p-2 border border-slate-300 rounded-lg space-y-1">
-                <label v-for="s in filteredSOP" :key="s.id" class="flex items-center gap-1.5 text-[9px] cursor-pointer hover:bg-purple-50 rounded p-1"><input type="checkbox" :value="s.id" v-model="st.sop_ids" class="rounded text-purple-600"><span><strong>{{ s.kode_sop }}</strong> - {{ s.nama_sop }}</span></label>
-              </div>
-            </div>
-            <div class="md:col-span-3 border border-teal-300 rounded-xl p-3 bg-teal-50/40">
-              <h4 class="text-[10px] font-extrabold text-teal-600 uppercase tracking-wider mb-2"><span class="w-5 h-5 bg-teal-500 text-white rounded-lg inline-flex items-center justify-center text-[9px] font-bold mr-1">VII</span>Instruksi</h4>
-              <textarea v-model="st.instruksi" rows="3" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs" placeholder="Instruksi khusus..."></textarea>
-            </div>
-          </div>
-
-          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
-            <button type="button" @click="resetSTForm()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-lg">Reset</button>
-            <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-6 py-2.5 rounded-lg shadow-sm"><i :class="loading?'bi bi-hourglass-split animate-spin':'bi bi-save'"></i> {{ loading?'Menyimpan...':'Simpan ST' }}</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== SUB-TAB: RIWAYAT ST ========== -->
-  <div v-show="stSubTab === 'riwayat'">
-    <div class="glass-card rounded-2xl shadow-sm overflow-hidden">
-      <div class="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-slate-200 px-5 py-3 flex items-center justify-between">
-        <h3 class="font-bold text-slate-700 text-sm"><i class="bi bi-clock-history text-emerald-500 mr-2"></i>Riwayat Surat Tugas</h3>
-        <div class="flex items-center gap-2">
-          <span class="text-[10px] text-slate-400">{{ filteredST.length }} data</span>
-          <button @click="loadAll" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"><i :class="loading?'bi bi-hourglass-split animate-spin':'bi bi-arrow-clockwise'"></i> Refresh</button>
-          <button @click="exportExcelST" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"><i class="bi bi-download"></i> Excel</button>
-        </div>
-      </div>
-      <div class="p-4">
-        <!-- Filter -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
-          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Tahun</label><select v-model="fSTTahun" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"><option value="">Semua</option><option v-for="t in listTahunST" :key="t" :value="t">{{ t }}</option></select></div>
-          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Bulan</label><select v-model="fSTBulan" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"><option value="">Semua</option><option v-for="(b, i) in ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des']" :value="String(i+1).padStart(2,'0')">{{ b }}</option></select></div>
-          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Layanan</label><select v-model="fSTLayanan" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"><option value="">Semua</option><option v-for="l in listLayananST" :key="l" :value="l">{{ l }}</option></select></div>
-          <div><input v-model="fSTSearch" placeholder="Cari..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></div>
-          <div><button @click="resetFilterST" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg py-2"><i class="bi bi-arrow-counterclockwise mr-1"></i>Reset</button></div>
-        </div>
-
-        <!-- Tabel -->
-        <div class="responsive-table border border-slate-200 rounded-lg overflow-x-auto">
-          <table class="w-full text-xs">
-            <thead>
-              <tr class="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider">
-                <th class="p-2.5 text-center w-10">No</th><th class="p-2.5">Nomor ST</th><th class="p-2.5">Tanggal</th><th class="p-2.5">Layanan / Kegiatan</th><th class="p-2.5 hide-mobile-col">Lokasi</th><th class="p-2.5 hide-mobile-col">Petugas</th><th class="p-2.5 text-center w-20">Status</th><th class="p-2.5 text-center w-20">Aksi</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              <tr v-if="!paginatedST.length"><td colspan="8" class="p-8 text-center text-slate-400">Belum ada surat tugas</td></tr>
-              <tr v-for="(s, idx) in paginatedST" :key="s.id" class="hover:bg-emerald-50/30 transition">
-                <td class="p-2.5 text-center text-slate-400 text-[10px]">{{ (pageST-1)*perPageST + idx + 1 }}</td>
-                <td class="p-2.5 font-mono text-[10px]">{{ s.nomor_st || '-' }}</td>
-                <td class="p-2.5 whitespace-nowrap text-[10px]">{{ formatDate(s.tanggal_st) }}</td>
-                <td class="p-2.5"><span class="bg-emerald-50 text-emerald-700 text-[9px] px-1.5 py-0.5 rounded font-semibold">{{ s.layanan || '-' }}</span><div class="text-[10px] text-slate-600 mt-0.5 truncate max-w-[140px]">{{ s.kegiatan || '-' }}</div></td>
-                <td class="p-2.5 text-[10px] truncate max-w-[120px] hide-mobile-col">{{ s.lokasi || '-' }}</td>
-                <td class="p-2.5 text-[10px] truncate max-w-[130px] hide-mobile-col">{{ getPetugasNama(s.petugas_ids) || '-' }}</td>
-                <td class="p-2.5 text-center"><span :class="s.status==='Aktif'?'bg-amber-100 text-amber-700':'bg-emerald-100 text-emerald-700'" class="text-[9px] font-bold px-2 py-0.5 rounded-full">{{ s.status }}</span></td>
-                <td class="p-2.5 text-center"><button @click="hapusST(s.id)" class="text-red-500 hover:bg-red-50 p-1.5 rounded"><i class="bi bi-trash"></i></button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Pagination -->
-        <div v-if="filteredST.length>0" class="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-slate-200">
-          <span class="text-[10px] text-slate-400">Hal <strong>{{ pageST }}</strong>/<strong>{{ totalPageST }}</strong></span>
-          <div class="flex items-center gap-1">
-            <button @click="pageST=1" :disabled="pageST===1" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="pageST===1?'text-slate-300':'text-slate-600 hover:bg-emerald-50'">«</button>
-            <button @click="pageST--" :disabled="pageST===1" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="pageST===1?'text-slate-300':'text-slate-600 hover:bg-emerald-50'">‹</button>
-            <template v-for="hal in totalPageST">
-              <button v-if="hal===1||hal===totalPageST||(hal>=pageST-1&&hal<=pageST+1)" @click="pageST=hal" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="pageST===hal?'bg-emerald-500 text-white':'text-slate-600 hover:bg-emerald-50'">{{ hal }}</button>
-              <span v-else-if="hal===pageST-2||hal===pageST+2" class="text-slate-300 text-xs">...</span>
-            </template>
-            <button @click="pageST++" :disabled="pageST===totalPageST" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="pageST===totalPageST?'text-slate-300':'text-slate-600 hover:bg-emerald-50'">›</button>
-            <button @click="pageST=totalPageST" :disabled="pageST===totalPageST" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="pageST===totalPageST?'text-slate-300':'text-slate-600 hover:bg-emerald-50'">»</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== TAB LAPORAN ========== -->
-<div v-if="tab==='laporan'" class="space-y-6 fade-in">
-
-  <!-- Header -->
-  <div class="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl p-5 text-white shadow-xl">
-    <div class="flex items-center justify-between">
-      <div><h2 class="text-xl font-bold flex items-center gap-2"><i class="bi bi-file-earmark-bar-graph"></i> Laporan Kegiatan</h2><p class="text-purple-200 text-xs mt-1">Buat laporan hasil kegiatan</p></div>
-      <span class="bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-semibold">{{ laporanList.length }} data</span>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-11 gap-5">
-    <!-- KOLOM KIRI: Form Input -->
-    <div class="lg:col-span-6 space-y-4">
-      <!-- I. Pilih Surat Tugas -->
-      <div class="glass-card rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
-        <div class="bg-gradient-to-r from-purple-50 to-indigo-50/30 border-b border-purple-200 px-5 py-3">
-          <h3 class="font-bold text-purple-700 text-sm">I. Pilih Surat Tugas</h3>
-        </div>
-        <div class="p-4">
-          <select v-model="laporan.surat_tugas_id" @change="onLaporanSTChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition">
-            <option value="" disabled>-- Pilih Surat Tugas --</option>
-            <option v-for="st in stAktifList" :key="st.id" :value="st.id">{{ st.nomor_st || st.kegiatan }}</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- II. Waktu & Kehadiran -->
-      <div class="glass-card rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50/30 border-b border-blue-200 px-5 py-3">
-          <h3 class="font-bold text-blue-700 text-sm">II. Waktu & Kehadiran</h3>
-        </div>
-        <div class="p-4 space-y-3">
-          <div>
-            <label class="text-xs font-bold text-gray-600">Jam Selesai</label>
-            <input type="time" v-model="laporan.jam_selesai" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs mt-1">
-          </div>
-          <div>
-            <label class="text-xs font-bold text-gray-600">Yang Hadir</label>
-            <input v-model="laporan.hadir" placeholder="Nama pejabat/tamu..." class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs mt-1">
-          </div>
-          <div>
-            <label class="text-xs font-bold text-gray-600">Tanggal Laporan</label>
-            <input type="date" v-model="laporan.tanggal_laporan" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs mt-1">
-          </div>
-        </div>
-      </div>
-
-      <!-- III. Dokumentasi -->
-      <div class="glass-card rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
-        <div class="bg-gradient-to-r from-pink-50 to-rose-50/30 border-b border-pink-200 px-5 py-3">
-          <h3 class="font-bold text-pink-700 text-sm">III. Dokumentasi (maks. 6 foto)</h3>
-        </div>
-        <div class="p-4 space-y-3">
-          <div class="flex items-center gap-2 flex-wrap">
-            <label class="bg-pink-500 hover:bg-pink-600 text-white text-xs font-semibold px-3 py-2.5 rounded-lg cursor-pointer transition">
-              <i class="bi bi-images"></i> Pilih Foto
-              <input type="file" @change="uploadGambarLaporan" accept="image/*" multiple class="hidden">
-            </label>
-            <button @click="cetakKolaseLaporan" :disabled="!laporan.gambar.length || loading" class="bg-rose-500 hover:bg-rose-600 disabled:bg-slate-300 text-white text-xs font-semibold px-3 py-2.5 rounded-lg transition">
-              <i :class="loading ? 'bi bi-hourglass-split animate-spin' : 'bi bi-printer'"></i> Cetak Kolase
-            </button>
-          </div>
-          <!-- Preview Gambar -->
-          <div v-if="laporanPreviewGambar.length > 0" class="grid grid-cols-3 gap-2">
-            <div v-for="(img, i) in laporanPreviewGambar" :key="i" class="relative aspect-square rounded-lg overflow-hidden border-2 border-slate-200">
-              <img :src="img.data" class="w-full h-full object-cover">
-              <button @click="hapusGambarLaporan(i)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✕</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- KOLOM KANAN: Pratinjau Kolase -->
-    <div class="lg:col-span-5">
-      <div class="lg:sticky lg:top-2 glass-card rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
-        <div class="bg-gradient-to-r from-purple-50 to-indigo-50/30 border-b border-purple-200 px-4 py-3">
-          <span class="font-bold text-purple-700 text-xs">Pratinjau Kolase</span>
-        </div>
-        <div class="p-3 bg-slate-100">
-          <div id="kolasePreview" class="bg-white shadow-md rounded-lg" style="padding:5mm 7mm; min-height: 200px; display: flex; align-items: center; justify-content: center;">
-            <span class="text-gray-400 text-xs">Pilih ST dan unggah foto untuk melihat pratinjau</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- URAIAN, TEMUAN, TINDAKAN, HASIL -->
-  <div class="space-y-4">
-    <div class="glass-card rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
-      <div class="bg-gradient-to-r from-emerald-50 to-teal-50/30 border-b border-emerald-200 px-5 py-3">
-        <h3 class="font-bold text-emerald-700 text-sm">IV. Uraian Pelaksanaan</h3>
-      </div>
-      <div class="p-4">
-        <textarea v-model="laporan.uraian_pelaksanaan" rows="10" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500 transition" placeholder="Tulis uraian pelaksanaan..."></textarea>
-      </div>
-    </div>
-
-    <div class="glass-card rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
-      <div class="bg-gradient-to-r from-amber-50 to-orange-50/30 border-b border-amber-200 px-5 py-3">
-        <h3 class="font-bold text-amber-700 text-sm">V. Temuan</h3>
-      </div>
-      <div class="p-4">
-        <textarea v-model="laporan.temuan" rows="5" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-amber-200 focus:border-amber-500 transition" placeholder="Tulis temuan..."></textarea>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="glass-card rounded-2xl shadow-sm border border-indigo-100 overflow-hidden">
-        <div class="bg-gradient-to-r from-indigo-50 to-blue-50/30 border-b border-indigo-200 px-5 py-3">
-          <h3 class="font-bold text-indigo-700 text-sm">VI. Tindakan</h3>
-        </div>
-        <div class="p-4">
-          <textarea v-model="laporan.tindakan" rows="5" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" placeholder="Tulis tindakan..."></textarea>
-        </div>
-      </div>
-      <div class="glass-card rounded-2xl shadow-sm border border-cyan-100 overflow-hidden">
-        <div class="bg-gradient-to-r from-cyan-50 to-blue-50/30 border-b border-cyan-200 px-5 py-3">
-          <h3 class="font-bold text-cyan-700 text-sm">VII. Hasil</h3>
-        </div>
-        <div class="p-4">
-          <textarea v-model="laporan.hasil" rows="5" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 transition" placeholder="Terkendali / Selesai"></textarea>
-        </div>
-      </div>
-    </div>
-
-    <div class="flex justify-end gap-2">
-      <button @click="resetLaporanForm()" class="bg-slate-100 hover:bg-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg transition"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
-      <button @click="simpanLaporan" :disabled="!laporan.surat_tugas_id || loading" class="bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold px-6 py-2.5 rounded-lg transition"><i :class="loading ? 'bi bi-hourglass-split animate-spin' : 'bi bi-save'"></i> {{ loading ? 'Menyimpan...' : 'Simpan Laporan' }}</button>
-    </div>
-  </div>
-</div>
-    
 <script>
   const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+
   const DATA_KECAMATAN = ['Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan','Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'];
   const DATA_DESA = {
     'Bendungan':['Botoputih','Depok','Masaran','Sengon','Surenlor'],'Dongko':['Dongko','Pandean','Petung','Pringapus','Salam'],'Durenan':['Durenan','Gador','Kamulan','Pakis','Pandean'],'Gandusari':['Gandusari','Jajar','Krandegan','Sukorame','Widoro'],'Kampak':['Bogoran','Karangrejo','Ngadimulyo','Senden','Timahan'],'Karangan':['Buluagung','Jati','Karangan','Kayen','Sumber'],'Munjungan':['Besuki','Munjungan','Sobo','Tawing','Bangun'],'Panggul':['Banjar','Depok','Manggis','Panggul','Wonocoyo'],'Pogalan':['Bendorejo','Kedunglurah','Ngadirejo','Pogalan','Wonocoyo'],'Pule':['Joho','Kembangan','Pule','Puyung','Sidomulyo'],'Suruh':['Gamping','Mlinjon','Ngrandu','Suruh','Wonokerto'],'Trenggalek':['Kelutan','Ngantru','Sumbergedong','Surondakan','Tamanan'],'Tugu':['Duren','Gading','Prambon','Tumpuk','Winong'],'Watulimo':['Dukuh','Gemaharjo','Prigi','Slawe','Watulimo']
   };
-  const params = new URLSearchParams(window.location.search);
-  const initTab = params.get('tab') || 'pengaduan';
 
-  Vue.createApp({
+  // Sidebar Component
+  const AppSidebar = {
+    template: `
+      <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+        <div class="sidebar-header">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span>
+            </div>
+            <button @click="$emit('toggle-sidebar')" class="text-white/70 hover:text-white p-1">
+              <i :class="sidebarOpen ? 'bi bi-chevron-left' : 'bi bi-chevron-right'" class="text-xl"></i>
+            </button>
+          </div>
+          <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+        </div>
+        <nav class="p-3 space-y-1">
+          <a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+          <div class="sidebar-divider"></div>
+          <div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='ops'?'':'ops'">
+            <span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span>
+            <i :class="expandedGroup==='ops'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i>
+          </div>
+          <div v-show="expandedGroup==='ops'" class="sidebar-sub space-y-1">
+            <a href="form.html?tab=pengaduan" class="sidebar-item active"><i class="bi bi-megaphone"></i> Pengaduan</a>
+            <a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+            <a href="form.html?tab=laporan" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+            <a href="peta.html" class="sidebar-item"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
+            <a href="sppd.html" class="sidebar-item"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
+          </div>
+          <div class="sidebar-divider"></div>
+          <div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='adm'?'':'adm'">
+            <span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span>
+            <i :class="expandedGroup==='adm'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i>
+          </div>
+          <div v-show="expandedGroup==='adm'" class="sidebar-sub space-y-1">
+            <a href="master.html" class="sidebar-item"><i class="bi bi-server"></i> Master Data</a>
+            <a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i> Pengaturan</a>
+          </div>
+          <div class="sidebar-divider"></div>
+          <a href="about.html" class="sidebar-item"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
+          <button @click="$emit('toggle-dark')" class="sidebar-item w-full">
+            <i :class="darkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i> {{ darkMode ? 'Mode Terang' : 'Mode Gelap' }}
+          </button>
+        </nav>
+      </aside>
+    `,
+    props: { sidebarOpen: Boolean, isMobile: Boolean, currentPage: String, darkMode: Boolean },
+    emits: ['toggle-sidebar', 'toggle-dark'],
+    data() { return { expandedGroup: 'ops' }; }
+  };
+
+  // Child: Form Pengaduan
+  const FormPengaduan = {
+    template: '#form-pengaduan-template',
+    props: {
+      kategoriList: Array, personilList: Array, pengaduanList: Array,
+      listKecamatan: Array, desaMap: Object
+    },
+    emits: ['data-updated'],
+    inject: ['supabase', 'addToast'],
     data() {
       return {
-        // UI
-        tab: initTab,
-        sidebarOpen: true, isMobile: window.innerWidth < 768, isDark: localStorage.getItem('darkMode')==='true',
-        expandedGroup: 'ops',
-        pesan: { teks:'', warna:'' },
-        loading: false,
-
-        // Sub-tab untuk Pengaduan dan Surat Tugas
-        pengaduanSubTab: 'form',
-        stSubTab: 'form',
-
-        // Form Pengaduan
-        aduan: {
-          nama:'', kontak:'', alamat_pelapor:'', kategori_id:'', sumber_aduan:'', potensi_ancaman:'',
-          kecamatan:'', desa:'', lokasi:'', tgl_kejadian:'', waktu_kejadian:'', deskripsi:'', gambar:[]
-        },
+        subTab: 'form',
+        aduan: this.emptyForm(),
         previewGambar: [],
         selectedBidang: '',
-
-        // Form Surat Tugas
-        st: {
-          nomor_st:'', tanggal_st:'', dasarManual:null,
-          unit_kerja:'', layanan:'', kegiatan:'', kegiatanManual:'',
-          kecamatan:'', desa:'', lokasi:'', lokasiManual:'',
-          tgl_mulai:'', tgl_selesai:'', jam_mulai:'08:00', jam_selesai:'16:00',
-          petugas_ids:[], kendaraan_ids:[], peralatan_ids:[], sop_ids:[],
-          instruksi:''
-        },
-
-        // Form Laporan
-        laporan: {
-          surat_tugas_id:'', jam_selesai:'', hadir:'', tanggal_laporan: new Date().toISOString().split('T')[0],
-          uraian_pelaksanaan:'', temuan:'', tindakan:'', hasil:'Terkendali / Selesai',
-          gambar:[]
-        },
-        laporanPreviewGambar: [],
-
-        // Data Master dari Supabase
-        kategoriList: [], personilList: [], unitKerjaList: [], layananList: [], sopList: [],
-        kendaraanList: [], peralatanList: [], lokasiList: [],
-        
-        // Data Transaksional
-        pengaduanList: [], suratTugasList: [], laporanList: [],
-
-        // Filter & Pagination Pengaduan
-        fAduTahun:'', fAduBulan:'', fAduBidang:'', fAduStatus:'', fAduSearch:'',
-        pageAdu:1, perPageAdu:15,
-
-        // Filter & Pagination Surat Tugas
-        fSTTahun:'', fSTBulan:'', fSTLayanan:'', fSTSearch:'',
-        pageST:1, perPageST:15,
-
-        statusOptions: ['Baru','Diverifikasi','Diproses','Selesai','Ditolak'],
-        listKecamatan: DATA_KECAMATAN
+        filterTahun: '', filterBulan: '', filterBidang: '', filterStatus: '', filterSearch: '',
+        page: 1, perPage: 15
       }
     },
-
     computed: {
-      // ========== PENGADUAN ==========
-      filteredDesaAduan() { return DATA_DESA[this.aduan.kecamatan] || []; },
       bidangList() {
         const s = new Set();
         this.kategoriList.forEach(k => { if (k.bidang) s.add(k.bidang); });
@@ -797,81 +217,62 @@
         if (!this.selectedBidang) return [];
         return this.kategoriList.filter(k => k.bidang === this.selectedBidang);
       },
-      filteredPengaduan() {
+      filteredDesa() {
+        return this.aduan.kecamatan ? (this.desaMap[this.aduan.kecamatan] || []) : [];
+      },
+      filteredData() {
         let d = this.pengaduanList;
-        if (this.fAduTahun) d = d.filter(p => new Date(p.tanggal_lapor).getFullYear().toString()===this.fAduTahun);
-        if (this.fAduBulan) d = d.filter(p => String(new Date(p.tanggal_lapor).getMonth()+1).padStart(2,'0')===this.fAduBulan);
-        if (this.fAduBidang) d = d.filter(p => p.kategori_pengaduan?.bidang === this.fAduBidang);
-        if (this.fAduStatus) d = d.filter(p => p.status===this.fAduStatus);
-        if (this.fAduSearch) { const kw = this.fAduSearch.toLowerCase(); d = d.filter(p => (p.nama_pelapor||'').toLowerCase().includes(kw) || (p.deskripsi||'').toLowerCase().includes(kw)); }
+        if (this.filterTahun) d = d.filter(p => new Date(p.tanggal_lapor).getFullYear().toString() === this.filterTahun);
+        if (this.filterBulan) d = d.filter(p => String(new Date(p.tanggal_lapor).getMonth()+1).padStart(2,'0') === this.filterBulan);
+        if (this.filterBidang) d = d.filter(p => p.kategori_pengaduan?.bidang === this.filterBidang);
+        if (this.filterStatus) d = d.filter(p => p.status === this.filterStatus);
+        if (this.filterSearch) {
+          const kw = this.filterSearch.toLowerCase();
+          d = d.filter(p => (p.nama_pelapor||'').toLowerCase().includes(kw) || (p.deskripsi||'').toLowerCase().includes(kw));
+        }
         return d;
       },
-      paginatedAdu() { return this.filteredPengaduan.slice((this.pageAdu-1)*this.perPageAdu, this.pageAdu*this.perPageAdu); },
-      totalPageAdu() { return Math.ceil(this.filteredPengaduan.length/this.perPageAdu)||1; },
-      listTahunAdu() {
-        const y=new Set();
-        this.pengaduanList.forEach(p=>{const d=new Date(p.tanggal_lapor); if(!isNaN(d)) y.add(d.getFullYear());});
-        if(y.size===0) y.add(new Date().getFullYear());
-        return [...y].sort((a,b)=>b-a);
+      paginated() {
+        const start = (this.page - 1) * this.perPage;
+        return this.filteredData.slice(start, start + this.perPage);
       },
-
-      // ========== SURAT TUGAS ==========
-      filteredDesaST() { return DATA_DESA[this.st.kecamatan] || []; },
-      filteredLayanan() { return this.st.unit_kerja ? this.layananList.filter(l => l.unit_kerja === this.st.unit_kerja) : []; },
-      filteredSOP() { return this.st.layanan ? this.sopList.filter(s => s.layanan === this.st.layanan) : []; },
-      filteredLokasi() {
-        if (!this.st.kecamatan || !this.lokasiList) return [];
-        return this.lokasiList.filter(l => l.kecamatan === this.st.kecamatan);
+      totalPage() { return Math.ceil(this.filteredData.length / this.perPage) || 1; },
+      listTahun() {
+        const y = new Set();
+        this.pengaduanList.forEach(p => { const d = new Date(p.tanggal_lapor); if (!isNaN(d)) y.add(d.getFullYear()); });
+        if (y.size === 0) y.add(new Date().getFullYear());
+        return [...y].sort((a,b) => b-a);
       },
-      filteredST() {
-        let d = this.suratTugasList;
-        if (this.fSTTahun) d = d.filter(s => new Date(s.tanggal_st).getFullYear().toString()===this.fSTTahun);
-        if (this.fSTBulan) d = d.filter(s => String(new Date(s.tanggal_st).getMonth()+1).padStart(2,'0')===this.fSTBulan);
-        if (this.fSTLayanan) d = d.filter(s => s.layanan === this.fSTLayanan);
-        if (this.fSTSearch) { const kw = this.fSTSearch.toLowerCase(); d = d.filter(s => (s.kegiatan||'').toLowerCase().includes(kw) || (s.lokasi||'').toLowerCase().includes(kw) || (s.nomor_st||'').toLowerCase().includes(kw)); }
-        return d;
-      },
-      paginatedST() { return this.filteredST.slice((this.pageST-1)*this.perPageST, this.pageST*this.perPageST); },
-      totalPageST() { return Math.ceil(this.filteredST.length/this.perPageST)||1; },
-      listTahunST() {
-        const y=new Set();
-        this.suratTugasList.forEach(s=>{const d=new Date(s.tanggal_st); if(!isNaN(d)) y.add(d.getFullYear());});
-        if(y.size===0) y.add(new Date().getFullYear());
-        return [...y].sort((a,b)=>b-a);
-      },
-      listLayananST() {
-        const s = new Set();
-        this.suratTugasList.forEach(st => { if (st.layanan) s.add(st.layanan); });
-        return [...s].sort();
-      },
-
-      // ========== LAPORAN ==========
-      stAktifList() { return this.suratTugasList.filter(s => s.status==='Aktif'); }
+      statusOptions() { return ['Baru','Diverifikasi','Diproses','Selesai','Ditolak']; }
     },
-
     methods: {
-      // ========== UI & NAVIGASI ==========
-      toggleDarkMode() { this.isDark=!this.isDark; localStorage.setItem('darkMode', this.isDark); document.documentElement.classList.toggle('dark', this.isDark); },
-      switchTab(t) { this.tab=t; const url=new URL(window.location); url.searchParams.set('tab',t); window.history.replaceState({},'',url); },
-      formatDate(d) { if(!d) return '-'; return new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}); },
-      statusBadge(s) { return {'Baru':'bg-amber-100 text-amber-700','Diverifikasi':'bg-sky-100 text-sky-700','Diproses':'bg-violet-100 text-violet-700','Selesai':'bg-emerald-100 text-emerald-700','Ditolak':'bg-rose-100 text-rose-700'}[s]||'bg-gray-100'; },
-
-      // ========== RESET FILTER ==========
-      resetFilterAdu() { this.fAduTahun=''; this.fAduBulan=''; this.fAduBidang=''; this.fAduStatus=''; this.fAduSearch=''; this.pageAdu=1; },
-      resetFilterST() { this.fSTTahun=''; this.fSTBulan=''; this.fSTLayanan=''; this.fSTSearch=''; this.pageST=1; },
-
-      // ========== PENGADUAN ==========
-      onBidangChange() { this.aduan.kategori_id = ''; },
-      resetFormPengaduan() {
-        this.aduan = { nama:'', kontak:'', alamat_pelapor:'', kategori_id:'', sumber_aduan:'', potensi_ancaman:'', kecamatan:'', desa:'', lokasi:'', tgl_kejadian:'', waktu_kejadian:'', deskripsi:'', gambar:[] };
-        this.previewGambar = []; this.selectedBidang = '';
+      emptyForm() {
+        return {
+          nama:'', kontak:'', alamat_pelapor:'', kategori_id:'', sumber_aduan:'',
+          kecamatan:'', desa:'', lokasi:'', tgl_kejadian:'', waktu_kejadian:'', deskripsi:'', gambar:[]
+        };
       },
+      resetForm() {
+        this.aduan = this.emptyForm();
+        this.previewGambar = [];
+        this.selectedBidang = '';
+      },
+      onBidangChange() { this.aduan.kategori_id = ''; },
       onFileChange(e) {
-        const files = e.target.files; if (!files || !files.length) return;
-        if (this.aduan.gambar.length >= 2) { this.pesan = {teks:'Maks 2 foto', warna:'text-red-500'}; return; }
-        const reader = new FileReader();
-        reader.onload = (ev) => { this.aduan.gambar.push(ev.target.result); this.previewGambar.push({data:ev.target.result, name:files[0].name, size:files[0].size}); };
-        reader.readAsDataURL(files[0]);
+        const files = e.target.files;
+        if (!files || !files.length) return;
+        for (let i = 0; i < files.length && this.aduan.gambar.length < 2; i++) {
+          const file = files[i];
+          if (!file.type.startsWith('image/')) { this.addToast('Hanya file gambar yang diizinkan', 'error'); continue; }
+          if (file.size > 5 * 1024 * 1024) { this.addToast('Maksimal ukuran 5MB', 'error'); continue; }
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            this.aduan.gambar.push(ev.target.result);
+            this.previewGambar.push({ data: ev.target.result, name: file.name, size: file.size });
+          };
+          reader.readAsDataURL(file);
+        }
+        e.target.value = '';
       },
       hapusGambar(i) { this.aduan.gambar.splice(i,1); this.previewGambar.splice(i,1); },
       getPrioritas(item) {
@@ -883,117 +284,298 @@
         if (Array.isArray(item.gambar)) return item.gambar;
         try { return JSON.parse(item.gambar); } catch(e) { return []; }
       },
-      getGambarCount(item) { return this.getGambarArray(item).length; },
-      async simpanPengaduan() {
-        if (!this.aduan.nama || !this.aduan.deskripsi) { this.pesan = {teks:'Nama dan Deskripsi wajib diisi!', warna:'text-red-500'}; return; }
-        const { error } = await supa.from('pengaduan').insert({
-          no_pengaduan: 'ADU-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*9000+1000),
-          nama_pelapor: this.aduan.nama, kontak: this.aduan.kontak, alamat_pelapor: this.aduan.alamat_pelapor||null,
-          kategori_id: this.aduan.kategori_id||null, sumber_aduan: this.aduan.sumber_aduan||null,
-          potensi_ancaman: this.aduan.potensi_ancaman||null, kecamatan: this.aduan.kecamatan||null, desa: this.aduan.desa||null,
-          lokasi: this.aduan.lokasi||null, tgl_kejadian: this.aduan.tgl_kejadian||null, waktu_kejadian: this.aduan.waktu_kejadian||null,
-          deskripsi: this.aduan.deskripsi, gambar: this.aduan.gambar.length ? this.aduan.gambar : null, status: 'Baru'
-        });
-        if (error) { this.pesan = {teks:'Gagal: '+error.message, warna:'text-red-500'}; }
-        else { this.pesan = {teks:'✅ Pengaduan berhasil dikirim!', warna:'text-green-600'}; this.resetFormPengaduan(); await this.loadAll(); }
+      async simpan() {
+        if (!this.aduan.nama || !this.aduan.deskripsi) {
+          this.addToast('Nama dan Deskripsi wajib diisi!', 'error'); return;
+        }
+        try {
+          const { error } = await this.supabase.from('pengaduan').insert({
+            no_pengaduan: 'ADU-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*9000+1000),
+            nama_pelapor: this.aduan.nama, kontak: this.aduan.kontak, alamat_pelapor: this.aduan.alamat_pelapor||null,
+            kategori_id: this.aduan.kategori_id||null, sumber_aduan: this.aduan.sumber_aduan||null,
+            kecamatan: this.aduan.kecamatan||null, desa: this.aduan.desa||null,
+            lokasi: this.aduan.lokasi||null, tgl_kejadian: this.aduan.tgl_kejadian||null,
+            waktu_kejadian: this.aduan.waktu_kejadian||null, deskripsi: this.aduan.deskripsi,
+            gambar: this.aduan.gambar.length ? this.aduan.gambar : null, status: 'Baru'
+          });
+          if (error) throw error;
+          this.addToast('✅ Pengaduan berhasil dikirim!');
+          this.resetForm();
+          this.$emit('data-updated');
+        } catch (e) { this.addToast('Gagal: ' + e.message, 'error'); }
       },
-      exportExcel() { alert('Fitur export Excel akan segera hadir.'); },
-      exportCSV() { alert('Fitur export CSV akan segera hadir.'); },
+      async updateStatus(id, newStatus) {
+        try {
+          const { error } = await this.supabase.from('pengaduan').update({ status: newStatus }).eq('id', id);
+          if (error) throw error;
+          this.addToast('Status diubah ke ' + newStatus);
+          this.$emit('data-updated');
+        } catch (e) { this.addToast('Gagal: ' + e.message, 'error'); }
+      },
+      statusBadge(s) {
+        return {'Baru':'bg-amber-100 text-amber-700','Diverifikasi':'bg-sky-100 text-sky-700','Diproses':'bg-violet-100 text-violet-700','Selesai':'bg-emerald-100 text-emerald-700','Ditolak':'bg-rose-100 text-rose-700'}[s]||'bg-gray-100';
+      },
+      exportExcel() {
+        if (!this.filteredData.length) { this.addToast('Tidak ada data', 'error'); return; }
+        const rows = this.filteredData.map((p, i) => ({
+          No: i+1, Tanggal: new Date(p.tanggal_lapor).toLocaleDateString('id'),
+          Pelapor: p.nama_pelapor, Kategori: p.kategori_pengaduan?.permasalahan || '-', Status: p.status
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Pengaduan');
+        XLSX.writeFile(wb, `pengaduan_${new Date().toISOString().slice(0,10)}.xlsx`);
+        this.addToast('Excel terunduh');
+      },
+      resetFilter() { this.filterTahun=''; this.filterBulan=''; this.filterBidang=''; this.filterStatus=''; this.filterSearch=''; this.page=1; }
+    },
+    watch: {
+      filterTahun(){this.page=1;}, filterBulan(){this.page=1;}, filterBidang(){this.page=1;}, filterStatus(){this.page=1;}
+    }
+  };
 
-      // ========== SURAT TUGAS ==========
-      resetSTForm() {
-        this.st = {
+  // Child: Form Surat Tugas
+  const FormST = {
+    template: '#form-st-template',
+    props: {
+      unitKerjaList: Array, layananList: Array, sopList: Array, personilList: Array,
+      kendaraanList: Array, peralatanList: Array, lokasiList: Array, suratTugasList: Array,
+      listKecamatan: Array, desaMap: Object
+    },
+    emits: ['data-updated'],
+    inject: ['supabase', 'addToast'],
+    data() {
+      return {
+        subTab: 'form',
+        st: this.emptySTForm(),
+        filterTahun: '', filterBulan: '', filterLayanan: '', filterSearch: '',
+        page: 1, perPage: 15
+      }
+    },
+    computed: {
+      filteredLayanan() {
+        return this.st.unit_kerja ? this.layananList.filter(l => l.unit_kerja === this.st.unit_kerja) : [];
+      },
+      filteredSOP() {
+        return this.st.layanan ? this.sopList.filter(s => s.layanan === this.st.layanan) : [];
+      },
+      filteredLokasi() {
+        if (!this.st.kecamatan || !this.lokasiList) return [];
+        return this.lokasiList.filter(l => l.kecamatan === this.st.kecamatan);
+      },
+      filteredDesa() {
+        return this.st.kecamatan ? (this.desaMap[this.st.kecamatan] || []) : [];
+      },
+      filteredData() {
+        let d = this.suratTugasList;
+        if (this.filterTahun) d = d.filter(s => new Date(s.tanggal_st).getFullYear().toString() === this.filterTahun);
+        if (this.filterBulan) d = d.filter(s => String(new Date(s.tanggal_st).getMonth()+1).padStart(2,'0') === this.filterBulan);
+        if (this.filterLayanan) d = d.filter(s => s.layanan === this.filterLayanan);
+        if (this.filterSearch) {
+          const kw = this.filterSearch.toLowerCase();
+          d = d.filter(s => (s.kegiatan||'').toLowerCase().includes(kw) || (s.lokasi||'').toLowerCase().includes(kw));
+        }
+        return d;
+      },
+      paginated() {
+        const start = (this.page - 1) * this.perPage;
+        return this.filteredData.slice(start, start + this.perPage);
+      },
+      totalPage() { return Math.ceil(this.filteredData.length / this.perPage) || 1; },
+      listTahun() {
+        const y = new Set();
+        this.suratTugasList.forEach(s => { const d = new Date(s.tanggal_st); if (!isNaN(d)) y.add(d.getFullYear()); });
+        if (y.size === 0) y.add(new Date().getFullYear());
+        return [...y].sort((a,b) => b-a);
+      },
+      layananOptions() {
+        const s = new Set();
+        this.suratTugasList.forEach(st => { if (st.layanan) s.add(st.layanan); });
+        return [...s].sort();
+      }
+    },
+    methods: {
+      emptySTForm() {
+        return {
           nomor_st:'', tanggal_st:'', dasarManual:null,
           unit_kerja:'', layanan:'', kegiatan:'', kegiatanManual:'',
           kecamatan:'', desa:'', lokasi:'', lokasiManual:'',
           tgl_mulai:'', tgl_selesai:'', jam_mulai:'08:00', jam_selesai:'16:00',
-          petugas_ids:[], kendaraan_ids:[], peralatan_ids:[], sop_ids:[],
-          instruksi:''
+          petugas_ids:[], kendaraan_ids:[], peralatan_ids:[], sop_ids:[], instruksi:''
         };
       },
-      onUnitChange() { this.st.layanan = ''; this.st.kegiatan = ''; this.st.sop_ids = []; },
+      resetForm() { this.st = this.emptySTForm(); },
+      onUnitChange() { this.st.layanan=''; this.st.kegiatan=''; this.st.sop_ids=[]; },
       onLayananChange() {
-        this.st.kegiatan = this.st.layanan; this.st.sop_ids = [];
+        this.st.kegiatan = this.st.layanan;
+        this.st.sop_ids = [];
         const sopTerkait = this.sopList.filter(s => s.layanan === this.st.layanan);
-        if (sopTerkait.length > 0) this.st.instruksi = sopTerkait.map(s => `[${s.kode_sop}] ${s.isi_instruksi}`).join('\n\n');
+        if (sopTerkait.length) this.st.instruksi = sopTerkait.map(s => `[${s.kode_sop}] ${s.isi_instruksi}`).join('\n\n');
       },
       getPetugasNama(ids) {
-        if (!ids || !ids.length) return '';
+        if (!ids || !ids.length) return '-';
         return ids.map(id => { const p = this.personilList.find(x => x.id === id); return p ? p.nama : id; }).join(', ');
       },
-      async simpanST() {
-        if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) { this.pesan = {teks:'Kegiatan, Lokasi, dan Tanggal ST wajib diisi!', warna:'text-red-500'}; return; }
-        if (!this.st.petugas_ids.length) { this.pesan = {teks:'Minimal 1 petugas harus dipilih!', warna:'text-red-500'}; return; }
-        const payload = {
-          nomor_st: this.st.nomor_st || (Math.floor(Math.random()*900+100)+'/ST/'+(this.st.unit_kerja||'OPS').substring(0,3).toUpperCase()+'/'+new Date().getFullYear()),
-          tanggal_st: this.st.tanggal_st,
-          dasar: ['Permendagri Nomor 26 Tahun 2020','Permendagri Nomor 16 Tahun 2023','Perda Trenggalek Nomor 03 Tahun 2019',this.st.dasarManual].filter(Boolean).join('\n'),
-          unit_kerja: this.st.unit_kerja||null, layanan: this.st.layanan||null,
-          kegiatan: this.st.kegiatan==='__manual__'?this.st.kegiatanManual:this.st.kegiatan,
-          lokasi: this.st.lokasi==='__manual__'?this.st.lokasiManual:this.st.lokasi,
-          kecamatan: this.st.kecamatan||null, desa: this.st.desa||null,
-          tgl_mulai: this.st.tgl_mulai||this.st.tanggal_st, tgl_selesai: this.st.tgl_selesai||this.st.tanggal_st,
-          jam_mulai: this.st.jam_mulai||'08:00', jam_selesai: this.st.jam_selesai||'16:00',
-          petugas_ids: this.st.petugas_ids,
-          kendaraan_ids: this.st.kendaraan_ids.length?this.st.kendaraan_ids:null,
-          peralatan_ids: this.st.peralatan_ids.length?this.st.peralatan_ids:null,
-          sop_ids: this.st.sop_ids.length?this.st.sop_ids:null,
-          instruksi: this.st.instruksi||null, status: 'Aktif'
-        };
-        const { error } = await supa.from('surat_tugas').insert(payload);
-        if (error) { this.pesan = {teks:'Gagal: '+error.message, warna:'text-red-500'}; }
-        else { this.pesan = {teks:'✅ Surat Tugas berhasil disimpan!', warna:'text-green-600'}; this.resetSTForm(); await this.loadAll(); }
+      async simpan() {
+        if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) {
+          this.addToast('Kegiatan, Lokasi, dan Tanggal wajib', 'error'); return;
+        }
+        if (!this.st.petugas_ids.length) { this.addToast('Minimal 1 petugas', 'error'); return; }
+        try {
+          const payload = {
+            nomor_st: this.st.nomor_st || (Math.floor(Math.random()*900+100)+'/ST/'+(this.st.unit_kerja||'OPS').substring(0,3).toUpperCase()+'/'+new Date().getFullYear()),
+            tanggal_st: this.st.tanggal_st,
+            dasar: ['Permendagri 26/2020','Permendagri 16/2023','Perda Trenggalek 3/2019',this.st.dasarManual].filter(Boolean).join('\n'),
+            unit_kerja: this.st.unit_kerja||null, layanan: this.st.layanan||null,
+            kegiatan: this.st.kegiatan==='__manual__' ? this.st.kegiatanManual : this.st.kegiatan,
+            lokasi: this.st.lokasi==='__manual__' ? this.st.lokasiManual : this.st.lokasi,
+            kecamatan: this.st.kecamatan||null, desa: this.st.desa||null,
+            tgl_mulai: this.st.tgl_mulai||this.st.tanggal_st, tgl_selesai: this.st.tgl_selesai||this.st.tanggal_st,
+            jam_mulai: this.st.jam_mulai||'08:00', jam_selesai: this.st.jam_selesai||'16:00',
+            petugas_ids: this.st.petugas_ids, kendaraan_ids: this.st.kendaraan_ids.length?this.st.kendaraan_ids:null,
+            peralatan_ids: this.st.peralatan_ids.length?this.st.peralatan_ids:null,
+            sop_ids: this.st.sop_ids.length?this.st.sop_ids:null,
+            instruksi: this.st.instruksi||null, status: 'Aktif'
+          };
+          const { error } = await this.supabase.from('surat_tugas').insert(payload);
+          if (error) throw error;
+          this.addToast('✅ Surat Tugas disimpan!');
+          this.resetForm();
+          this.$emit('data-updated');
+        } catch (e) { this.addToast('Gagal: ' + e.message, 'error'); }
       },
-      exportExcelST() { alert('Fitur export Excel akan segera hadir.'); },
+      exportExcel() {
+        if (!this.filteredData.length) { this.addToast('Tidak ada data', 'error'); return; }
+        const rows = this.filteredData.map((s, i) => ({
+          No: i+1, Tanggal: new Date(s.tanggal_st).toLocaleDateString('id'),
+          Nomor: s.nomor_st||'-', Kegiatan: s.kegiatan||'-', Lokasi: s.lokasi||'-', Status: s.status
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Surat Tugas');
+        XLSX.writeFile(wb, `st_${new Date().toISOString().slice(0,10)}.xlsx`);
+        this.addToast('Excel terunduh');
+      },
+      resetFilter() { this.filterTahun=''; this.filterBulan=''; this.filterLayanan=''; this.filterSearch=''; this.page=1; }
+    },
+    watch: {
+      filterTahun(){this.page=1;}, filterBulan(){this.page=1;}, filterLayanan(){this.page=1;}
+    }
+  };
 
-      // ========== LAPORAN ==========
-      onLaporanSTChange() {},
-      uploadGambarLaporan(e) {
-        const files = e.target.files; if (!files || !files.length) return;
+  // Child: Form Laporan
+  const FormLaporan = {
+    template: '#form-laporan-template',
+    props: {
+      suratTugasList: Array, personilList: Array, laporanList: Array
+    },
+    emits: ['data-updated'],
+    inject: ['supabase', 'addToast'],
+    data() {
+      return {
+        laporan: {
+          surat_tugas_id:'', jam_selesai:'', hadir:'', tanggal_laporan: new Date().toISOString().split('T')[0],
+          uraian_pelaksanaan:'', temuan:'', tindakan:'', hasil:'Terkendali / Selesai', gambar:[]
+        },
+        previewGambar: []
+      }
+    },
+    computed: {
+      stAktifList() { return this.suratTugasList.filter(s => s.status === 'Aktif'); }
+    },
+    methods: {
+      onFileChange(e) {
+        const files = e.target.files;
+        if (!files || !files.length) return;
         for (let i = 0; i < files.length && this.laporan.gambar.length < 6; i++) {
           const file = files[i];
-          if (!file.type.startsWith('image/')) continue;
+          if (!file.type.startsWith('image/')) { this.addToast('Hanya gambar', 'error'); continue; }
+          if (file.size > 5*1024*1024) { this.addToast('Maks 5MB', 'error'); continue; }
           const reader = new FileReader();
-          reader.onload = (ev) => { this.laporan.gambar.push(ev.target.result); this.laporanPreviewGambar.push({data:ev.target.result, name:file.name}); };
+          reader.onload = (ev) => {
+            this.laporan.gambar.push(ev.target.result);
+            this.previewGambar.push({ data: ev.target.result, name: file.name });
+          };
           reader.readAsDataURL(file);
         }
         e.target.value = '';
       },
-      hapusGambarLaporan(i) { this.laporan.gambar.splice(i,1); this.laporanPreviewGambar.splice(i,1); },
-      cetakKolaseLaporan() { alert('Fitur cetak kolase akan segera hadir.'); },
-      resetLaporanForm() {
-        this.laporan = { surat_tugas_id:'', jam_selesai:'', hadir:'', tanggal_laporan: new Date().toISOString().split('T')[0], uraian_pelaksanaan:'', temuan:'', tindakan:'', hasil:'Terkendali / Selesai', gambar:[] };
-        this.laporanPreviewGambar = [];
-      },
-      async simpanLaporan() {
-        if (!this.laporan.surat_tugas_id) { this.pesan = {teks:'Pilih Surat Tugas terlebih dahulu!', warna:'text-red-500'}; return; }
-        if (!this.laporan.uraian_pelaksanaan || this.laporan.uraian_pelaksanaan.trim().length < 10) { this.pesan = {teks:'Uraian Pelaksanaan wajib diisi (min. 10 karakter)!', warna:'text-red-500'}; return; }
-        const payload = {
-          surat_tugas_id: this.laporan.surat_tugas_id,
-          tanggal_laporan: this.laporan.tanggal_laporan || new Date().toISOString().split('T')[0],
-          jam_selesai: this.laporan.jam_selesai||null, hadir: this.laporan.hadir||null,
-          uraian_pelaksanaan: this.laporan.uraian_pelaksanaan,
-          temuan: this.laporan.temuan||null, tindakan: this.laporan.tindakan||null,
-          hasil: this.laporan.hasil||'Terkendali / Selesai',
-          gambar_urls: this.laporan.gambar.length ? this.laporan.gambar : null
+      hapusGambar(i) { this.laporan.gambar.splice(i,1); this.previewGambar.splice(i,1); },
+      resetForm() {
+        this.laporan = {
+          surat_tugas_id:'', jam_selesai:'', hadir:'', tanggal_laporan: new Date().toISOString().split('T')[0],
+          uraian_pelaksanaan:'', temuan:'', tindakan:'', hasil:'Terkendali / Selesai', gambar:[]
         };
-        const { error } = await supa.from('laporan').insert(payload);
-        if (error) { this.pesan = {teks:'Gagal: '+error.message, warna:'text-red-500'}; }
-        else {
-          await supa.from('surat_tugas').update({ status: 'Selesai Lapor' }).eq('id', this.laporan.surat_tugas_id);
-          this.pesan = {teks:'✅ Laporan berhasil disimpan!', warna:'text-green-600'};
-          this.resetLaporanForm(); await this.loadAll();
-        }
+        this.previewGambar = [];
       },
+      async simpan() {
+        if (!this.laporan.surat_tugas_id || !this.laporan.uraian_pelaksanaan) {
+          this.addToast('Pilih ST dan isi Uraian', 'error'); return;
+        }
+        try {
+          const { error } = await this.supabase.from('laporan').insert({
+            surat_tugas_id: this.laporan.surat_tugas_id,
+            tanggal_laporan: this.laporan.tanggal_laporan,
+            jam_selesai: this.laporan.jam_selesai||null,
+            hadir: this.laporan.hadir||null,
+            uraian_pelaksanaan: this.laporan.uraian_pelaksanaan,
+            temuan: this.laporan.temuan||null,
+            tindakan: this.laporan.tindakan||null,
+            hasil: this.laporan.hasil,
+            gambar_urls: this.laporan.gambar.length ? this.laporan.gambar : null
+          });
+          if (error) throw error;
+          await this.supabase.from('surat_tugas').update({ status: 'Selesai Lapor' }).eq('id', this.laporan.surat_tugas_id);
+          this.addToast('✅ Laporan disimpan!');
+          this.resetForm();
+          this.$emit('data-updated');
+        } catch (e) { this.addToast('Gagal: ' + e.message, 'error'); }
+      },
+      cetakKolase() {
+        if (!this.previewGambar.length) { this.addToast('Tidak ada gambar', 'error'); return; }
+        const win = window.open('', '_blank');
+        let html = '<html><head><title>Kolase Laporan</title><style>img{width:100%;max-width:200px;margin:4px;}</style></head><body>';
+        this.previewGambar.forEach(img => html += `<img src="${img.data}">`);
+        html += '</body></html>';
+        win.document.write(html);
+        win.document.close();
+        setTimeout(() => win.print(), 500);
+      }
+    }
+  };
 
-      // ========== AKSI DATA ==========
-      async updateStatus(id, newStatus) { await supa.from('pengaduan').update({ status: newStatus }).eq('id', id); await this.loadAll(); },
-      async hapusPengaduan(id) { if(confirm('Hapus?')){ await supa.from('pengaduan').delete().eq('id',id); await this.loadAll(); } },
-      async hapusST(id) { if(confirm('Hapus?')){ await supa.from('surat_tugas').delete().eq('id',id); await this.loadAll(); } },
-
-      // ========== LOAD DATA ==========
-      async loadAll() {
-        const [kat, pet, unit, lay, sop, ken, alt, lok, adu, st, lap] = await Promise.all([
+  const { createApp } = Vue;
+  createApp({
+    components: { AppSidebar, FormPengaduan, FormST, FormLaporan },
+    data() {
+      return {
+        tab: new URLSearchParams(window.location.search).get('tab') || 'pengaduan',
+        sidebarOpen: true, isMobile: window.innerWidth < 768, isDark: localStorage.getItem('darkMode')==='true',
+        kategoriList: [], personilList: [], unitKerjaList: [], layananList: [], sopList: [],
+        kendaraanList: [], peralatanList: [], lokasiList: [],
+        pengaduanList: [], suratTugasList: [], laporanList: [],
+        listKecamatan: DATA_KECAMATAN,
+        desaMap: DATA_DESA,
+        toasts: []
+      }
+    },
+    provide() {
+      return {
+        supabase: supa,
+        addToast: this.addToast
+      }
+    },
+    methods: {
+      toggleDarkMode() {
+        this.isDark = !this.isDark;
+        localStorage.setItem('darkMode', this.isDark);
+        document.documentElement.classList.toggle('dark', this.isDark);
+      },
+      addToast(message, type = 'success') {
+        const id = Date.now();
+        this.toasts.push({ id, message, type });
+        setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000);
+      },
+      async loadMaster() {
+        const res = await Promise.all([
           supa.from('kategori_pengaduan').select('*').eq('status','Aktif'),
           supa.from('personil').select('*').eq('status','Aktif'),
           supa.from('unit_kerja').select('*').eq('status','Aktif'),
@@ -1001,25 +583,543 @@
           supa.from('sop').select('*').eq('status','Aktif'),
           supa.from('kendaraan').select('*'),
           supa.from('peralatan').select('*'),
-          supa.from('lokasi').select('*'),
-          supa.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang)').order('tanggal_lapor',{ascending:false}),
-          supa.from('surat_tugas').select('*').order('created_at',{ascending:false}),
-          supa.from('laporan').select('*').order('tanggal_laporan',{ascending:false})
+          supa.from('lokasi').select('*')
         ]);
-        this.kategoriList = kat.data||[]; this.personilList = pet.data||[];
-        this.unitKerjaList = unit.data||[]; this.layananList = lay.data||[];
-        this.sopList = sop.data||[]; this.kendaraanList = ken.data||[];
-        this.peralatanList = alt.data||[]; this.lokasiList = lok.data||[];
-        this.pengaduanList = adu.data||[]; this.suratTugasList = st.data||[];
-        this.laporanList = lap.data||[];
+        const [kat, pet, unit, lay, sop, ken, alt, lok] = res;
+        this.kategoriList = kat.data || [];
+        this.personilList = pet.data || [];
+        this.unitKerjaList = unit.data || [];
+        this.layananList = lay.data || [];
+        this.sopList = sop.data || [];
+        this.kendaraanList = ken.data || [];
+        this.peralatanList = alt.data || [];
+        this.lokasiList = lok.data || [];
+      },
+      async loadPengaduan() {
+        const { data } = await supa.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang)').order('tanggal_lapor',{ascending:false});
+        this.pengaduanList = data || [];
+      },
+      async loadST() {
+        const { data } = await supa.from('surat_tugas').select('*').order('created_at',{ascending:false});
+        this.suratTugasList = data || [];
+      },
+      async loadLaporan() {
+        const { data } = await supa.from('laporan').select('*').order('tanggal_laporan',{ascending:false});
+        this.laporanList = data || [];
+      },
+      async loadAll() {
+        await Promise.all([this.loadMaster(), this.loadPengaduan(), this.loadST(), this.loadLaporan()]);
       }
     },
-
     mounted() {
       if (this.isDark) document.documentElement.classList.add('dark');
       if (this.isMobile) this.sidebarOpen = false;
-      window.addEventListener('resize', () => { this.isMobile = window.innerWidth < 768; if (!this.isMobile) this.sidebarOpen = true; });
+      window.addEventListener('resize', () => {
+        this.isMobile = window.innerWidth < 768;
+        if (!this.isMobile) this.sidebarOpen = true;
+      });
       this.loadAll();
     }
   }).mount('#app');
 </script>
+
+<!-- Template: Form Pengaduan -->
+<script type="text/x-template" id="form-pengaduan-template">
+<div class="space-y-6">
+  <!-- Header & Sub-tab -->
+  <div class="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl p-5 text-white shadow-xl">
+    <div class="flex items-center justify-between">
+      <div><h2 class="text-xl font-bold"><i class="bi bi-journal-text"></i> Pengaduan</h2></div>
+      <span class="bg-white/20 px-4 py-1.5 rounded-full text-xs">{{ filteredData.length }} data</span>
+    </div>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-1.5 border flex gap-1.5">
+    <button @click="subTab='form'" :class="subTab==='form'?'bg-blue-500 text-white shadow':'bg-slate-50 dark:bg-gray-600 text-slate-600 dark:text-white'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold"><i class="bi bi-pencil-square"></i> Form Baru</button>
+    <button @click="subTab='riwayat'" :class="subTab==='riwayat'?'bg-blue-500 text-white shadow':'bg-slate-50 dark:bg-gray-600 text-slate-600 dark:text-white'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold"><i class="bi bi-list-ul"></i> Riwayat ({{ filteredData.length }})</button>
+  </div>
+
+  <!-- Form -->
+  <div v-show="subTab==='form'" class="glass-card rounded-2xl overflow-hidden border-2 border-blue-200">
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-5 py-3 border-b border-blue-200 flex justify-between">
+      <h3 class="font-bold text-sm text-blue-800 dark:text-blue-200">📝 Kirim Pengaduan Baru</h3>
+      <button @click="resetForm()" class="text-xs bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-600 text-blue-600 dark:text-blue-300 px-3 py-1.5 rounded-lg"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+    </div>
+    <div class="p-5">
+      <form @submit.prevent="simpan">
+        <div class="border border-teal-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-teal-50 to-emerald-50/20">
+          <h4 class="text-sm font-bold mb-3 text-teal-700"><span class="w-6 h-6 bg-teal-500 text-white rounded-full inline-flex items-center justify-center text-xs mr-2">1</span>DATA PELAPOR</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="md:col-span-2"><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Nama <span class="text-red-500">*</span></label><input v-model="aduan.nama" required placeholder="Nama lengkap pelapor" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">No. HP</label><input v-model="aduan.kontak" placeholder="0812-xxxx-xxxx" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Alamat</label><input v-model="aduan.alamat_pelapor" placeholder="Alamat lengkap" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          </div>
+        </div>
+
+        <div class="border border-slate-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-slate-50 to-gray-50/20">
+          <h4 class="text-sm font-bold mb-3 text-slate-700"><span class="w-6 h-6 bg-slate-500 text-white rounded-full inline-flex items-center justify-center text-xs mr-2">2</span>DATA KEJADIAN</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Bidang</label>
+              <select v-model="selectedBidang" @change="onBidangChange()" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <option value="">-- Pilih Bidang --</option>
+                <option v-for="b in bidangList" :key="b" :value="b">{{ b }}</option>
+              </select>
+            </div>
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Kategori</label>
+              <select v-model="aduan.kategori_id" :disabled="!selectedBidang" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <option value="">-- Pilih Kategori --</option>
+                <option v-for="k in filteredKategoriByBidang" :key="k.id" :value="k.id">{{ k.permasalahan || k.nama }}</option>
+              </select>
+            </div>
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Tgl Kejadian</label><input type="date" v-model="aduan.tgl_kejadian" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Waktu</label><input type="time" v-model="aduan.waktu_kejadian" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Kecamatan</label>
+              <select v-model="aduan.kecamatan" @change="aduan.desa=''" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <option value="">-- Pilih --</option>
+                <option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Desa</label>
+              <select v-model="aduan.desa" :disabled="!aduan.kecamatan" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <option value="">-- Pilih --</option>
+                <option v-for="desa in filteredDesa" :key="desa" :value="desa">{{ desa }}</option>
+              </select>
+            </div>
+            <div class="md:col-span-2"><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Lokasi Spesifik</label><input v-model="aduan.lokasi" placeholder="Alamat lengkap" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Sumber Aduan</label>
+              <select v-model="aduan.sumber_aduan" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <option value="">-- Pilih --</option>
+                <option>WhatsApp</option><option>Website</option><option>Telepon</option><option>Surat</option><option>Lainnya</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="border border-amber-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-amber-50 to-orange-50/20">
+          <h4 class="text-sm font-bold mb-3 text-amber-700"><span class="w-6 h-6 bg-amber-500 text-white rounded-full inline-flex items-center justify-center text-xs mr-2">3</span>DESKRIPSI & DOKUMENTASI</h4>
+          <div class="mb-4"><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Deskripsi <span class="text-red-500">*</span></label><textarea v-model="aduan.deskripsi" rows="5" required placeholder="Kronologi..." class="w-full border rounded-lg p-3 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></textarea></div>
+          <div>
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Bukti Foto (maks 2)</label>
+            <div class="flex gap-2 mt-1 mb-2">
+              <label class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-2.5 rounded-lg cursor-pointer"><i class="bi bi-camera"></i> Pilih Foto<input type="file" @change="onFileChange" accept="image/*" multiple class="hidden"></label>
+              <button type="button" @click="aduan.gambar=[]; previewGambar=[]" v-if="aduan.gambar.length" class="bg-red-100 text-red-700 text-xs font-bold px-3 py-2.5 rounded-lg"><i class="bi bi-trash"></i> Hapus</button>
+              <span v-if="aduan.gambar.length" class="text-xs text-slate-400 flex items-center"><i class="bi bi-image"></i> {{ aduan.gambar.length }}/2</span>
+            </div>
+            <div v-if="previewGambar.length" class="flex gap-2 flex-wrap mt-2">
+              <div v-for="(img,i) in previewGambar" :key="i" class="relative w-[100px] h-[75px] border-2 border-slate-300 rounded-lg overflow-hidden bg-slate-50">
+                <img :src="img.data" class="w-full h-full object-cover">
+                <button @click="hapusGambar(i)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✕</button>
+                <div class="absolute bottom-0 left-0 right-0 bg-white/90 px-1.5 py-0.5 text-[8px]">{{ (img.size/1024).toFixed(1) }}KB</div>
+              </div>
+            </div>
+            <p class="text-[9px] text-slate-400 mt-2"><i class="bi bi-info-circle"></i> JPG/PNG, maks 5MB</p>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+          <button type="button" @click="resetForm()" class="bg-slate-100 hover:bg-slate-200 dark:bg-gray-600 dark:text-white text-slate-700 font-bold text-xs px-4 py-2.5 rounded-lg">Reset</button>
+          <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm">Kirim Pengaduan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Riwayat -->
+  <div v-show="subTab==='riwayat'" class="glass-card rounded-2xl overflow-hidden border-2 border-blue-100">
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200 px-5 py-3 flex justify-between items-center">
+      <h3 class="font-bold text-sm text-blue-800 dark:text-blue-200">📋 Riwayat ({{ filteredData.length }})</h3>
+      <button @click="exportExcel" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"><i class="bi bi-download"></i> Excel</button>
+    </div>
+    <!-- Filter -->
+    <div class="p-4 bg-white dark:bg-gray-800 border-b">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
+        <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Tahun</label><select v-model="filterTahun" class="w-full border rounded-lg px-3 py-2 text-xs mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">Semua</option><option v-for="t in listTahun" :value="t">{{ t }}</option></select></div>
+        <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Bulan</label><select v-model="filterBulan" class="w-full border rounded-lg px-3 py-2 text-xs mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">Semua</option><option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">Mei</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Agt</option><option value="09">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select></div>
+        <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Bidang</label><select v-model="filterBidang" class="w-full border rounded-lg px-3 py-2 text-xs mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">Semua</option><option v-for="b in bidangList" :value="b">{{ b }}</option></select></div>
+        <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Status</label><select v-model="filterStatus" class="w-full border rounded-lg px-3 py-2 text-xs mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">Semua</option><option v-for="s in statusOptions" :value="s">{{ s }}</option></select></div>
+        <div><button @click="resetFilter" class="w-full bg-amber-400 hover:bg-amber-500 text-white font-bold text-xs rounded-lg px-4 py-2"><i class="bi bi-arrow-counterclockwise mr-1"></i>Reset</button></div>
+      </div>
+    </div>
+
+    <!-- Tabel -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 uppercase font-bold text-[10px]">
+            <th class="p-2.5 text-center w-10">#</th>
+            <th class="p-2.5 text-left">Tanggal</th>
+            <th class="p-2.5 text-left">Pelapor</th>
+            <th class="p-2.5 text-left">Kategori</th>
+            <th class="p-2.5 text-left">Lokasi</th>
+            <th class="p-2.5 text-center">Prio</th>
+            <th class="p-2.5 text-center">Status</th>
+            <th class="p-2.5 text-center">Foto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="!filteredData.length"><td colspan="8" class="p-8 text-center text-slate-400">Tidak ada data</td></tr>
+          <tr v-for="(item, idx) in paginated" :key="item.id" class="hover:bg-blue-50/30 dark:hover:bg-blue-900/20">
+            <td class="p-2.5 text-center text-slate-400 text-[10px]">{{ (page-1)*perPage + idx + 1 }}</td>
+            <td class="p-2.5 whitespace-nowrap text-[10px]">{{ new Date(item.tanggal_lapor).toLocaleDateString('id') }}</td>
+            <td class="p-2.5 font-medium text-[11px]">{{ item.nama_pelapor }}</td>
+            <td class="p-2.5 text-[10px]"><div class="font-semibold">{{ item.kategori_pengaduan?.bidang || '-' }}</div><div class="text-slate-500 dark:text-slate-400 text-[9px]">{{ item.kategori_pengaduan?.permasalahan || '-' }}</div></td>
+            <td class="p-2.5 text-[10px]"><div class="truncate max-w-[120px]">{{ item.lokasi || '-' }}</div><div class="text-[9px] text-slate-400 dark:text-slate-500 truncate max-w-[120px]">{{ [item.desa, item.kecamatan].filter(Boolean).join(', ') }}</div></td>
+            <td class="p-2.5 text-center"><span v-if="getPrioritas(item)==='Tinggi'" class="text-red-500">🔴</span><span v-else-if="getPrioritas(item)==='Sedang'" class="text-amber-500">🟡</span><span v-else class="text-emerald-500">🟢</span></td>
+            <td class="p-2.5 text-center">
+              <select @change="updateStatus(item.id, $event.target.value)" class="text-xs border rounded-lg px-2 py-1 font-bold" :class="statusBadge(item.status)">
+                <option v-for="s in statusOptions" :value="s" :selected="item.status===s">{{ s }}</option>
+              </select>
+            </td>
+            <td class="p-2.5 text-center">
+              <div v-if="getGambarArray(item).length" class="flex items-center justify-center"><img :src="getGambarArray(item)[0]" class="w-8 h-8 object-cover rounded-lg border-2 border-slate-100 dark:border-slate-600 shadow-sm"></div>
+              <span v-else class="text-slate-300 dark:text-slate-500 text-xs">-</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="filteredData.length" class="flex items-center justify-between gap-3 p-4 border-t dark:border-gray-700">
+      <span class="text-[10px] text-slate-400">Hal <strong class="text-slate-600 dark:text-slate-300">{{ page }}</strong>/<strong>{{ totalPage }}</strong></span>
+      <div class="flex items-center gap-1">
+        <button @click="page=1" :disabled="page===1" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===1?'text-slate-300':'text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900'">«</button>
+        <button @click="page--" :disabled="page===1" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===1?'text-slate-300':'text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900'">‹</button>
+        <template v-for="hal in totalPage">
+          <button v-if="hal===1||hal===totalPage||(hal>=page-1&&hal<=page+1)" @click="page=hal" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold" :class="page===hal?'bg-blue-500 text-white':'text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900'">{{ hal }}</button>
+          <span v-else-if="hal===page-2||hal===page+2" class="text-slate-300 dark:text-slate-600 text-xs">...</span>
+        </template>
+        <button @click="page++" :disabled="page===totalPage" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===totalPage?'text-slate-300':'text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900'">›</button>
+        <button @click="page=totalPage" :disabled="page===totalPage" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===totalPage?'text-slate-300':'text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900'">»</button>
+      </div>
+    </div>
+  </div>
+</div>
+</script>
+
+<script type="text/x-template" id="form-st-template">
+<div class="space-y-6">
+  <div class="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-5 text-white shadow-xl">
+    <div class="flex items-center justify-between">
+      <div><h2 class="text-xl font-bold"><i class="bi bi-envelope-paper"></i> Surat Tugas</h2></div>
+      <span class="bg-white/20 px-4 py-1.5 rounded-full text-xs">{{ filteredData.length }} data</span>
+    </div>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-1.5 border flex gap-1.5">
+    <button @click="subTab='form'" :class="subTab==='form'?'bg-emerald-500 text-white shadow':'bg-slate-50 dark:bg-gray-600 text-slate-600 dark:text-white'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold"><i class="bi bi-pencil-square"></i> Form Baru</button>
+    <button @click="subTab='riwayat'" :class="subTab==='riwayat'?'bg-emerald-500 text-white shadow':'bg-slate-50 dark:bg-gray-600 text-slate-600 dark:text-white'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold"><i class="bi bi-list-ul"></i> Riwayat ({{ filteredData.length }})</button>
+  </div>
+
+  <!-- Form ST -->
+  <div v-show="subTab==='form'" class="glass-card rounded-2xl border-2 border-emerald-200 overflow-hidden">
+    <div class="bg-gradient-to-r from-emerald-50 to-teal-50/30 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-emerald-200 px-5 py-3 flex justify-between">
+      <h3 class="font-bold text-sm text-emerald-700 dark:text-emerald-300">📝 Buat Surat Tugas</h3>
+      <button @click="resetForm()" class="text-xs bg-white dark:bg-gray-700 border border-emerald-200 dark:border-emerald-600 text-emerald-600 dark:text-emerald-300 px-3 py-1.5 rounded-lg"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+    </div>
+    <div class="p-5">
+      <form @submit.prevent="simpan">
+        <div class="border border-emerald-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-emerald-50 to-green-50/20">
+          <h4 class="text-xs font-extrabold text-emerald-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-emerald-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">I</span>Administrasi Surat</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Nomor ST</label><input v-model="st.nomor_st" placeholder="Auto‑generate" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Tanggal ST <span class="text-red-500">*</span></label><input type="date" v-model="st.tanggal_st" required class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          </div>
+        </div>
+
+        <div class="border border-cyan-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-cyan-50 to-teal-50/20">
+          <h4 class="text-xs font-extrabold text-cyan-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-cyan-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">II</span>Dasar Hukum</h4>
+          <div class="text-[10px] text-slate-600 dark:text-slate-400 space-y-1 mb-3">
+            <p>1. Permendagri Nomor 26 Tahun 2020</p><p>2. Permendagri Nomor 16 Tahun 2023</p><p>3. Perda Trenggalek Nomor 03 Tahun 2019</p>
+          </div>
+          <button type="button" @click="st.dasarManual = st.dasarManual === null ? '' : null" class="text-[11px] bg-cyan-100 hover:bg-cyan-200 dark:bg-cyan-900 dark:hover:bg-cyan-800 text-cyan-700 dark:text-cyan-300 font-bold px-3 py-2 rounded-lg transition mb-2 border border-cyan-200 dark:border-cyan-700">{{ st.dasarManual === null ? '+ Tambah Dasar Manual' : '- Hapus Dasar Manual' }}</button>
+          <textarea v-show="st.dasarManual !== null" v-model="st.dasarManual" rows="2" class="w-full border rounded-lg p-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Tulis dasar tambahan..."></textarea>
+        </div>
+
+        <div class="border border-teal-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-teal-50 to-emerald-50/20">
+          <h4 class="text-xs font-extrabold text-teal-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-teal-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">III</span>Klasifikasi & Lokasi</h4>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Unit Kerja</label>
+              <select v-model="st.unit_kerja" @change="onUnitChange()" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <option value="">-- Pilih --</option><option v-for="u in unitKerjaList" :key="u.id" :value="u.nama_unit">{{ u.nama_unit }}</option>
+              </select>
+            </div>
+            <div v-if="st.unit_kerja">
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Layanan</label>
+              <select v-model="st.layanan" @change="onLayananChange()" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <option value="">-- Pilih --</option><option v-for="l in filteredLayanan" :key="l.id" :value="l.nama_layanan">{{ l.nama_layanan }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-3">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Kegiatan</label>
+            <select v-model="st.kegiatan" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+              <option value="">-- Pilih --</option><option v-if="st.layanan" :value="st.layanan">{{ st.layanan }} (Auto)</option><option value="__manual__">Isi Manual...</option>
+            </select>
+            <input v-if="st.kegiatan==='__manual__'" v-model="st.kegiatanManual" placeholder="Tulis nama kegiatan..." class="w-full mt-2 border border-amber-300 rounded-lg px-3 py-2.5 text-sm bg-amber-50 dark:bg-amber-900/20 dark:text-white dark:border-amber-600">
+          </div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Kecamatan</label>
+              <select v-model="st.kecamatan" @change="st.desa=''" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <option value="">-- Semua --</option><option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Desa</label>
+              <select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                <option value="">-- Pilih --</option><option v-for="desa in filteredDesa" :key="desa" :value="desa">{{ desa }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-3">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Lokasi <span class="text-red-500">*</span></label>
+            <select v-model="st.lokasi" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+              <option value="" disabled>-- Pilih --</option><option v-for="lok in filteredLokasi" :key="lok.id" :value="lok.nama_lokasi">{{ lok.nama_lokasi }}</option><option value="__manual__">Manual...</option>
+            </select>
+            <input v-if="st.lokasi==='__manual__'" v-model="st.lokasiManual" placeholder="Tulis lokasi..." class="w-full mt-2 border border-amber-300 rounded-lg px-3 py-2.5 text-sm bg-amber-50 dark:bg-amber-900/20 dark:text-white dark:border-amber-600">
+          </div>
+        </div>
+
+        <div class="border border-orange-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-orange-50 to-amber-50/20">
+          <h4 class="text-xs font-extrabold text-orange-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-orange-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">IV</span>Waktu Pelaksanaan</h4>
+          <div class="grid grid-cols-4 gap-3">
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Tgl Mulai</label><input type="date" v-model="st.tgl_mulai" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Jam Mulai</label><input type="time" v-model="st.jam_mulai" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Tgl Selesai</label><input type="date" v-model="st.tgl_selesai" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Jam Selesai</label><input type="time" v-model="st.jam_selesai" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          </div>
+        </div>
+
+        <div class="border border-pink-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-pink-50 to-rose-50/20">
+          <h4 class="text-xs font-extrabold text-pink-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-pink-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">V</span>Sumber Daya</h4>
+          <div class="mb-3">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Petugas <span class="text-red-500">*</span> ({{ st.petugas_ids.length }})</label>
+            <div class="grid grid-cols-2 gap-1 max-h-[150px] overflow-y-auto p-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 mt-1">
+              <label v-for="p in personilList" :key="p.id" class="flex items-center gap-2 text-[11px] cursor-pointer hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded p-1.5">
+                <input type="checkbox" :value="p.id" v-model="st.petugas_ids" class="rounded text-pink-600"><span class="truncate">{{ p.nama }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Kendaraan ({{ st.kendaraan_ids.length }})</label>
+              <div class="max-h-[120px] overflow-y-auto p-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 mt-1 space-y-1">
+                <label v-for="k in kendaraanList" :key="k.id" class="flex items-center gap-2 text-[10px] cursor-pointer hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded p-1">
+                  <input type="checkbox" :value="k.id" v-model="st.kendaraan_ids" class="rounded text-pink-600"><span class="truncate">{{ k.nama }} ({{ k.plat || '-' }})</span>
+                </label>
+                <p v-if="!kendaraanList.length" class="text-[9px] text-slate-400 p-1">Tidak ada kendaraan</p>
+              </div>
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Peralatan ({{ st.peralatan_ids.length }})</label>
+              <div class="max-h-[120px] overflow-y-auto p-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 mt-1 space-y-1">
+                <label v-for="a in peralatanList" :key="a.id" class="flex items-center gap-2 text-[10px] cursor-pointer hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded p-1">
+                  <input type="checkbox" :value="a.id" v-model="st.peralatan_ids" class="rounded text-pink-600"><span class="truncate">{{ a.nama }}</span>
+                </label>
+                <p v-if="!peralatanList.length" class="text-[9px] text-slate-400 p-1">Tidak ada peralatan</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+          <div class="md:col-span-2 border border-purple-300 rounded-xl p-3 bg-purple-50/40 dark:bg-purple-900/20">
+            <h4 class="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider mb-2"><span class="w-5 h-5 bg-purple-500 text-white rounded-lg inline-flex items-center justify-center text-[9px] font-bold mr-1">VI</span>SOP ({{ st.sop_ids.length }})</h4>
+            <div class="max-h-[120px] overflow-y-auto p-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 space-y-1">
+              <label v-for="s in filteredSOP" :key="s.id" class="flex items-center gap-1.5 text-[9px] cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded p-1">
+                <input type="checkbox" :value="s.id" v-model="st.sop_ids" class="rounded text-purple-600"><span><strong>{{ s.kode_sop }}</strong> - {{ s.nama_sop }}</span>
+              </label>
+            </div>
+          </div>
+          <div class="md:col-span-3 border border-teal-300 rounded-xl p-3 bg-teal-50/40 dark:bg-teal-900/20">
+            <h4 class="text-[10px] font-extrabold text-teal-600 uppercase tracking-wider mb-2"><span class="w-5 h-5 bg-teal-500 text-white rounded-lg inline-flex items-center justify-center text-[9px] font-bold mr-1">VII</span>Instruksi</h4>
+            <textarea v-model="st.instruksi" rows="3" class="w-full border rounded-lg p-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Instruksi khusus..."></textarea>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-600">
+          <button type="button" @click="resetForm()" class="bg-slate-100 hover:bg-slate-200 dark:bg-gray-600 dark:text-white text-slate-700 font-bold text-xs px-4 py-2.5 rounded-lg">Reset</button>
+          <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-6 py-2.5 rounded-lg shadow-sm">Simpan ST</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Riwayat ST -->
+  <div v-show="subTab==='riwayat'" class="glass-card rounded-2xl overflow-hidden border-2 border-emerald-100">
+    <div class="bg-gradient-to-r from-emerald-50 to-teal-50/30 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-emerald-200 px-5 py-3 flex justify-between items-center">
+      <h3 class="font-bold text-sm text-emerald-700 dark:text-emerald-300"><i class="bi bi-clock-history mr-2"></i>Riwayat ({{ filteredData.length }})</h3>
+      <button @click="exportExcel" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"><i class="bi bi-download"></i> Excel</button>
+    </div>
+    <div class="p-4">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+        <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Tahun</label><select v-model="filterTahun" class="w-full border rounded-lg px-3 py-2 text-xs mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">Semua</option><option v-for="t in listTahun" :value="t">{{ t }}</option></select></div>
+        <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Bulan</label><select v-model="filterBulan" class="w-full border rounded-lg px-3 py-2 text-xs mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">Semua</option><option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">Mei</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Agt</option><option value="09">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select></div>
+        <div><label class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Layanan</label><select v-model="filterLayanan" class="w-full border rounded-lg px-3 py-2 text-xs mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">Semua</option><option v-for="l in layananOptions" :value="l">{{ l }}</option></select></div>
+        <div><input v-model="filterSearch" placeholder="Cari..." class="w-full border rounded-lg px-3 py-2 text-xs mt-5 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+        <div><button @click="resetFilter" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg py-2 mt-5"><i class="bi bi-arrow-counterclockwise mr-1"></i>Reset</button></div>
+      </div>
+
+      <div class="overflow-x-auto border border-slate-200 dark:border-gray-700 rounded-lg">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="bg-slate-50 dark:bg-gray-700 text-slate-600 dark:text-slate-300 uppercase font-bold text-[10px]">
+              <th class="p-2.5 text-center w-10">No</th><th class="p-2.5">Nomor ST</th><th class="p-2.5">Tanggal</th><th class="p-2.5">Layanan / Kegiatan</th><th class="p-2.5">Lokasi</th><th class="p-2.5">Petugas</th><th class="p-2.5 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!paginated.length"><td colspan="7" class="p-8 text-center text-slate-400">Belum ada data</td></tr>
+            <tr v-for="(s, idx) in paginated" :key="s.id" class="hover:bg-emerald-50/30 dark:hover:bg-emerald-900/20">
+              <td class="p-2.5 text-center text-slate-400 text-[10px]">{{ (page-1)*perPage + idx + 1 }}</td>
+              <td class="p-2.5 font-mono text-[10px]">{{ s.nomor_st || '-' }}</td>
+              <td class="p-2.5 whitespace-nowrap text-[10px]">{{ new Date(s.tanggal_st).toLocaleDateString('id') }}</td>
+              <td class="p-2.5"><span class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[9px] px-1.5 py-0.5 rounded font-semibold">{{ s.layanan || '-' }}</span><div class="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5 truncate max-w-[140px]">{{ s.kegiatan || '-' }}</div></td>
+              <td class="p-2.5 text-[10px] truncate max-w-[120px]">{{ s.lokasi || '-' }}</td>
+              <td class="p-2.5 text-[10px] truncate max-w-[130px]">{{ getPetugasNama(s.petugas_ids) || '-' }}</td>
+              <td class="p-2.5 text-center"><span :class="s.status==='Aktif'?'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300':'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'" class="text-[9px] font-bold px-2 py-0.5 rounded-full">{{ s.status }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="filteredData.length" class="flex items-center justify-between gap-3 mt-3 pt-3 border-t dark:border-gray-700">
+        <span class="text-[10px] text-slate-400">Hal <strong>{{ page }}</strong>/<strong>{{ totalPage }}</strong></span>
+        <div class="flex items-center gap-1">
+          <button @click="page=1" :disabled="page===1" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===1?'text-slate-300':'text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900'">«</button>
+          <button @click="page--" :disabled="page===1" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===1?'text-slate-300':'text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900'">‹</button>
+          <template v-for="hal in totalPage">
+            <button v-if="hal===1||hal===totalPage||(hal>=page-1&&hal<=page+1)" @click="page=hal" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold" :class="page===hal?'bg-emerald-500 text-white':'text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900'">{{ hal }}</button>
+            <span v-else-if="hal===page-2||hal===page+2" class="text-slate-300 dark:text-slate-600 text-xs">...</span>
+          </template>
+          <button @click="page++" :disabled="page===totalPage" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===totalPage?'text-slate-300':'text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900'">›</button>
+          <button @click="page=totalPage" :disabled="page===totalPage" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===totalPage?'text-slate-300':'text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900'">»</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</script>
+
+<script type="text/x-template" id="form-laporan-template">
+<div class="space-y-6">
+  <div class="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl p-5 text-white shadow-xl">
+    <div class="flex items-center justify-between">
+      <div><h2 class="text-xl font-bold"><i class="bi bi-file-earmark-bar-graph"></i> Laporan Kegiatan</h2></div>
+      <span class="bg-white/20 px-4 py-1.5 rounded-full text-xs">{{ laporanList.length }} data</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-11 gap-5">
+    <div class="lg:col-span-6 space-y-4">
+      <div class="glass-card rounded-2xl border border-purple-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-50 to-indigo-50/30 dark:from-purple-900/20 dark:to-indigo-900/20 border-b border-purple-200 px-5 py-3">
+          <h3 class="font-bold text-sm text-purple-700 dark:text-purple-300">I. Pilih Surat Tugas</h3>
+        </div>
+        <div class="p-4">
+          <select v-model="laporan.surat_tugas_id" class="w-full border rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+            <option value="" disabled>-- Pilih Surat Tugas --</option>
+            <option v-for="st in stAktifList" :key="st.id" :value="st.id">{{ st.nomor_st || st.kegiatan }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl border border-blue-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50/30 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200 px-5 py-3">
+          <h3 class="font-bold text-sm text-blue-700 dark:text-blue-300">II. Waktu & Kehadiran</h3>
+        </div>
+        <div class="p-4 space-y-3">
+          <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Jam Selesai</label><input type="time" v-model="laporan.jam_selesai" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Yang Hadir</label><input v-model="laporan.hadir" placeholder="Nama pejabat/tamu..." class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Tanggal Laporan</label><input type="date" v-model="laporan.tanggal_laporan" required class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl border border-pink-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-pink-50 to-rose-50/30 dark:from-pink-900/20 dark:to-rose-900/20 border-b border-pink-200 px-5 py-3">
+          <h3 class="font-bold text-sm text-pink-700 dark:text-pink-300">III. Dokumentasi (maks. 6 foto)</h3>
+        </div>
+        <div class="p-4 space-y-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <label class="bg-pink-500 hover:bg-pink-600 text-white text-xs font-semibold px-3 py-2.5 rounded-lg cursor-pointer">
+              <i class="bi bi-images"></i> Pilih Foto
+              <input type="file" @change="onFileChange" accept="image/*" multiple class="hidden">
+            </label>
+            <button @click="cetakKolase" :disabled="!previewGambar.length" class="bg-rose-500 hover:bg-rose-600 disabled:bg-slate-300 dark:disabled:bg-gray-600 text-white text-xs font-semibold px-3 py-2.5 rounded-lg"><i class="bi bi-printer"></i> Cetak Kolase</button>
+          </div>
+          <div v-if="previewGambar.length" class="grid grid-cols-3 gap-2">
+            <div v-for="(img, i) in previewGambar" :key="i" class="relative aspect-square rounded-lg overflow-hidden border-2 border-slate-200 dark:border-gray-600">
+              <img :src="img.data" class="w-full h-full object-cover">
+              <button @click="hapusGambar(i)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-5">
+      <div class="lg:sticky lg:top-2 glass-card rounded-2xl border border-purple-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-50 to-indigo-50/30 dark:from-purple-900/20 dark:to-indigo-900/20 border-b border-purple-200 px-4 py-3">
+          <span class="font-bold text-xs text-purple-700 dark:text-purple-300">Pratinjau Kolase</span>
+        </div>
+        <div class="p-3 bg-slate-100 dark:bg-gray-700">
+          <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 min-h-[200px] flex items-center justify-center">
+            <span v-if="!previewGambar.length" class="text-slate-400 dark:text-slate-500 text-xs">Unggah foto untuk melihat pratinjau</span>
+            <div v-else class="grid grid-cols-2 gap-2">
+              <img v-for="(img, i) in previewGambar" :key="i" :src="img.data" class="w-full h-auto rounded">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <div class="glass-card rounded-2xl border border-emerald-100 overflow-hidden">
+      <div class="bg-gradient-to-r from-emerald-50 to-teal-50/30 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-emerald-200 px-5 py-3">
+        <h3 class="font-bold text-sm text-emerald-700 dark:text-emerald-300">IV. Uraian Pelaksanaan</h3>
+      </div>
+      <div class="p-4">
+        <textarea v-model="laporan.uraian_pelaksanaan" rows="10" required class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Tulis uraian pelaksanaan..."></textarea>
+      </div>
+    </div>
+
+    <div class="glass-card rounded-2xl border border-amber-100 overflow-hidden">
+      <div class="bg-gradient-to-r from-amber-50 to-orange-50/30 dark:from-amber-900/20 dark:to-orange-900/20 border-b border-amber-200 px-5 py-3">
+        <h3 class="font-bold text-sm text-amber-700 dark:text-amber-300">V. Temuan</h3>
+      </div>
+      <div class="p-4">
+        <textarea v-model="laporan.temuan" rows="5" class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Tulis temuan..."></textarea>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="glass-card rounded-2xl border border-indigo-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-50 to-blue-50/30 dark:from-indigo-900/20 dark:to-blue-900/20 border-b border-indigo-200 px-5 py-3">
+          <h3 class="font-bold text-sm text-indigo-700 dark:text-indigo-300">VI. Tindakan</h3>
+        </div>
+        <div class="p-4">
+          <textarea v-model="laporan.tindakan" rows="5" class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Tulis tindakan..."></textarea>
+        </div>
+      </div>
+      <div class="glass-card rounded-2xl border border-cyan-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-cyan-50 to-blue-50/30 dark:from-cyan-900/20 dark:to-blue-900/20 border-b border-cyan-200 px-5 py-3">
+          <h3 class="font-bold text-sm text-cyan-700 dark:text-cyan-300">VII. Hasil</h3>
+        </div>
+        <div class="p-4">
+          <textarea v-model="laporan.hasil" rows="5" class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Terkendali / Selesai"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2">
+      <button @click="resetForm()" class="bg-slate-100 hover:bg-slate-200 dark:bg-gray-600 dark:text-white text-xs font-bold px-4 py-2.5 rounded-lg"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+      <button @click="simpan" class="bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold px-6 py-2.5 rounded-lg"><i class="bi bi-save"></i> Simpan Laporan</button>
+    </div>
+  </div>
+</div>
+</script>
+</body>
+</html>
