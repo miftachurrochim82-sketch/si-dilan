@@ -466,39 +466,54 @@
             addToast('Anda telah logout', 'info');
           }
 
-          // Check session on mount
-          onMounted(async () => {
-            try {
-              const { data: { session: currentSession } } = await supa.auth.getSession();
-              session.value = currentSession;
-            } catch (e) {
-              console.error('Auth check error:', e);
-            }
-            if (session.value) {
-              await loadData();
-              if (isMobile.value) sidebarOpen.value = false;
-              setTimeout(() => {
-                const loader = document.getElementById('app-loading');
-                if (loader) loader.classList.add('hide');
-              }, 600);
-            } else {
-              // Show login immediately, hide loading
-              document.getElementById('app-loading')?.classList.add('hide');
-            }
-          });
+// Fungsi bantu untuk menyembunyikan loading screen
+function hideLoader() {
+  const loader = document.getElementById('app-loading');
+  if (loader) {
+    loader.style.transition = 'opacity 0.5s ease';
+    loader.style.opacity = '0';
+    setTimeout(() => {
+      if (loader) loader.style.display = 'none';
+    }, 500);
+  }
+}
 
-          // Watch session to load data after login
-          watch(session, (newSession) => {
-            if (newSession) {
-              loadData().then(() => {
-                setTimeout(() => {
-                  const loader = document.getElementById('app-loading');
-                  if (loader) loader.classList.add('hide');
-                }, 600);
-              });
-            }
-          });
+// Check session on mount
+onMounted(async () => {
+  try {
+    const { data: { session: currentSession } } = await supa.auth.getSession();
+    session.value = currentSession;
+  } catch (e) {
+    console.error('Auth check error:', e);
+  }
 
+  // SELALU sembunyikan loading screen segera setelah pengecekan session
+  hideLoader();
+
+  if (session.value) {
+    // Sudah login → muat data di background
+    try {
+      await loadData();
+    } catch (e) {
+      // Error sudah ditangani di loadData (toast)
+    }
+    if (isMobile.value) sidebarOpen.value = false;
+  }
+  // Jika belum login, login form akan muncul dengan sendirinya (v-if)
+});
+
+// Watch session untuk event login/logout
+watch(session, (newSession, oldSession) => {
+  if (newSession && !oldSession) {
+    // Baru login → muat data (tanpa menyembunyikan loader lagi)
+    loadData().catch(e => {});
+    if (isMobile.value) sidebarOpen.value = false;
+  } else if (!newSession && oldSession) {
+    // Logout → bersihkan data
+    pengaduan.value = [];
+    suratTugas.value = [];
+  }
+});
           async function loadData() {
             try {
               const [adu, st] = await Promise.all([
