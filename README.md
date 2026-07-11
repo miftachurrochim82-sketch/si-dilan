@@ -12,12 +12,19 @@ Dibangun dengan teknologi modern dan gratis:
 
 | Modul | Status | Deskripsi |
 |-------|--------|-----------|
-| 📊 **Dashboard** | ✅ Aktif | Ringkasan pengaduan, surat tugas, dan personil |
-| 📢 **DUMAS** | ✅ Aktif | Pengaduan Masyarakat (Form + Tracking Status) |
-| 📋 **TUGAS** | ✅ Aktif | Surat Tugas (Form lengkap + Riwayat) |
+| 📊 **Dashboard** | ✅ Aktif | Ringkasan pengaduan, ST, personil, grafik, dark mode |
+| 📢 **DUMAS** | ✅ Aktif | Pengaduan Masyarakat (Form + Tracking Status + Riwayat) |
+| 📋 **TUGAS** | ✅ Aktif | Surat Tugas (Form lengkap + Riwayat + Pagination) |
+| 📝 **Laporan** | ✅ Aktif | Form laporan hasil kegiatan + simpan ke database |
 | 🧾 **SPPD** | ⏳ Coming Soon | Surat Perintah Perjalanan Dinas & Kwitansi |
 | 🗃️ **Master Data** | ✅ Aktif | Personil, Layanan, SOP, Lokasi, Kendaraan, Peralatan, dll. |
 | ⚙️ **Pengaturan** | ✅ Aktif | Identitas Instansi, Pejabat, Kontak, Default Perjalanan |
+
+### Fitur Tambahan
+- 🌙 **Dark Mode** — Toggle tema gelap/terang di sidebar, tersimpan otomatis
+- 📊 **Grafik Interaktif** — Grafik batang (pengaduan per bulan) & donat (status)
+- 📱 **Responsif** — Sidebar adaptif untuk layar kecil (tablet & HP)
+- 🔔 **Badge Counter** — Indikator jumlah di menu sidebar
 
 ---
 
@@ -38,6 +45,7 @@ Dibangun dengan teknologi modern dan gratis:
 - **Backend/Database:** [Supabase](https://supabase.com) (PostgreSQL, REST API)
 - **Hosting:** [GitHub Pages](https://pages.github.com)
 - **Icon:** Bootstrap Icons
+- **Grafik:** Chart.js 4
 
 ---
 
@@ -53,4 +61,27 @@ Dibangun dengan teknologi modern dan gratis:
 
 ---
 
-_Dibangun dengan ❤️ oleh Tim Satpol PPK Kabupaten Trenggalek._
+## 🗺 Rencana Pengembangan (Roadmap)
+
+### Fase 2 – Pelengkapan Fitur (Q3 2026)
+- [ ] Generate PDF Surat Tugas & SPPD via Supabase Edge Functions
+- [ ] Upload gambar dokumentasi pengaduan & laporan (Supabase Storage)
+- [ ] Halaman tracking publik untuk masyarakat cek status aduan
+- [ ] Notifikasi WhatsApp otomatis (Fonnte API via Edge Functions)
+- [ ] Fitur ekspor data ke Excel
+
+### Fase 3 – Profesionalisasi (Q4 2026)
+- [ ] Migrasi ke VS Code + Vite (development environment)
+- [ ] Deploy frontend ke Vercel dengan CI/CD
+- [ ] Implementasi autentikasi login (Supabase Auth)
+- [ ] Role-based access control (Admin, Operator, Viewer)
+
+### Fase 4 – Peluncuran Publik (2027)
+- [ ] Portal pengaduan publik resmi
+- [ ] Integrasi dengan website Pemkab Trenggalek
+- [ ] Dashboard monitoring real-time untuk pimpinan
+- [ ] Dokumentasi lengkap & pelatihan pengguna
+
+---
+
+## 🏗 Struktur Proyek
