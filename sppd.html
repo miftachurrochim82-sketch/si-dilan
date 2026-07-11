@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cetak SPPD & Kwitansi - SI DILAN</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+body { background: linear-gradient(135deg, #f0f4ff, #e8f0fe); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
+.glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white; z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); overflow-y: auto; }
+.sidebar.collapsed { transform: translateX(-100%); }
+.sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; text-decoration: none; color: white; }
+.sidebar-item:hover { background: rgba(255,255,255,0.1); }
+.sidebar-item.active { background: rgba(255,255,255,0.2); font-weight: 600; }
+.sidebar-group-title { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); cursor: pointer; }
+.sidebar-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 12px; }
+.main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
+.main-content.expanded { margin-left: 0; }
+.btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+@media (max-width: 768px) { .sidebar { width: 280px; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .main-content { margin-left: 0; } .main-content.shifted { margin-left: 280px; } }
+</style>
+</head>
+<body>
+
+<div id="app">
+<!-- SIDEBAR -->
+<aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+<div class="sidebar-header">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
+<button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button>
+</div>
+<p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+</div>
+<nav class="p-3 space-y-1">
+<a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+<div class="sidebar-divider"></div>
+<div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='ops'?'':'ops'"><span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span><i :class="expandedGroup==='ops'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
+<div v-show="expandedGroup==='ops'" class="space-y-1 pl-3">
+<a href="form.html?tab=pengaduan" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
+<a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+<a href="form.html?tab=laporan" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+<a href="peta.html" class="sidebar-item"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
+<a href="sppd.html" class="sidebar-item active"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
+</div>
+<div class="sidebar-divider"></div>
+<div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='adm'?'':'adm'"><span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span><i :class="expandedGroup==='adm'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
+<div v-show="expandedGroup==='adm'" class="space-y-1 pl-3">
+<a href="master.html" class="sidebar-item"><i class="bi bi-server"></i> Master Data</a>
+<a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i> Pengaturan</a>
+</div>
+<div class="sidebar-divider"></div>
+<a href="about.html" class="sidebar-item"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
+<button @click="toggleDarkMode" class="sidebar-item w-full"><i :class="isDark?'bi bi-sun-fill':'bi bi-moon-fill'"></i> {{ isDark?'Mode Terang':'Mode Gelap' }}</button>
+</nav>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+<div class="max-w-2xl mx-auto">
+<div class="flex justify-between items-center mb-6">
+<div><h1 class="text-2xl font-bold text-blue-800">Cetak SPPD & Kwitansi</h1><p class="text-sm text-blue-500">Generate SPD dan Rincian Kwitansi Perjalanan Dinas</p></div>
+<button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
+</div>
+
+<!-- ========== PILIH ST & PETUGAS ========== -->
+<div class="glass-card rounded-2xl shadow-sm border border-blue-100 overflow-hidden mb-6">
+<div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-5 py-4 flex items-center gap-3">
+<div class="w-8 h-8 bg-blue-500 text-white rounded-lg flex items-center justify-center flex-shrink-0"><i class="bi bi-people-fill text-sm"></i></div>
+<div><h3 class="font-bold text-slate-800 text-sm">Pilih Surat Tugas & Petugas</h3><p class="text-[10px] text-slate-400">Pilih ST dan petugas yang akan dicetak SPD-nya</p></div>
+</div>
+
+<div class="p-5 space-y-4">
+<!-- Pilih ST -->
+<div>
+<label class="text-[11px] font-bold text-slate-600 mb-2 flex items-center gap-2"><i class="bi bi-file-earmark-text text-blue-500"></i> Surat Tugas</label>
+<select v-model="sppdST" @change="onSPPDSTChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition">
+<option value="" disabled>-- Pilih Surat Tugas --</option>
+<option v-for="st in stAktifList" :key="st.id" :value="st.id">{{ st.nomor_st || st.kegiatan }}</option>
+</select>
+</div>
+
+<!-- Pilih Petugas -->
+<div v-if="sppdPetugasList && sppdPetugasList.length > 0">
+<div class="flex items-center justify-between mb-2">
+<label class="text-[11px] font-bold text-slate-600">Petugas</label>
+<label class="flex items-center gap-1.5 text-[10px] cursor-pointer hover:bg-blue-50 rounded px-2 py-1">
+<input type="checkbox" @change="toggleAllPetugas($event)" :checked="sppdPetugas.length === sppdPetugasList.length" class="rounded text-blue-600">
+<span class="font-bold">Pilih Semua</span>
+</label>
+</div>
+<div class="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto p-3 border border-slate-300 rounded-lg">
+<label v-for="p in sppdPetugasList" :key="p.id" class="flex items-center gap-2 text-[11px] cursor-pointer hover:bg-blue-50 rounded p-1.5">
+<input type="checkbox" :value="p.id" v-model="sppdPetugas" class="rounded text-blue-600">
+<span class="truncate">{{ p.nama }} - {{ p.nip }}</span>
+</label>
+</div>
+</div>
+<div v-else class="text-[11px] text-slate-400 p-4 text-center border border-dashed border-slate-300 rounded-lg">
+Pilih Surat Tugas terlebih dahulu untuk melihat daftar petugas
+</div>
+
+<!-- Tombol Cetak SPD -->
+<div class="flex justify-end gap-2 pt-4 border-t border-slate-200">
+<button @click="sppdST = ''; sppdPetugas = [];" class="bg-slate-100 hover:bg-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg transition"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+<button @click="generateSPD" :disabled="!sppdST || !sppdPetugas.length || loading" class="btn-primary"><i :class="loading ? 'bi bi-hourglass-split animate-spin' : 'bi bi-printer'"></i> {{ loading ? 'Memproses...' : 'Cetak SPD' }}</button>
+</div>
+</div>
+</div>
+
+<!-- ========== BIAYA & KWITANSI ========== -->
+<div v-if="sppdST && sppdPetugas.length > 0" class="glass-card rounded-2xl shadow-sm border border-emerald-100 overflow-hidden mb-6">
+<div class="bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-emerald-200 px-5 py-4 flex items-center gap-3">
+<div class="w-8 h-8 bg-emerald-500 text-white rounded-lg flex items-center justify-center flex-shrink-0"><i class="bi bi-cash-stack text-sm"></i></div>
+<div><h3 class="font-bold text-slate-800 text-sm">Biaya & Kwitansi</h3><p class="text-[10px] text-slate-400">Input biaya perjalanan dinas</p></div>
+</div>
+
+<div class="p-5 space-y-4">
+<!-- Toggle Standar Biaya -->
+<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2"><i class="bi bi-calculator text-blue-600"></i><span class="text-xs font-bold text-blue-700">Gunakan Standar Biaya</span></div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input type="checkbox" v-model="gunakanStandarBiaya" class="sr-only peer">
+<div class="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+<span class="ml-2 text-[10px] text-slate-600">{{ gunakanStandarBiaya ? 'Otomatis' : 'Manual' }}</span>
+</label>
+</div>
+<div>
+<label class="text-[10px] font-bold text-slate-600 mb-1 block">Jenis Perjalanan</label>
+<select v-model="jenisPerjalanan" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition">
+<option value="Dalam Daerah">Dalam Daerah</option>
+<option value="Luar Daerah (Prov)">Luar Daerah (Prov)</option>
+<option value="Luar Provinsi">Luar Provinsi</option>
+</select>
+</div>
+</div>
+
+<!-- Input Biaya Manual -->
+<div v-if="!gunakanStandarBiaya" class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-[10px] font-bold text-slate-600 mb-1 block">Uang Harian (Rp)</label>
+<input type="number" v-model="sppdBiaya.uangHarian" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs" placeholder="0">
+<p class="text-[9px] text-slate-400 mt-0.5">Rp {{ Number(sppdBiaya.uangHarian || 0).toLocaleString('id-ID') }}</p>
+</div>
+<div>
+<label class="text-[10px] font-bold text-slate-600 mb-1 block">Transport (Rp)</label>
+<input type="number" v-model="sppdBiaya.transport" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs" placeholder="0">
+<p class="text-[9px] text-slate-400 mt-0.5">Rp {{ Number(sppdBiaya.transport || 0).toLocaleString('id-ID') }}</p>
+</div>
+<div>
+<label class="text-[10px] font-bold text-slate-600 mb-1 block">Penginapan (Rp)</label>
+<input type="number" v-model="sppdBiaya.penginapan" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs" placeholder="0">
+<p class="text-[9px] text-slate-400 mt-0.5">Rp {{ Number(sppdBiaya.penginapan || 0).toLocaleString('id-ID') }}</p>
+</div>
+<div>
+<label class="text-[10px] font-bold text-slate-600 mb-1 block">Lain-lain (Rp)</label>
+<input type="number" v-model="sppdBiaya.lainnya" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs" placeholder="0">
+<p class="text-[9px] text-slate-400 mt-0.5">Rp {{ Number(sppdBiaya.lainnya || 0).toLocaleString('id-ID') }}</p>
+</div>
+</div>
+
+<!-- Info Standar Biaya -->
+<div v-if="gunakanStandarBiaya" class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
+<i class="bi bi-info-circle mr-1"></i> Total biaya akan dihitung otomatis berdasarkan Standar Biaya per golongan, jenis perjalanan, dan lama perjalanan.
+</div>
+
+<!-- Total Biaya -->
+<div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
+<span class="text-xs font-bold text-slate-600">Total Biaya (per orang)</span>
+<span class="text-lg font-black text-emerald-600">Rp {{ totalBiaya.toLocaleString('id-ID') }}</span>
+</div>
+
+<!-- Tombol Aksi -->
+<div class="flex justify-end gap-2 pt-4 border-t border-slate-200 flex-wrap">
+<button @click="simpanBiayaSPPD" :disabled="loading" class="bg-slate-100 hover:bg-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg transition"><i class="bi bi-save"></i> Simpan Biaya</button>
+<button @click="resetBiaya" class="bg-slate-100 hover:bg-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg transition"><i class="bi bi-arrow-counterclockwise"></i> Reset Biaya</button>
+<button @click="cetakKwitansiSPPD" :disabled="loading || !sppdBiayaSaved" class="bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white text-xs font-bold px-4 py-2.5 rounded-lg transition"><i :class="loading ? 'bi bi-hourglass-split animate-spin' : 'bi bi-printer'"></i> Cetak Rincian</button>
+<button @click="cetakRekapBiaya" :disabled="loading" class="bg-teal-500 hover:bg-teal-600 disabled:bg-slate-300 text-white text-xs font-bold px-4 py-2.5 rounded-lg transition"><i :class="loading ? 'bi bi-hourglass-split animate-spin' : 'bi bi-file-earmark-pdf'"></i> Rekap Biaya</button>
+<button @click="cetakKwitansiPembayaran" :disabled="loading" class="bg-purple-500 hover:bg-purple-600 disabled:bg-slate-300 text-white text-xs font-bold px-4 py-2.5 rounded-lg transition"><i :class="loading ? 'bi bi-hourglass-split animate-spin' : 'bi bi-file-earmark-pdf'"></i> Kwitansi Pembayaran</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+<script>
+const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+
+Vue.createApp({
+data() {
+return {
+sidebarOpen: true, isMobile: window.innerWidth < 768, isDark: localStorage.getItem('darkMode')==='true',
+expandedGroup: 'ops',
+loading: false,
+suratTugasList: [], personilList: [],
+sppdST: '', sppdPetugas: [], sppdPetugasList: [],
+gunakanStandarBiaya: false, jenisPerjalanan: 'Dalam Daerah',
+sppdBiaya: { uangHarian: 0, transport: 0, penginapan: 0, lainnya: 0 },
+sppdBiayaSaved: false
+}
+},
+computed: {
+stAktifList() { return this.suratTugasList.filter(s => s.status === 'Aktif'); },
+totalBiaya() { return (this.sppdBiaya.uangHarian || 0) + (this.sppdBiaya.transport || 0) + (this.sppdBiaya.penginapan || 0) + (this.sppdBiaya.lainnya || 0); }
+},
+methods: {
+toggleDarkMode() {
+this.isDark = !this.isDark;
+localStorage.setItem('darkMode', this.isDark);
+document.documentElement.classList.toggle('dark', this.isDark);
+},
+async loadData() {
+const [stRes, petRes] = await Promise.all([
+supa.from('surat_tugas').select('*').order('created_at', { ascending: false }),
+supa.from('personil').select('*').eq('status', 'Aktif')
+]);
+this.suratTugasList = stRes.data || [];
+this.personilList = petRes.data || [];
+},
+onSPPDSTChange() {
+this.sppdPetugas = [];
+this.sppdPetugasList = [];
+this.sppdBiayaSaved = false;
+this.resetBiaya();
+if (!this.sppdST) return;
+const st = this.suratTugasList.find(s => s.id === this.sppdST);
+if (st && st.petugas_ids) {
+this.sppdPetugasList = st.petugas_ids.map(id => {
+const p = this.personilList.find(x => x.id === id);
+return { id: p?.id || id, nama: p?.nama || id, nip: p?.nip || '...' };
+});
+}
+},
+toggleAllPetugas(e) {
+this.sppdPetugas = e.target.checked ? this.sppdPetugasList.map(p => p.id) : [];
+},
+resetBiaya() {
+Object.assign(this.sppdBiaya, { uangHarian: 0, transport: 0, penginapan: 0, lainnya: 0 });
+this.sppdBiayaSaved = false;
+},
+generateSPD() { alert('Fitur Cetak SPD akan segera hadir (menunggu Edge Functions).'); },
+async simpanBiayaSPPD() {
+if (!this.sppdST || !this.sppdPetugas.length) return;
+this.loading = true;
+try {
+for (const petugasId of this.sppdPetugas) {
+await supa.from('sppd').upsert({
+surat_tugas_id: this.sppdST,
+personil_id: petugasId,
+uang_harian: this.sppdBiaya.uangHarian || 0,
+transport: this.sppdBiaya.transport || 0,
+penginapan: this.sppdBiaya.penginapan || 0,
+lainnya: this.sppdBiaya.lainnya || 0,
+total_biaya: this.totalBiaya
+}, { onConflict: 'surat_tugas_id,personil_id' });
+}
+this.sppdBiayaSaved = true;
+alert('✅ Biaya berhasil disimpan!');
+} catch (e) { alert('❌ Gagal: ' + e.message); }
+finally { this.loading = false; }
+},
+cetakKwitansiSPPD() { alert('Fitur Cetak Rincian akan segera hadir (menunggu Edge Functions).'); },
+cetakRekapBiaya() { alert('Fitur Rekap Biaya akan segera hadir (menunggu Edge Functions).'); },
+cetakKwitansiPembayaran() { alert('Fitur Kwitansi Pembayaran akan segera hadir (menunggu Edge Functions).'); }
+},
+mounted() {
+if (this.isDark) document.documentElement.classList.add('dark');
+if (this.isMobile) this.sidebarOpen = false;
+window.addEventListener('resize', () => { this.isMobile = window.innerWidth < 768; if (!this.isMobile) this.sidebarOpen = true; });
+this.loadData();
+}
+}).mount('#app');
+</script>
+</body>
+</html>
