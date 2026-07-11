@@ -135,7 +135,6 @@
   </div>
 
   <div id="app" v-cloak>
-    <!-- Mobile Overlay -->
     <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
 
     <!-- Sidebar -->
@@ -155,12 +154,15 @@
       <nav class="sidebar-menu">
         <a href="index.html" class="sidebar-item active">
           <i class="bi bi-speedometer2 text-lg"></i> Dashboard
+          <span v-if="totalPengaduan + totalST > 0" class="ml-auto bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{{ totalPengaduan + totalST > 999 ? '999+' : totalPengaduan + totalST }}</span>
         </a>
         <a href="form.html?tab=pengaduan" class="sidebar-item">
           <i class="bi bi-megaphone text-lg"></i> Pengaduan
+          <span v-if="pengaduanBaru > 0" class="ml-auto bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{{ pengaduanBaru > 99 ? '99+' : pengaduanBaru }}</span>
         </a>
         <a href="form.html?tab=st" class="sidebar-item">
           <i class="bi bi-envelope-paper text-lg"></i> Surat Tugas
+          <span v-if="stAktif > 0" class="ml-auto bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{{ stAktif > 99 ? '99+' : stAktif }}</span>
         </a>
         <a href="master.html" class="sidebar-item">
           <i class="bi bi-server text-lg"></i> Master Data
@@ -169,11 +171,16 @@
           <i class="bi bi-gear text-lg"></i> Pengaturan
         </a>
       </nav>
+      <div class="p-4 text-xs text-blue-200 border-t border-blue-700/50 mx-3" v-show="sidebarOpen">
+        <p class="text-blue-400/50 text-[9px] flex items-center gap-1">
+          <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full inline-block animate-pulse"></span>
+          SI DILAN Terpadu v2.5
+        </p>
+      </div>
     </aside>
 
     <!-- Main Content -->
     <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
-      <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div>
           <h1 class="text-2xl font-extrabold text-blue-900">Dashboard</h1>
@@ -188,48 +195,128 @@
         <i class="bi bi-exclamation-triangle"></i> {{ error }}
       </div>
 
-      <!-- Stat Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-        <div class="glass-card stat-card rounded-2xl p-6">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <i class="bi bi-file-earmark-text text-blue-600 text-xl"></i>
+      <!-- Filter Dashboard -->
+      <div class="glass-card rounded-xl p-3 mb-6 flex flex-wrap items-center gap-3">
+        <span class="text-xs font-bold text-blue-600"><i class="bi bi-funnel"></i> Filter:</span>
+        <select v-model="dashFilterTahun" class="text-xs border border-blue-200 rounded-lg px-3 py-2 bg-white" style="width:120px">
+          <option v-for="t in listTahun" :key="t" :value="t">{{ t }}</option>
+        </select>
+        <select v-model="dashFilterBidang" class="text-xs border border-blue-200 rounded-lg px-3 py-2 bg-white" style="min-width:180px">
+          <option value="">🏢 Semua Bidang</option>
+          <option v-for="b in bidangList" :key="b" :value="b">{{ b }}</option>
+        </select>
+        <span class="text-xs text-blue-500 ml-auto bg-white px-3 py-1 rounded-full font-semibold">{{ filteredPengaduan.length }} pengaduan</span>
+      </div>
+
+      <!-- Stat Cards Detail -->
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+        <div class="glass-card stat-card rounded-2xl p-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="bi bi-inbox text-xl"></i></div>
+            <div><div class="text-2xl font-black">{{ filteredPengaduan.length }}</div><div class="text-[11px] opacity-90">Total Pengaduan</div></div>
+          </div>
+        </div>
+        <div class="glass-card stat-card rounded-2xl p-4 bg-gradient-to-br from-amber-400 to-orange-500 text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="bi bi-exclamation-circle text-xl"></i></div>
+            <div><div class="text-2xl font-black">{{ pengaduanBaru }}</div><div class="text-[11px] opacity-90">Baru</div></div>
+          </div>
+        </div>
+        <div class="glass-card stat-card rounded-2xl p-4 bg-gradient-to-br from-violet-400 to-purple-500 text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="bi bi-hourglass-split text-xl"></i></div>
+            <div><div class="text-2xl font-black">{{ pengaduanProses }}</div><div class="text-[11px] opacity-90">Diproses</div></div>
+          </div>
+        </div>
+        <div class="glass-card stat-card rounded-2xl p-4 bg-gradient-to-br from-emerald-400 to-teal-500 text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="bi bi-check-circle text-xl"></i></div>
+            <div><div class="text-2xl font-black">{{ pengaduanSelesai }}</div><div class="text-[11px] opacity-90">Selesai</div></div>
+          </div>
+        </div>
+        <div class="glass-card stat-card rounded-2xl p-4 bg-gradient-to-br from-red-400 to-rose-500 text-white">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="bi bi-exclamation-triangle text-xl"></i></div>
+            <div><div class="text-2xl font-black">{{ pengaduanMendesak }}</div><div class="text-[11px] opacity-90">Mendesak</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        <a href="form.html?tab=pengaduan" class="glass-card rounded-xl p-4 flex items-center gap-3 hover:shadow-lg transition cursor-pointer">
+          <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow"><i class="bi bi-journal-plus text-white text-lg"></i></div>
+          <div><h3 class="font-bold text-blue-700 text-xs">Buat Pengaduan</h3><p class="text-[10px] text-blue-500">Form input baru</p></div>
+        </a>
+        <a href="form.html?tab=st" class="glass-card rounded-xl p-4 flex items-center gap-3 hover:shadow-lg transition cursor-pointer">
+          <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow"><i class="bi bi-envelope-paper text-white text-lg"></i></div>
+          <div><h3 class="font-bold text-emerald-700 text-xs">Buat Surat Tugas</h3><p class="text-[10px] text-emerald-500">Form input baru</p></div>
+        </a>
+        <div class="glass-card rounded-xl p-4 flex items-center gap-3 opacity-50 cursor-not-allowed">
+          <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center shadow"><i class="bi bi-file-earmark-pdf text-white text-lg"></i></div>
+          <div><h3 class="font-bold text-purple-700 text-xs">Cetak SPPD</h3><p class="text-[10px] text-purple-500">Segera hadir</p></div>
+        </div>
+      </div>
+
+      <!-- Status Overview -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div class="glass-card rounded-2xl p-5">
+          <h3 class="font-bold text-sm text-blue-700 mb-4"><i class="bi bi-pie-chart"></i> Status Pengaduan</h3>
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-gray-600">Baru</span><span class="text-xs font-bold text-amber-700">{{ pengaduanBaru }}</span></div>
+              <div class="w-full bg-gray-100 rounded-full h-3"><div class="bg-amber-500 h-3 rounded-full" :style="{ width: (pengaduanBaru/totalPengaduan*100) + '%' }"></div></div>
             </div>
             <div>
-              <div class="text-3xl font-extrabold text-blue-900">{{ pengaduan.length }}</div>
-              <div class="text-xs text-blue-500 font-medium">Pengaduan</div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-gray-600">Diverifikasi</span><span class="text-xs font-bold text-sky-700">{{ pengaduanDiverifikasi }}</span></div>
+              <div class="w-full bg-gray-100 rounded-full h-3"><div class="bg-sky-500 h-3 rounded-full" :style="{ width: (pengaduanDiverifikasi/totalPengaduan*100) + '%' }"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-gray-600">Diproses</span><span class="text-xs font-bold text-violet-700">{{ pengaduanProses }}</span></div>
+              <div class="w-full bg-gray-100 rounded-full h-3"><div class="bg-violet-500 h-3 rounded-full" :style="{ width: (pengaduanProses/totalPengaduan*100) + '%' }"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-gray-600">Selesai</span><span class="text-xs font-bold text-emerald-700">{{ pengaduanSelesai }}</span></div>
+              <div class="w-full bg-gray-100 rounded-full h-3"><div class="bg-emerald-500 h-3 rounded-full" :style="{ width: (pengaduanSelesai/totalPengaduan*100) + '%' }"></div></div>
             </div>
           </div>
         </div>
-        <div class="glass-card stat-card rounded-2xl p-6">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-              <i class="bi bi-envelope-paper text-emerald-600 text-xl"></i>
+
+        <div class="glass-card rounded-2xl p-5">
+          <h3 class="font-bold text-sm text-emerald-700 mb-4"><i class="bi bi-graph-up"></i> Progress Surat Tugas</h3>
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-gray-600">Selesai</span><span class="text-xs font-bold text-emerald-700">{{ stSelesai }}</span></div>
+              <div class="w-full bg-gray-100 rounded-full h-3"><div class="bg-emerald-500 h-3 rounded-full" :style="{ width: (stSelesai/totalST*100) + '%' }"></div></div>
             </div>
             <div>
-              <div class="text-3xl font-extrabold text-emerald-900">{{ suratTugas.length }}</div>
-              <div class="text-xs text-emerald-500 font-medium">Surat Tugas</div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-gray-600">Aktif</span><span class="text-xs font-bold text-amber-700">{{ stAktif }}</span></div>
+              <div class="w-full bg-gray-100 rounded-full h-3"><div class="bg-amber-500 h-3 rounded-full" :style="{ width: (stAktif/totalST*100) + '%' }"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1"><span class="text-xs text-gray-600">Ada Laporan</span><span class="text-xs font-bold text-blue-700">{{ stDenganLaporan }}</span></div>
+              <div class="w-full bg-gray-100 rounded-full h-3"><div class="bg-blue-500 h-3 rounded-full" :style="{ width: (stDenganLaporan/totalST*100) + '%' }"></div></div>
             </div>
           </div>
         </div>
-        <div class="glass-card stat-card rounded-2xl p-6">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-              <i class="bi bi-people text-purple-600 text-xl"></i>
-            </div>
-            <div>
-              <div class="text-3xl font-extrabold text-purple-900">{{ personil.length }}</div>
-              <div class="text-xs text-purple-500 font-medium">Personil</div>
-            </div>
+      </div>
+
+      <!-- ST Belum Lapor -->
+      <div class="glass-card rounded-2xl p-5 mb-6">
+        <h3 class="font-bold text-sm text-amber-700 mb-4"><i class="bi bi-exclamation-triangle"></i> ST Belum Lapor ({{ stBelumLaporList.length }})</h3>
+        <div class="space-y-2 max-h-[200px] overflow-y-auto">
+          <div v-if="stBelumLaporList.length === 0" class="text-center text-xs text-gray-400 py-4">🎉 Semua ST sudah lapor</div>
+          <div v-else v-for="st in stBelumLaporList" :key="st.id" class="flex items-center gap-2 text-xs p-2 hover:bg-amber-50 rounded-lg">
+            <span class="text-gray-500 w-[75px]">{{ formatDate(st.tanggal_st) }}</span>
+            <span class="font-medium truncate flex-1">{{ st.kegiatan }}</span>
+            <span class="text-amber-600 font-bold">{{ st.status }}</span>
           </div>
         </div>
       </div>
 
       <!-- Tabel Pengaduan -->
       <div class="glass-card rounded-2xl p-5 mb-6">
-        <h2 class="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2">
-          <i class="bi bi-megaphone"></i> Pengaduan Terbaru
-        </h2>
+        <h2 class="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2"><i class="bi bi-megaphone"></i> Pengaduan Terbaru</h2>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
@@ -242,7 +329,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="p in pengaduan" :key="p.id" class="border-t border-gray-100">
+              <tr v-for="p in filteredPengaduan" :key="p.id" class="border-t border-gray-100">
                 <td class="p-3">{{ formatDate(p.tanggal_lapor) }}</td>
                 <td class="p-3 font-medium">{{ p.nama_pelapor }}</td>
                 <td class="p-3">{{ p.kategori_pengaduan?.permasalahan || '-' }}</td>
@@ -256,12 +343,10 @@
                   </select>
                 </td>
                 <td class="p-3 text-center">
-                  <button @click="hapusPengaduan(p.id)" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" title="Hapus">
-                    <i class="bi bi-trash"></i>
-                  </button>
+                  <button @click="hapusPengaduan(p.id)" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" title="Hapus"><i class="bi bi-trash"></i></button>
                 </td>
               </tr>
-              <tr v-if="!pengaduan.length">
+              <tr v-if="!filteredPengaduan.length">
                 <td colspan="5" class="p-6 text-center text-gray-400">Belum ada pengaduan. <a href="form.html?tab=pengaduan" class="text-blue-500 underline">Kirim pengaduan pertama →</a></td>
               </tr>
             </tbody>
@@ -270,10 +355,8 @@
       </div>
 
       <!-- Tabel Surat Tugas -->
-      <div class="glass-card rounded-2xl p-5">
-        <h2 class="text-lg font-bold text-emerald-800 mb-4 flex items-center gap-2">
-          <i class="bi bi-envelope-paper"></i> Surat Tugas Terbaru
-        </h2>
+      <div class="glass-card rounded-2xl p-5 mb-6">
+        <h2 class="text-lg font-bold text-emerald-800 mb-4 flex items-center gap-2"><i class="bi bi-envelope-paper"></i> Surat Tugas Terbaru</h2>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
@@ -286,26 +369,35 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="st in suratTugas" :key="st.id" class="border-t border-gray-100">
+              <tr v-for="st in filteredST" :key="st.id" class="border-t border-gray-100">
                 <td class="p-3">{{ formatDate(st.tanggal_st) }}</td>
                 <td class="p-3 font-medium">{{ st.kegiatan }}</td>
                 <td class="p-3">{{ st.lokasi }}</td>
                 <td class="p-3">
-                  <span :class="st.status === 'Aktif' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'" class="px-3 py-1 rounded-full text-xs font-bold">
-                    {{ st.status }}
-                  </span>
+                  <span :class="st.status === 'Aktif' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'" class="px-3 py-1 rounded-full text-xs font-bold">{{ st.status }}</span>
                 </td>
                 <td class="p-3 text-center">
-                  <button @click="hapusST(st.id)" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" title="Hapus">
-                    <i class="bi bi-trash"></i>
-                  </button>
+                  <button @click="hapusST(st.id)" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" title="Hapus"><i class="bi bi-trash"></i></button>
                 </td>
               </tr>
-              <tr v-if="!suratTugas.length">
+              <tr v-if="!filteredST.length">
                 <td colspan="5" class="p-6 text-center text-gray-400">Belum ada surat tugas. <a href="form.html?tab=st" class="text-blue-500 underline">Buat surat tugas pertama →</a></td>
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="glass-card rounded-2xl p-5 mb-6">
+        <h3 class="font-bold text-sm text-blue-700 mb-4"><i class="bi bi-activity"></i> Aktivitas Terkini</h3>
+        <div class="space-y-3 max-h-60 overflow-y-auto">
+          <div v-if="activityLog.length === 0" class="text-center text-xs text-gray-400 py-4">Belum ada aktivitas</div>
+          <div v-for="(a, i) in activityLog.slice(0, 10)" :key="i" class="flex items-start gap-3 text-xs">
+            <span class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" :style="{ background: a.color || '#0d6efd' }"></span>
+            <span class="text-gray-600 flex-1">{{ a.icon || '📝' }} {{ a.text || a.detail }}</span>
+            <span class="text-gray-400 flex-shrink-0">{{ formatDate(a.waktu) }}</span>
+          </div>
         </div>
       </div>
 
@@ -328,10 +420,13 @@
           const pengaduan = ref([]);
           const suratTugas = ref([]);
           const personil = ref([]);
+          const activityLog = ref([]);
           const error = ref(null);
           const toast = reactive({ show: false, type: 'success', message: '' });
           const sidebarOpen = ref(true);
           const isMobile = ref(window.innerWidth < 768);
+          const dashFilterTahun = ref(String(new Date().getFullYear()));
+          const dashFilterBidang = ref('');
 
           window.addEventListener('resize', () => {
             isMobile.value = window.innerWidth < 768;
@@ -345,10 +440,11 @@
 
           async function loadData() {
             try {
-              const [aduRes, stRes, personilRes] = await Promise.all([
+              const [aduRes, stRes, personilRes, actRes] = await Promise.all([
                 supabase.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang)').order('tanggal_lapor', { ascending: false }),
                 supabase.from('surat_tugas').select('*').order('created_at', { ascending: false }),
-                supabase.from('personil').select('*').eq('status', 'Aktif')
+                supabase.from('personil').select('*').eq('status', 'Aktif'),
+                supabase.from('activity_log').select('*').order('waktu', { ascending: false }).limit(20)
               ]);
               if (aduRes.error) throw new Error('Pengaduan: ' + aduRes.error.message);
               if (stRes.error) throw new Error('Surat Tugas: ' + stRes.error.message);
@@ -356,6 +452,7 @@
               pengaduan.value = aduRes.data || [];
               suratTugas.value = stRes.data || [];
               personil.value = personilRes.data || [];
+              activityLog.value = actRes.data || [];
             } catch (e) {
               error.value = 'Gagal memuat data: ' + e.message;
             } finally {
@@ -369,7 +466,12 @@
           async function updateStatus(id, newStatus) {
             const { error } = await supabase.from('pengaduan').update({ status: newStatus }).eq('id', id);
             if (error) { showToast('Gagal: ' + error.message, 'error'); }
-            else { showToast('Status diubah menjadi ' + newStatus); await loadData(); }
+            else {
+              showToast('Status diubah menjadi ' + newStatus);
+              // Tambah activity log
+              await supabase.from('activity_log').insert({ action: 'Update Status', detail: `Pengaduan #${id} → ${newStatus}`, status: 'INFO' });
+              await loadData();
+            }
           }
 
           async function hapusPengaduan(id) {
@@ -401,16 +503,77 @@
             }[status] || 'bg-gray-100 text-gray-600 border-gray-300';
           }
 
+          // Computed: Filter Pengaduan
+          const filteredPengaduan = computed(() => {
+            let data = pengaduan.value || [];
+            if (dashFilterTahun.value) {
+              data = data.filter(p => {
+                const d = new Date(p.tanggal_lapor);
+                return !isNaN(d) && d.getFullYear().toString() === dashFilterTahun.value;
+              });
+            }
+            if (dashFilterBidang.value) {
+              data = data.filter(p => p.kategori_pengaduan?.bidang === dashFilterBidang.value);
+            }
+            return data;
+          });
+
+          // Computed: Filter Surat Tugas
+          const filteredST = computed(() => {
+            let data = suratTugas.value || [];
+            if (dashFilterTahun.value) {
+              data = data.filter(st => {
+                const d = new Date(st.tanggal_st);
+                return !isNaN(d) && d.getFullYear().toString() === dashFilterTahun.value;
+              });
+            }
+            return data;
+          });
+
+          const listTahun = computed(() => {
+            const years = new Set();
+            pengaduan.value.forEach(p => { const d = new Date(p.tanggal_lapor); if (!isNaN(d)) years.add(d.getFullYear()); });
+            suratTugas.value.forEach(st => { const d = new Date(st.tanggal_st); if (!isNaN(d)) years.add(d.getFullYear()); });
+            if (years.size === 0) years.add(new Date().getFullYear());
+            return [...years].sort((a,b) => b-a);
+          });
+
+          const bidangList = computed(() => {
+            const bidang = new Set();
+            pengaduan.value.forEach(p => { if (p.kategori_pengaduan?.bidang) bidang.add(p.kategori_pengaduan.bidang); });
+            return [...bidang].sort();
+          });
+
+          // Statistik Pengaduan
+          const totalPengaduan = computed(() => pengaduan.value.length);
+          const pengaduanBaru = computed(() => pengaduan.value.filter(p => p.status === 'Baru').length);
+          const pengaduanDiverifikasi = computed(() => pengaduan.value.filter(p => p.status === 'Diverifikasi').length);
+          const pengaduanProses = computed(() => pengaduan.value.filter(p => p.status === 'Diproses').length);
+          const pengaduanSelesai = computed(() => pengaduan.value.filter(p => p.status === 'Selesai').length);
+          const pengaduanMendesak = computed(() => pengaduan.value.filter(p => p.kategori_pengaduan?.prioritas === 'Tinggi' && (p.status === 'Baru' || p.status === 'Diproses')).length);
+
+          // Statistik Surat Tugas
+          const totalST = computed(() => suratTugas.value.length);
+          const stAktif = computed(() => suratTugas.value.filter(st => st.status === 'Aktif').length);
+          const stSelesai = computed(() => suratTugas.value.filter(st => st.status === 'Selesai' || st.status === 'Selesai Lapor').length);
+          const stDenganLaporan = computed(() => suratTugas.value.filter(st => st.laporan_id).length);
+          const stBelumLaporList = computed(() => suratTugas.value.filter(st => st.status === 'Aktif' && !st.laporan_id).slice(0, 10));
+
           onMounted(() => {
             if (isMobile.value) sidebarOpen.value = false;
             loadData();
           });
 
           return {
-            pengaduan, suratTugas, personil, error, toast,
+            pengaduan, suratTugas, personil, activityLog, error, toast,
             sidebarOpen, isMobile, showToast,
             updateStatus, hapusPengaduan, hapusST,
-            formatDate, statusBadge
+            formatDate, statusBadge,
+            dashFilterTahun, dashFilterBidang,
+            filteredPengaduan, filteredST,
+            listTahun, bidangList,
+            totalPengaduan, pengaduanBaru, pengaduanDiverifikasi, pengaduanProses, pengaduanSelesai, pengaduanMendesak,
+            totalST, stAktif, stSelesai, stDenganLaporan, stBelumLaporList
           };
         }
       }).mount('#app');
