@@ -297,76 +297,215 @@
   </div>
 </div>
 
-    <!-- ========== TAB SURAT TUGAS ========== -->
-    <div v-if="tab==='st'" class="space-y-6">
-      <div class="glass-card rounded-2xl p-5">
-        <h2 class="text-lg font-bold text-emerald-800 mb-4">📋 Form Surat Tugas</h2>
-        <form @submit.prevent="simpanST" class="space-y-3">
-          <textarea v-model="st.dasar" placeholder="Dasar Hukum" class="w-full border rounded-lg px-3 py-2 text-sm" rows="2"></textarea>
-          <div class="grid grid-cols-2 gap-3">
-            <select v-model="st.unit_kerja" @change="st.layanan=''" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Unit Kerja --</option><option v-for="u in unitKerjaList" :key="u.id" :value="u.nama_unit">{{ u.nama_unit }}</option></select>
-            <select v-model="st.layanan" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Layanan --</option><option v-for="l in filteredLayanan" :key="l.id" :value="l.nama_layanan">{{ l.nama_layanan }}</option></select>
+<!-- ========== TAB SURAT TUGAS ========== -->
+<div v-if="tab==='st'" class="space-y-6 fade-in">
+
+  <!-- Header -->
+  <div class="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-5 text-white shadow-xl">
+    <div class="flex items-center justify-between">
+      <div><h2 class="text-xl font-bold flex items-center gap-2"><i class="bi bi-envelope-paper"></i> Surat Tugas</h2><p class="text-emerald-200 text-xs mt-1">Buat surat tugas dan pantau riwayat</p></div>
+      <span class="bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-semibold">{{ filteredST.length }} data</span>
+    </div>
+  </div>
+
+  <!-- Sub-tab: Form vs Riwayat -->
+  <div class="bg-white rounded-2xl shadow-sm p-1.5 border border-slate-200 flex gap-1.5">
+    <button @click="stSubTab = 'form'" :class="stSubTab==='form' ? 'bg-emerald-500 text-white shadow' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"><i class="bi bi-pencil-square"></i> Form Baru</button>
+    <button @click="stSubTab = 'riwayat'" :class="stSubTab==='riwayat' ? 'bg-emerald-500 text-white shadow' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"><i class="bi bi-list-ul"></i> Riwayat ({{ filteredST.length }})</button>
+  </div>
+
+  <!-- ========== SUB-TAB: FORM ST ========== -->
+  <div v-show="stSubTab === 'form'" class="space-y-4">
+    <div class="glass-card rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
+      <div class="bg-gradient-to-r from-emerald-50 to-teal-50/30 border-b border-emerald-200 px-5 py-3 flex items-center justify-between">
+        <h3 class="font-bold text-emerald-700 text-sm">📝 Buat Surat Tugas</h3>
+        <button type="button" @click="resetSTForm()" class="bg-slate-100 hover:bg-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg transition"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+      </div>
+      <div class="p-4">
+        <form @submit.prevent="simpanST">
+
+          <!-- I. ADMINISTRASI -->
+          <div class="border border-emerald-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-emerald-50 to-green-50/20">
+            <h4 class="text-xs font-extrabold text-emerald-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-emerald-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">I</span>Administrasi Surat</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Nomor ST</label><input v-model="st.nomor_st" placeholder="Auto‑generate" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
+              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Tanggal ST <span class="text-red-500">*</span></label><input type="date" v-model="st.tanggal_st" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
+            </div>
           </div>
-          <select v-model="st.sop_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm"><option v-for="s in filteredSOP" :key="s.id" :value="s.id">{{ s.kode_sop }} - {{ s.nama_sop }}</option></select>
-          <input v-model="st.kegiatan" placeholder="Kegiatan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
-          <div class="grid grid-cols-2 gap-3">
-            <select v-model="st.kecamatan" @change="st.desa=''" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Kecamatan --</option><option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option></select>
-            <select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Desa --</option><option v-for="desa in filteredDesaST" :key="desa" :value="desa">{{ desa }}</option></select>
+
+          <!-- II. DASAR HUKUM -->
+          <div class="border border-cyan-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-cyan-50 to-teal-50/20">
+            <h4 class="text-xs font-extrabold text-cyan-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-cyan-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">II</span>Dasar Hukum</h4>
+            <div class="text-[10px] text-slate-600 space-y-1 mb-3">
+              <p>1. Permendagri Nomor 26 Tahun 2020</p>
+              <p>2. Permendagri Nomor 16 Tahun 2023</p>
+              <p>3. Perda Trenggalek Nomor 03 Tahun 2019</p>
+            </div>
+            <button type="button" @click="st.dasarManual = st.dasarManual === null ? '' : null" class="text-[11px] bg-cyan-100 hover:bg-cyan-200 text-cyan-700 font-bold px-3 py-2 rounded-lg transition mb-2 border border-cyan-200">{{ st.dasarManual === null ? '+ Tambah Dasar Manual' : '- Hapus Dasar Manual' }}</button>
+            <textarea v-show="st.dasarManual !== null" v-model="st.dasarManual" rows="2" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs" placeholder="Tulis dasar tambahan..."></textarea>
           </div>
-          <input v-model="st.lokasi" placeholder="Lokasi Spesifik *" required class="w-full border rounded-lg px-3 py-2 text-sm">
-          <select v-model="st.petugas_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm"><option v-for="p in personilList" :key="p.id" :value="p.id">{{ p.nama }} ({{ p.jabatan }})</option></select>
-          <div class="grid grid-cols-4 gap-3">
-            <input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="st.tgl_mulai" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="st.jam_mulai" type="time" value="08:00" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="st.jam_selesai" type="time" value="16:00" class="w-full border rounded-lg px-3 py-2 text-sm">
+
+          <!-- III. KLASIFIKASI & LOKASI -->
+          <div class="border border-teal-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-teal-50 to-emerald-50/20">
+            <h4 class="text-xs font-extrabold text-teal-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-teal-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">III</span>Klasifikasi & Lokasi</h4>
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[10px] font-bold text-slate-600 mb-1 block">Unit Kerja</label>
+                  <select v-model="st.unit_kerja" @change="onUnitChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="">-- Pilih --</option><option v-for="u in unitKerjaList" :key="u.id" :value="u.nama_unit">{{ u.nama_unit }}</option></select>
+                </div>
+                <div v-if="st.unit_kerja">
+                  <label class="text-[10px] font-bold text-slate-600 mb-1 block">Layanan</label>
+                  <select v-model="st.layanan" @change="onLayananChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="">-- Pilih --</option><option v-for="l in filteredLayanan" :key="l.id" :value="l.nama_layanan">{{ l.nama_layanan }}</option></select>
+                </div>
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Kegiatan</label>
+                <select v-model="st.kegiatan" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="">-- Pilih --</option><option v-if="st.layanan" :value="st.layanan">{{ st.layanan }} (Auto)</option><option value="__manual__">Isi Manual...</option></select>
+                <input v-if="st.kegiatan==='__manual__'" v-model="st.kegiatanManual" placeholder="Tulis nama kegiatan..." class="w-full mt-2 border border-amber-300 rounded-lg px-3 py-2.5 text-xs bg-amber-50">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[10px] font-bold text-slate-600 mb-1 block">Kecamatan</label>
+                  <select v-model="st.kecamatan" @change="st.desa=''" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="">-- Semua --</option><option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option></select>
+                </div>
+                <div>
+                  <label class="text-[10px] font-bold text-slate-600 mb-1 block">Desa</label>
+                  <select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="">-- Pilih --</option><option v-for="desa in filteredDesaST" :key="desa" :value="desa">{{ desa }}</option></select>
+                </div>
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Lokasi <span class="text-red-500">*</span></label>
+                <select v-model="st.lokasi" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"><option value="" disabled>-- Pilih --</option><option v-for="lok in filteredLokasi" :key="lok.id" :value="lok.nama_lokasi">{{ lok.nama_lokasi }}</option><option value="__manual__">Manual...</option></select>
+                <input v-if="st.lokasi==='__manual__'" v-model="st.lokasiManual" placeholder="Tulis lokasi..." class="w-full mt-2 border border-amber-300 rounded-lg px-3 py-2.5 text-xs bg-amber-50">
+              </div>
+            </div>
           </div>
-          <textarea v-model="st.instruksi" placeholder="Instruksi Khusus" class="w-full border rounded-lg px-3 py-2 text-sm" rows="2"></textarea>
-          <button type="submit" class="btn-primary w-full">Simpan Surat Tugas</button>
-          <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
+
+          <!-- IV. WAKTU -->
+          <div class="border border-orange-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-orange-50 to-amber-50/20">
+            <h4 class="text-xs font-extrabold text-orange-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-orange-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">IV</span>Waktu Pelaksanaan</h4>
+            <div class="grid grid-cols-4 gap-3">
+              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Tgl Mulai</label><input type="date" v-model="st.tgl_mulai" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
+              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Jam Mulai</label><input type="time" v-model="st.jam_mulai" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
+              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Tgl Selesai</label><input type="date" v-model="st.tgl_selesai" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
+              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Jam Selesai</label><input type="time" v-model="st.jam_selesai" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs"></div>
+            </div>
+          </div>
+
+          <!-- V. SUMBER DAYA -->
+          <div class="border border-pink-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-pink-50 to-rose-50/20">
+            <h4 class="text-xs font-extrabold text-pink-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-pink-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">V</span>Sumber Daya</h4>
+            <div class="mb-3">
+              <label class="text-[10px] font-bold text-slate-600 mb-1 block">Petugas <span class="text-red-500">*</span> ({{ st.petugas_ids.length }})</label>
+              <div class="grid grid-cols-2 gap-1 max-h-[150px] overflow-y-auto p-2 border border-slate-300 rounded-lg">
+                <label v-for="p in personilList" :key="p.id" class="flex items-center gap-2 text-[11px] cursor-pointer hover:bg-pink-50 rounded p-1.5"><input type="checkbox" :value="p.id" v-model="st.petugas_ids" class="rounded text-pink-600"><span class="truncate">{{ p.nama }}</span></label>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Kendaraan ({{ st.kendaraan_ids.length }})</label>
+                <div class="max-h-[120px] overflow-y-auto p-2 border border-slate-300 rounded-lg space-y-1">
+                  <label v-for="k in kendaraanList" :key="k.id" class="flex items-center gap-2 text-[10px] cursor-pointer hover:bg-pink-50 rounded p-1"><input type="checkbox" :value="k.id" v-model="st.kendaraan_ids" class="rounded text-pink-600"><span class="truncate">{{ k.nama }} ({{ k.plat || '-' }})</span></label>
+                  <p v-if="!kendaraanList.length" class="text-[9px] text-slate-400 p-1">Tidak ada kendaraan</p>
+                </div>
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Peralatan ({{ st.peralatan_ids.length }})</label>
+                <div class="max-h-[120px] overflow-y-auto p-2 border border-slate-300 rounded-lg space-y-1">
+                  <label v-for="a in peralatanList" :key="a.id" class="flex items-center gap-2 text-[10px] cursor-pointer hover:bg-pink-50 rounded p-1"><input type="checkbox" :value="a.id" v-model="st.peralatan_ids" class="rounded text-pink-600"><span class="truncate">{{ a.nama }}</span></label>
+                  <p v-if="!peralatanList.length" class="text-[9px] text-slate-400 p-1">Tidak ada peralatan</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VI. SOP & VII. INSTRUKSI -->
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+            <div class="md:col-span-2 border border-purple-300 rounded-xl p-3 bg-purple-50/40">
+              <h4 class="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider mb-2"><span class="w-5 h-5 bg-purple-500 text-white rounded-lg inline-flex items-center justify-center text-[9px] font-bold mr-1">VI</span>SOP ({{ st.sop_ids.length }})</h4>
+              <div class="max-h-[120px] overflow-y-auto p-2 border border-slate-300 rounded-lg space-y-1">
+                <label v-for="s in filteredSOP" :key="s.id" class="flex items-center gap-1.5 text-[9px] cursor-pointer hover:bg-purple-50 rounded p-1"><input type="checkbox" :value="s.id" v-model="st.sop_ids" class="rounded text-purple-600"><span><strong>{{ s.kode_sop }}</strong> - {{ s.nama_sop }}</span></label>
+              </div>
+            </div>
+            <div class="md:col-span-3 border border-teal-300 rounded-xl p-3 bg-teal-50/40">
+              <h4 class="text-[10px] font-extrabold text-teal-600 uppercase tracking-wider mb-2"><span class="w-5 h-5 bg-teal-500 text-white rounded-lg inline-flex items-center justify-center text-[9px] font-bold mr-1">VII</span>Instruksi</h4>
+              <textarea v-model="st.instruksi" rows="3" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs" placeholder="Instruksi khusus..."></textarea>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+            <button type="button" @click="resetSTForm()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-lg">Reset</button>
+            <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-6 py-2.5 rounded-lg shadow-sm"><i :class="loading?'bi bi-hourglass-split animate-spin':'bi bi-save'"></i> {{ loading?'Menyimpan...':'Simpan ST' }}</button>
+          </div>
         </form>
       </div>
+    </div>
+  </div>
 
-      <!-- RIWAYAT SURAT TUGAS -->
-      <div class="glass-card rounded-2xl p-5">
-        <h2 class="text-lg font-bold text-emerald-800 mb-4">📋 Riwayat Surat Tugas ({{ filteredST.length }})</h2>
-        <div class="grid grid-cols-4 gap-3 mb-4">
-          <select v-model="fSTTahun" class="border rounded-lg px-3 py-2 text-xs"><option value="">Semua Tahun</option><option v-for="t in listTahunST" :key="t" :value="t">{{ t }}</option></select>
-          <input v-model="fSTSearch" placeholder="Cari..." class="border rounded-lg px-3 py-2 text-xs">
-          <button @click="resetFilterST" class="bg-amber-500 text-white rounded-lg text-xs font-bold">Reset</button>
+  <!-- ========== SUB-TAB: RIWAYAT ST ========== -->
+  <div v-show="stSubTab === 'riwayat'">
+    <div class="glass-card rounded-2xl shadow-sm overflow-hidden">
+      <div class="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-slate-200 px-5 py-3 flex items-center justify-between">
+        <h3 class="font-bold text-slate-700 text-sm"><i class="bi bi-clock-history text-emerald-500 mr-2"></i>Riwayat Surat Tugas</h3>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] text-slate-400">{{ filteredST.length }} data</span>
+          <button @click="loadAll" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"><i :class="loading?'bi bi-hourglass-split animate-spin':'bi bi-arrow-clockwise'"></i> Refresh</button>
+          <button @click="exportExcelST" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"><i class="bi bi-download"></i> Excel</button>
         </div>
-        <div class="overflow-x-auto">
-          <table>
-            <thead><tr><th>No</th><th>Nomor ST</th><th>Kegiatan</th><th>Lokasi</th><th>Status</th><th>Aksi</th></tr></thead>
-            <tbody>
-              <tr v-for="(s,i) in paginatedST" :key="s.id">
-                <td>{{ (pageST-1)*perPageST + i + 1 }}</td>
-                <td>{{ s.nomor_st || '-' }}</td>
-                <td>{{ s.kegiatan }}</td>
-                <td>{{ s.lokasi }}</td>
-                <td><span :class="s.status==='Aktif'?'bg-amber-100 text-amber-700':'bg-emerald-100 text-emerald-700'" class="px-2 py-1 rounded-full text-xs font-bold">{{ s.status }}</span></td>
-                <td><button @click="hapusST(s.id)" class="text-red-500"><i class="bi bi-trash"></i></button></td>
+      </div>
+      <div class="p-4">
+        <!-- Filter -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Tahun</label><select v-model="fSTTahun" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"><option value="">Semua</option><option v-for="t in listTahunST" :key="t" :value="t">{{ t }}</option></select></div>
+          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Bulan</label><select v-model="fSTBulan" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"><option value="">Semua</option><option v-for="(b, i) in ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des']" :value="String(i+1).padStart(2,'0')">{{ b }}</option></select></div>
+          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Layanan</label><select v-model="fSTLayanan" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"><option value="">Semua</option><option v-for="l in listLayananST" :key="l" :value="l">{{ l }}</option></select></div>
+          <div><input v-model="fSTSearch" placeholder="Cari..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></div>
+          <div><button @click="resetFilterST" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg py-2"><i class="bi bi-arrow-counterclockwise mr-1"></i>Reset</button></div>
+        </div>
+
+        <!-- Tabel -->
+        <div class="responsive-table border border-slate-200 rounded-lg overflow-x-auto">
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider">
+                <th class="p-2.5 text-center w-10">No</th><th class="p-2.5">Nomor ST</th><th class="p-2.5">Tanggal</th><th class="p-2.5">Layanan / Kegiatan</th><th class="p-2.5 hide-mobile-col">Lokasi</th><th class="p-2.5 hide-mobile-col">Petugas</th><th class="p-2.5 text-center w-20">Status</th><th class="p-2.5 text-center w-20">Aksi</th>
               </tr>
-              <tr v-if="!paginatedST.length"><td colspan="6" class="text-center py-4 text-gray-400">Belum ada data</td></tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-if="!paginatedST.length"><td colspan="8" class="p-8 text-center text-slate-400">Belum ada surat tugas</td></tr>
+              <tr v-for="(s, idx) in paginatedST" :key="s.id" class="hover:bg-emerald-50/30 transition">
+                <td class="p-2.5 text-center text-slate-400 text-[10px]">{{ (pageST-1)*perPageST + idx + 1 }}</td>
+                <td class="p-2.5 font-mono text-[10px]">{{ s.nomor_st || '-' }}</td>
+                <td class="p-2.5 whitespace-nowrap text-[10px]">{{ formatDate(s.tanggal_st) }}</td>
+                <td class="p-2.5"><span class="bg-emerald-50 text-emerald-700 text-[9px] px-1.5 py-0.5 rounded font-semibold">{{ s.layanan || '-' }}</span><div class="text-[10px] text-slate-600 mt-0.5 truncate max-w-[140px]">{{ s.kegiatan || '-' }}</div></td>
+                <td class="p-2.5 text-[10px] truncate max-w-[120px] hide-mobile-col">{{ s.lokasi || '-' }}</td>
+                <td class="p-2.5 text-[10px] truncate max-w-[130px] hide-mobile-col">{{ getPetugasNama(s.petugas_ids) || '-' }}</td>
+                <td class="p-2.5 text-center"><span :class="s.status==='Aktif'?'bg-amber-100 text-amber-700':'bg-emerald-100 text-emerald-700'" class="text-[9px] font-bold px-2 py-0.5 rounded-full">{{ s.status }}</span></td>
+                <td class="p-2.5 text-center"><button @click="hapusST(s.id)" class="text-red-500 hover:bg-red-50 p-1.5 rounded"><i class="bi bi-trash"></i></button></td>
+              </tr>
             </tbody>
           </table>
         </div>
-        <div class="flex justify-between mt-3 text-xs">
-          <span>Hal {{ pageST }}/{{ totalPageST }}</span>
-          <div class="flex gap-1">
-            <button @click="pageST=1" :disabled="pageST===1" class="px-2 py-1 rounded bg-gray-200">«</button>
-            <button @click="pageST--" :disabled="pageST===1" class="px-2 py-1 rounded bg-gray-200">‹</button>
-            <template v-for="h in totalPageST">
-              <button v-if="h===1||h===totalPageST||(h>=pageST-1&&h<=pageST+1)" @click="pageST=h" class="px-2 py-1 rounded" :class="pageST===h?'bg-emerald-500 text-white':'bg-gray-200'">{{ h }}</button>
-              <span v-else-if="h===pageST-2||h===pageST+2">...</span>
+
+        <!-- Pagination -->
+        <div v-if="filteredST.length>0" class="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-slate-200">
+          <span class="text-[10px] text-slate-400">Hal <strong>{{ pageST }}</strong>/<strong>{{ totalPageST }}</strong></span>
+          <div class="flex items-center gap-1">
+            <button @click="pageST=1" :disabled="pageST===1" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="pageST===1?'text-slate-300':'text-slate-600 hover:bg-emerald-50'">«</button>
+            <button @click="pageST--" :disabled="pageST===1" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="pageST===1?'text-slate-300':'text-slate-600 hover:bg-emerald-50'">‹</button>
+            <template v-for="hal in totalPageST">
+              <button v-if="hal===1||hal===totalPageST||(hal>=pageST-1&&hal<=pageST+1)" @click="pageST=hal" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="pageST===hal?'bg-emerald-500 text-white':'text-slate-600 hover:bg-emerald-50'">{{ hal }}</button>
+              <span v-else-if="hal===pageST-2||hal===pageST+2" class="text-slate-300 text-xs">...</span>
             </template>
-            <button @click="pageST++" :disabled="pageST===totalPageST" class="px-2 py-1 rounded bg-gray-200">›</button>
-            <button @click="pageST=totalPageST" :disabled="pageST===totalPageST" class="px-2 py-1 rounded bg-gray-200">»</button>
+            <button @click="pageST++" :disabled="pageST===totalPageST" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="pageST===totalPageST?'text-slate-300':'text-slate-600 hover:bg-emerald-50'">›</button>
+            <button @click="pageST=totalPageST" :disabled="pageST===totalPageST" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="pageST===totalPageST?'text-slate-300':'text-slate-600 hover:bg-emerald-50'">»</button>
           </div>
         </div>
       </div>
     </div>
-
+  </div>
+</div>
     <!-- ========== TAB LAPORAN ========== -->
     <div v-if="tab==='laporan'" class="space-y-6">
       <div class="glass-card rounded-2xl p-5">
