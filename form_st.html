@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Surat Tugas - SI DILAN</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+:root {
+--bg: #f0f4ff; --bg2: #e8f0fe; --card-bg: rgba(255,255,255,0.75);
+--text: #1e293b; --text2: #3b82f6; --border: rgba(255,255,255,0.3);
+--table-hover: #f0f7ff;
+}
+.dark {
+--bg: #0f172a; --bg2: #1e293b; --card-bg: rgba(30,41,59,0.85);
+--text: #e2e8f0; --text2: #93c5fd; --border: rgba(255,255,255,0.08);
+--table-hover: #1e3a5f;
+}
+body {
+background: linear-gradient(135deg, var(--bg), var(--bg2));
+font-family: 'Segoe UI', system-ui, sans-serif;
+margin: 0; min-height: 100vh; color: var(--text);
+transition: background 0.3s, color 0.3s;
+}
+.glass-card {
+background: var(--card-bg); backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px); border: 1px solid var(--border);
+box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+}
+.sidebar {
+position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white;
+z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+overflow-y: auto;
+}
+.dark .sidebar { background: linear-gradient(180deg, #0f172a, #1e293b); }
+.sidebar.collapsed { transform: translateX(-100%); }
+.sidebar.open { transform: translateX(0); }
+.sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-item {
+display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer;
+transition: background 0.2s; text-decoration: none; color: white;
+}
+.sidebar-item:hover { background: rgba(255,255,255,0.1); }
+.sidebar-item.active { background: rgba(255,255,255,0.2); font-weight: 600; }
+.sidebar-group-title {
+display: flex; align-items: center; justify-content: space-between;
+padding: 10px 16px; font-size: 11px; font-weight: 700;
+text-transform: uppercase; letter-spacing: 1px;
+color: rgba(255,255,255,0.5); cursor: pointer; user-select: none;
+}
+.sidebar-group-title:hover { color: rgba(255,255,255,0.8); }
+.sidebar-sub { padding-left: 12px; }
+.sidebar-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 12px; }
+.main-content {
+margin-left: 260px; padding: 24px; min-height: 100vh;
+transition: margin-left 0.3s;
+}
+.main-content.expanded { margin-left: 0; }
+.mobile-overlay {
+position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+z-index: 35; display: none;
+}
+.mobile-overlay.show { display: block; }
+.btn-primary {
+background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white;
+border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer;
+}
+.btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+table th { background: var(--bg2); color: var(--text2); font-weight: 600; position: sticky; top: 0; }
+table td { border-top: 1px solid var(--border); }
+tbody tr:hover { background: var(--table-hover); }
+[v-cloak] { display: none !important; }
+@media (max-width: 768px) {
+.sidebar { width: 280px; transform: translateX(-100%); }
+.main-content { margin-left: 0; }
+.main-content.shifted { margin-left: 280px; }
+}
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+<div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+<div class="sidebar-header">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
+<button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button>
+</div>
+<p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+</div>
+<nav class="p-3 space-y-1">
+<a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+<div class="sidebar-divider"></div>
+<div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='ops'?'':'ops'"><span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span><i :class="expandedGroup==='ops'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
+<div v-show="expandedGroup==='ops'" class="sidebar-sub space-y-1">
+<a href="form_pengaduan.html" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
+<a href="form_st.html" class="sidebar-item active"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+<a href="form_laporan.html" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+<a href="peta.html" class="sidebar-item"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
+<a href="sppd.html" class="sidebar-item"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
+</div>
+<div class="sidebar-divider"></div>
+<div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='adm'?'':'adm'"><span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span><i :class="expandedGroup==='adm'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
+<div v-show="expandedGroup==='adm'" class="sidebar-sub space-y-1">
+<a href="master.html" class="sidebar-item"><i class="bi bi-server"></i> Master Data</a>
+<a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i> Pengaturan</a>
+</div>
+<div class="sidebar-divider"></div>
+<a href="about.html" class="sidebar-item"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
+<button @click="toggleDarkMode" class="sidebar-item w-full"><i :class="isDark?'bi bi-sun-fill':'bi bi-moon-fill'"></i> {{ isDark?'Mode Terang':'Mode Gelap' }}</button>
+</nav>
+</aside>
+
+<main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+<div class="max-w-7xl mx-auto">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h1 class="text-2xl font-bold" style="color: var(--text)">Surat Tugas</h1>
+<p class="text-sm" style="color: var(--text2)">Buat surat tugas dan pantau riwayat</p>
+</div>
+<button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
+</div>
+
+<!-- Toast Container -->
+<div style="position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column-reverse;gap:8px;align-items:flex-end;">
+<div v-for="t in toasts" :key="t.id" style="padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;color:white;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-width:360px;" :style="{ background: t.type === 'success' ? '#10b981' : '#ef4444' }">
+<i :class="t.type === 'success' ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i> {{ t.message }}
+</div>
+</div>
+
+<!-- Sub-tab -->
+<div class="bg-white dark:bg-gray-800 rounded-2xl p-1.5 border flex gap-1.5 mb-4">
+<button @click="subTab = 'form'" :class="subTab==='form'?'bg-emerald-500 text-white shadow':'bg-slate-50 dark:bg-gray-600 text-slate-600 dark:text-white'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold"><i class="bi bi-pencil-square"></i> Form Baru</button>
+<button @click="subTab = 'riwayat'" :class="subTab==='riwayat'?'bg-emerald-500 text-white shadow':'bg-slate-50 dark:bg-gray-600 text-slate-600 dark:text-white'" class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold"><i class="bi bi-list-ul"></i> Riwayat ({{ filteredData.length }})</button>
+</div>
+
+<!-- ========== FORM ========== -->
+<div v-show="subTab === 'form'" class="glass-card rounded-2xl overflow-hidden border-2 border-emerald-200">
+<div class="bg-gradient-to-r from-emerald-50 to-teal-50/30 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-emerald-200 px-5 py-3 flex justify-between">
+<h3 class="font-bold text-sm text-emerald-700 dark:text-emerald-300">📝 Buat Surat Tugas</h3>
+<button @click="resetForm()" class="text-xs bg-white dark:bg-gray-700 border border-emerald-200 dark:border-emerald-600 text-emerald-600 dark:text-emerald-300 px-3 py-1.5 rounded-lg"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+</div>
+<div class="p-5">
+<form @submit.prevent="simpanST">
+<!-- I. Administrasi -->
+<div class="border border-emerald-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-emerald-50 to-green-50/20">
+<h4 class="text-xs font-extrabold text-emerald-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-emerald-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">I</span>Administrasi Surat</h4>
+<div class="grid grid-cols-2 gap-3">
+<div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Nomor ST</label><input v-model="st.nomor_st" placeholder="Auto‑generate" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+<div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Tanggal ST <span class="text-red-500">*</span></label><input type="date" v-model="st.tanggal_st" required class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+</div>
+</div>
+
+<!-- II. Dasar Hukum -->
+<div class="border border-cyan-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-cyan-50 to-teal-50/20">
+<h4 class="text-xs font-extrabold text-cyan-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-cyan-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">II</span>Dasar Hukum</h4>
+<div class="text-[10px] text-slate-600 dark:text-slate-400 space-y-1 mb-3">
+<p>1. Permendagri Nomor 26 Tahun 2020</p><p>2. Permendagri Nomor 16 Tahun 2023</p><p>3. Perda Trenggalek Nomor 03 Tahun 2019</p>
+</div>
+<button type="button" @click="st.dasarManual = st.dasarManual === null ? '' : null" class="text-[11px] bg-cyan-100 hover:bg-cyan-200 dark:bg-cyan-900 dark:hover:bg-cyan-800 text-cyan-700 dark:text-cyan-300 font-bold px-3 py-2 rounded-lg transition mb-2 border border-cyan-200 dark:border-cyan-700">{{ st.dasarManual === null ? '+ Tambah Dasar Manual' : '- Hapus Dasar Manual' }}</button>
+<textarea v-show="st.dasarManual !== null" v-model="st.dasarManual" rows="2" class="w-full border rounded-lg p-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Tulis dasar tambahan..."></textarea>
+</div>
+
+<!-- III. Klasifikasi & Lokasi -->
+<div class="border border-teal-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-teal-50 to-emerald-50/20">
+<h4 class="text-xs font-extrabold text-teal-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-teal-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">III</span>Klasifikasi & Lokasi</h4>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-xs font-bold text-slate-600 dark:text-slate-300">Unit Kerja</label>
+<select v-model="st.unit_kerja" @change="onUnitChange()" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+<option value="">-- Pilih --</option>
+<option v-for="u in unitKerjaList" :key="u.id" :value="u.nama_unit">{{ u.nama_unit }}</option>
+</select>
+</div>
+<div v-if="st.unit_kerja">
+<label class="text-xs font-bold text-slate-600 dark:text-slate-300">Layanan</label>
+<select v-model="st.layanan" @change="onLayananChange()" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+<option value="">-- Pilih --</option>
+<option v-for="l in filteredLayanan" :key="l.id" :value="l.nama_layanan">{{ l.nama_layanan }}</option>
+</select>
+</div>
+</div>
+<div class="mt-3">
+<label class="text-xs font-bold text-slate-600 dark:text-slate-300">Kegiatan</label>
+<select v-model="st.kegiatan" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+<option value="">-- Pilih --</option>
+<option v-if="st.layanan" :value="st.layanan">{{ st.layanan }} (Auto)</option>
+<option value="__manual__">Isi Manual...</option>
+</select>
+<input v-if="st.kegiatan==='__manual__'" v-model="st.kegiatanManual" placeholder="Tulis nama kegiatan..." class="w-full mt-2 border border-amber-300 rounded-lg px-3 py-2.5 text-sm bg-amber-50 dark:bg-amber-900/20 dark:text-white dark:border-amber-600">
+</div>
+<div class="grid grid-cols-2 gap-3 mt-3">
+<div>
+<label class="text-xs font-bold text-slate-600 dark:text-slate-300">Kecamatan</label>
+<select v-model="st.kecamatan" @change="st.desa=''" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+<option value="">-- Semua --</option>
+<option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
+</select>
+</div>
+<div>
+<label class="text-xs font-bold text-slate-600 dark:text-slate-300">Desa</label>
+<select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+<option value="">-- Pilih --</option>
+<option v-for="desa in filteredDesa" :key="desa" :value="desa">{{ desa }}</option>
+</select>
+</div>
+</div>
+<div class="mt-3">
+<label class="text-xs font-bold text-slate-600 dark:text-slate-300">Lokasi <span class="text-red-500">*</span></label>
+<select v-model="st.lokasi" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+<option value="" disabled>-- Pilih --</option>
+<option v-for="lok in filteredLokasi" :key="lok.id" :value="lok.nama_lokasi">{{ lok.nama_lokasi }}</option>
+<option value="__manual__">Manual...</option>
+</select>
+<input v-if="st.lokasi==='__manual__'" v-model="st.lokasiManual" placeholder="Tulis lokasi..." class="w-full mt-2 border border-amber-300 rounded-lg px-3 py-2.5 text-sm bg-amber-50 dark:bg-amber-900/20 dark:text-white dark:border-amber-600">
+</div>
+</div>
+
+<!-- IV. Waktu -->
+<div class="border border-orange-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-orange-50 to-amber-50/20">
+<h4 class="text-xs font-extrabold text-orange-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-orange-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">IV</span>Waktu Pelaksanaan</h4>
+<div class="grid grid-cols-4 gap-3">
+<div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Tgl Mulai</label><input type="date" v-model="st.tgl_mulai" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+<div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Jam Mulai</label><input type="time" v-model="st.jam_mulai" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+<div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Tgl Selesai</label><input type="date" v-model="st.tgl_selesai" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+<div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Jam Selesai</label><input type="time" v-model="st.jam_selesai" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+</div>
+</div>
+
+<!-- V. Sumber Daya -->
+<div class="border border-pink-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-pink-50 to-rose-50/20">
+<h4 class="text-xs font-extrabold text-pink-600 uppercase tracking-wider mb-3"><span class="w-6 h-6 bg-pink-500 text-white rounded-lg inline-flex items-center justify-center text-[10px] font-bold mr-2">V</span>Sumber Daya</h4>
+<div class="mb-3">
+<label class="text-xs font-bold text-slate-600 dark:text-slate-300">Petugas <span class="text-red-500">*</span> ({{ st.petugas_ids.length }})</label>
+<div class="grid grid-cols-2 gap-1 max-h-[150px] overflow-y-auto p-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 mt-1">
+<label v-for="p in personilList" :key="p.id" class="flex items-center gap-2 text-[11px] cursor-pointer hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded p-1.5">
+<input type="checkbox" :value="p.id" v-model="st.petugas_ids" class="rounded text-pink-600"><span class="truncate">{{ p.nama }}</span>
+</label>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-xs font-bold text-slate-600 dark:text-slate-300">Kendaraan ({{ st.kendaraan_ids.length }})</label>
+<div class="max-h-[120px] overflow-y-auto p-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 mt-1 space-y-1">
+<label v-for="k in kendaraanList" :key="k.id" class="flex items-center gap-2 text-[10px] cursor-pointer hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded p-1">
+<input type="checkbox" :value="k.id" v-model="st.kendaraan_ids" class="rounded text-pink-600"><span class="truncate">{{ k.nama }} ({{ k.plat || '-' }})</span>
+</label>
+<p v-if="!kendaraanList.length" class="text-[9px] text-slate-400 p-1">Tidak ada kendaraan</p>
+</div>
+</div>
+<div>
+<label class="text-xs font-bold text-slate-600 dark:text-slate-300">Peralatan ({{ st.peralatan_ids.length }})</label>
+<div class="max-h-[120px] overflow-y-auto p-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 mt-1 space-y-1">
+<label v-for="a in peralatanList" :key="a.id" class="flex items-center gap-2 text-[10px] cursor-pointer hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded p-1">
+<input type="checkbox" :value="a.id" v-model="st.peralatan_ids" class="rounded text-pink-600"><span class="truncate">{{ a.nama }}</span>
+</label>
+<p v-if="!peralatanList.length" class="text-[9px] text-slate-400 p-1">Tidak ada peralatan</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- VI & VII -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+<div class="md:col-span-2 border border-purple-300 rounded-xl p-3 bg-purple-50/40 dark:bg-purple-900/20">
+<h4 class="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider mb-2"><span class="w-5 h-5 bg-purple-500 text-white rounded-lg inline-flex items-center justify-center text-[9px] font-bold mr-1">VI</span>SOP ({{ st.sop_ids.length }})</h4>
+<div class="max-h-[120px] overflow-y-auto p-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 space-y-1">
+<label v-for="s in filteredSOP" :key="s.id" class="flex items-center gap-1.5 text-[9px] cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded p-1">
+<input type="checkbox" :value="s.id" v-model="st.sop_ids" class="rounded text-purple-600"><span><strong>{{ s.kode_sop }}</strong> - {{ s.nama_sop }}</span>
+</label>
+</div>
+</div>
+<div class="md:col-span-3 border border-teal-300 rounded-xl p-3 bg-teal-50/40 dark:bg-teal-900/20">
+<h4 class="text-[10px] font-extrabold text-teal-600 uppercase tracking-wider mb-2"><span class="w-5 h-5 bg-teal-500 text-white rounded-lg inline-flex items-center justify-center text-[9px] font-bold mr-1">VII</span>Instruksi</h4>
+<textarea v-model="st.instruksi" rows="3" class="w-full border rounded-lg p-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Instruksi khusus..."></textarea>
+</div>
+</div>
+
+<div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-600">
+<button type="button" @click="resetForm()" class="bg-slate-100 hover:bg-slate-200 dark:bg-gray-600 dark:text-white text-slate-700 font-bold text-xs px-4 py-2.5 rounded-lg">Reset</button>
+<button type="submit" :disabled="loading" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-6 py-2.5 rounded-lg shadow-sm">{{ loading ? 'Menyimpan...' : 'Simpan ST' }}</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- ========== RIWAYAT ========== -->
+<div v-show="subTab === 'riwayat'" class="glass-card rounded-2xl overflow-hidden border-2 border-emerald-100">
+<div class="bg-gradient-to-r from-emerald-50 to-teal-50/30 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-emerald-200 px-5 py-3 flex justify-between items-center">
+<h3 class="font-bold text-sm text-emerald-700 dark:text-emerald-300"><i class="bi bi-clock-history mr-2"></i>Riwayat ({{ filteredData.length }})</h3>
+<button @click="exportExcel" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"><i class="bi bi-download"></i> Excel</button>
+</div>
+<div class="p-4">
+<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+<div><label class="text-[10px] font-bold text-slate-500">Tahun</label><select v-model="fTahun" class="w-full border rounded-lg px-3 py-2 text-xs mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">Semua</option><option v-for="t in listTahun" :value="t">{{ t }}</option></select></div>
+<div><label class="text-[10px] font-bold text-slate-500">Bulan</label><select v-model="fBulan" class="w-full border rounded-lg px-3 py-2 text-xs mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">Semua</option><option v-for="(b,i) in ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des']" :value="String(i+1).padStart(2,'0')">{{ b }}</option></select></div>
+<div><label class="text-[10px] font-bold text-slate-500">Layanan</label><select v-model="fLayanan" class="w-full border rounded-lg px-3 py-2 text-xs mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">Semua</option><option v-for="l in layananOptions" :value="l">{{ l }}</option></select></div>
+<div><input v-model="fSearch" placeholder="Cari..." class="w-full border rounded-lg px-3 py-2 text-xs mt-5 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+<div><button @click="resetFilter" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg py-2 mt-5"><i class="bi bi-arrow-counterclockwise mr-1"></i>Reset</button></div>
+</div>
+
+<div class="overflow-x-auto border border-slate-200 dark:border-gray-700 rounded-lg">
+<table class="w-full text-xs">
+<thead>
+<tr class="bg-slate-50 dark:bg-gray-700 text-slate-600 dark:text-slate-300 uppercase font-bold text-[10px]">
+<th class="p-2.5 text-center w-10">No</th><th class="p-2.5">Nomor ST</th><th class="p-2.5">Tanggal</th><th class="p-2.5">Layanan / Kegiatan</th><th class="p-2.5">Lokasi</th><th class="p-2.5">Petugas</th><th class="p-2.5 text-center">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr v-if="!paginated.length"><td colspan="7" class="p-8 text-center text-slate-400">Belum ada data</td></tr>
+<tr v-for="(s, idx) in paginated" :key="s.id" class="hover:bg-emerald-50/30 dark:hover:bg-emerald-900/20">
+<td class="p-2.5 text-center text-slate-400 text-[10px]">{{ (page-1)*perPage + idx + 1 }}</td>
+<td class="p-2.5 font-mono text-[10px]">{{ s.nomor_st || '-' }}</td>
+<td class="p-2.5 whitespace-nowrap text-[10px]">{{ formatDate(s.tanggal_st) }}</td>
+<td class="p-2.5"><span class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-[9px] px-1.5 py-0.5 rounded font-semibold">{{ s.layanan || '-' }}</span><div class="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5 truncate max-w-[140px]">{{ s.kegiatan || '-' }}</div></td>
+<td class="p-2.5 text-[10px] truncate max-w-[120px]">{{ s.lokasi || '-' }}</td>
+<td class="p-2.5 text-[10px] truncate max-w-[130px]">{{ getPetugasNama(s.petugas_ids) || '-' }}</td>
+<td class="p-2.5 text-center"><span :class="s.status==='Aktif'?'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300':'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'" class="text-[9px] font-bold px-2 py-0.5 rounded-full">{{ s.status }}</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div v-if="filteredData.length" class="flex items-center justify-between gap-3 mt-3 pt-3 border-t dark:border-gray-700">
+<span class="text-[10px] text-slate-400">Hal <strong>{{ page }}</strong>/<strong>{{ totalPage }}</strong></span>
+<div class="flex items-center gap-1">
+<button @click="page=1" :disabled="page===1" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===1?'text-slate-300':'text-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'">«</button>
+<button @click="page--" :disabled="page===1" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===1?'text-slate-300':'text-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'">‹</button>
+<template v-for="hal in totalPage">
+<button v-if="hal===1||hal===totalPage||(hal>=page-1&&hal<=page+1)" @click="page=hal" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold" :class="page===hal?'bg-emerald-500 text-white':'text-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'">{{ hal }}</button>
+<span v-else-if="hal===page-2||hal===page+2" class="text-slate-300 text-xs">...</span>
+</template>
+<button @click="page++" :disabled="page===totalPage" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===totalPage?'text-slate-300':'text-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'">›</button>
+<button @click="page=totalPage" :disabled="page===totalPage" class="w-7 h-7 flex items-center justify-center rounded text-xs" :class="page===totalPage?'text-slate-300':'text-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900'">»</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+<script>
+const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+const DATA_KECAMATAN = ['Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan','Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'];
+const DATA_DESA = {
+'Bendungan':['Botoputih','Depok','Masaran','Sengon','Surenlor'],'Dongko':['Dongko','Pandean','Petung','Pringapus','Salam'],'Durenan':['Durenan','Gador','Kamulan','Pakis','Pandean'],'Gandusari':['Gandusari','Jajar','Krandegan','Sukorame','Widoro'],'Kampak':['Bogoran','Karangrejo','Ngadimulyo','Senden','Timahan'],'Karangan':['Buluagung','Jati','Karangan','Kayen','Sumber'],'Munjungan':['Besuki','Munjungan','Sobo','Tawing','Bangun'],'Panggul':['Banjar','Depok','Manggis','Panggul','Wonocoyo'],'Pogalan':['Bendorejo','Kedunglurah','Ngadirejo','Pogalan','Wonocoyo'],'Pule':['Joho','Kembangan','Pule','Puyung','Sidomulyo'],'Suruh':['Gamping','Mlinjon','Ngrandu','Suruh','Wonokerto'],'Trenggalek':['Kelutan','Ngantru','Sumbergedong','Surondakan','Tamanan'],'Tugu':['Duren','Gading','Prambon','Tumpuk','Winong'],'Watulimo':['Dukuh','Gemaharjo','Prigi','Slawe','Watulimo']
+};
+
+const { createApp } = Vue;
+createApp({
+data() {
+return {
+subTab: 'form',
+sidebarOpen: true,
+isMobile: window.innerWidth < 768,
+isDark: localStorage.getItem('darkMode')==='true',
+expandedGroup: 'ops',
+toasts: [],
+loading: false,
+// Form
+st: {
+nomor_st:'', tanggal_st:'', dasarManual:null,
+unit_kerja:'', layanan:'', kegiatan:'', kegiatanManual:'',
+kecamatan:'', desa:'', lokasi:'', lokasiManual:'',
+tgl_mulai:'', tgl_selesai:'', jam_mulai:'08:00', jam_selesai:'16:00',
+petugas_ids:[], kendaraan_ids:[], peralatan_ids:[], sop_ids:[], instruksi:''
+},
+// Data master
+unitKerjaList: [], layananList: [], sopList: [], personilList: [],
+kendaraanList: [], peralatanList: [], lokasiList: [],
+// Data ST
+suratTugasList: [],
+// Filter & Pagination
+fTahun: '', fBulan: '', fLayanan: '', fSearch: '',
+page: 1, perPage: 15,
+listKecamatan: DATA_KECAMATAN,
+desaMap: DATA_DESA
+}
+},
+computed: {
+filteredLayanan() {
+return this.st.unit_kerja ? this.layananList.filter(l => l.unit_kerja === this.st.unit_kerja) : [];
+},
+filteredSOP() {
+return this.st.layanan ? this.sopList.filter(s => s.layanan === this.st.layanan) : [];
+},
+filteredLokasi() {
+if (!this.st.kecamatan || !this.lokasiList) return [];
+return this.lokasiList.filter(l => l.kecamatan === this.st.kecamatan);
+},
+filteredDesa() {
+return this.st.kecamatan ? (this.desaMap[this.st.kecamatan] || []) : [];
+},
+filteredData() {
+let d = this.suratTugasList;
+if (this.fTahun) d = d.filter(s => new Date(s.tanggal_st).getFullYear().toString()===this.fTahun);
+if (this.fBulan) d = d.filter(s => String(new Date(s.tanggal_st).getMonth()+1).padStart(2,'0')===this.fBulan);
+if (this.fLayanan) d = d.filter(s => s.layanan === this.fLayanan);
+if (this.fSearch) {
+const kw = this.fSearch.toLowerCase();
+d = d.filter(s => (s.kegiatan||'').toLowerCase().includes(kw) || (s.lokasi||'').toLowerCase().includes(kw));
+}
+console.log('📊 filteredData ST:', d.length);
+return d;
+},
+paginated() {
+const start = (this.page-1)*this.perPage;
+return this.filteredData.slice(start, start+this.perPage);
+},
+totalPage() { return Math.ceil(this.filteredData.length/this.perPage)||1; },
+listTahun() {
+const y = new Set();
+this.suratTugasList.forEach(s => { const d=new Date(s.tanggal_st); if(!isNaN(d)) y.add(d.getFullYear()); });
+if(y.size===0) y.add(new Date().getFullYear());
+return [...y].sort((a,b)=>b-a);
+},
+layananOptions() {
+const s = new Set();
+this.suratTugasList.forEach(st => { if(st.layanan) s.add(st.layanan); });
+return [...s].sort();
+}
+},
+methods: {
+addToast(msg,type='success') {
+const id = Date.now();
+this.toasts.push({id, message:msg, type});
+setTimeout(()=>{ this.toasts = this.toasts.filter(t=>t.id!==id); },3000);
+},
+toggleDarkMode() {
+this.isDark=!this.isDark;
+localStorage.setItem('darkMode', this.isDark);
+document.documentElement.classList.toggle('dark', this.isDark);
+},
+async loadMaster() {
+console.log('📡 Memuat data master ST...');
+try {
+const tables = [
+supa.from('unit_kerja').select('*').eq('status','Aktif'),
+supa.from('layanan').select('*').eq('status','Aktif'),
+supa.from('sop').select('*').eq('status','Aktif'),
+supa.from('personil').select('*').eq('status','Aktif'),
+supa.from('kendaraan').select('*'),
+supa.from('peralatan').select('*'),
+supa.from('lokasi').select('*')
+];
+const res = await Promise.all(tables);
+const errors = res.filter(r => r.error);
+if (errors.length) throw new Error(errors.map(e => e.error.message).join(', '));
+this.unitKerjaList = res[0].data || [];
+this.layananList = res[1].data || [];
+this.sopList = res[2].data || [];
+this.personilList = res[3].data || [];
+this.kendaraanList = res[4].data || [];
+this.peralatanList = res[5].data || [];
+this.lokasiList = res[6].data || [];
+console.log('✅ Master ST dimuat:', this.unitKerjaList.length, 'unit', this.layananList.length, 'layanan', this.sopList.length, 'sop');
+} catch(e) {
+console.error('❌ Gagal load master ST:', e.message);
+this.addToast('Gagal memuat data master: '+e.message, 'error');
+}
+},
+async loadST() {
+console.log('📡 Memuat data surat tugas...');
+try {
+const { data, error } = await supa.from('surat_tugas').select('*').order('created_at',{ascending:false});
+if(error) throw error;
+this.suratTugasList = data || [];
+console.log('✅ ST dimuat:', this.suratTugasList.length);
+} catch(e) {
+console.error('❌ Gagal load ST:', e.message);
+this.addToast('Gagal memuat surat tugas', 'error');
+}
+},
+resetForm() {
+this.st = {
+nomor_st:'', tanggal_st:'', dasarManual:null,
+unit_kerja:'', layanan:'', kegiatan:'', kegiatanManual:'',
+kecamatan:'', desa:'', lokasi:'', lokasiManual:'',
+tgl_mulai:'', tgl_selesai:'', jam_mulai:'08:00', jam_selesai:'16:00',
+petugas_ids:[], kendaraan_ids:[], peralatan_ids:[], sop_ids:[], instruksi:''
+};
+console.log('🔄 Form ST direset');
+},
+onUnitChange() { this.st.layanan=''; this.st.kegiatan=''; this.st.sop_ids=[]; },
+onLayananChange() {
+this.st.kegiatan = this.st.layanan;
+this.st.sop_ids = [];
+const sopTerkait = this.sopList.filter(s => s.layanan === this.st.layanan);
+if (sopTerkait.length) this.st.instruksi = sopTerkait.map(s => `[${s.kode_sop}] ${s.isi_instruksi}`).join('\n\n');
+console.log('🔧 Layanan diubah, SOP terkait:', sopTerkait.length);
+},
+getPetugasNama(ids) {
+if(!ids || !ids.length) return '-';
+return ids.map(id => { const p = this.personilList.find(x => x.id === id); return p ? p.nama : id; }).join(', ');
+},
+async simpanST() {
+console.log('💾 simpanST dipanggil');
+if(!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) {
+this.addToast('Kegiatan, Lokasi, dan Tanggal wajib diisi','error'); return;
+}
+if(!this.st.petugas_ids.length) { this.addToast('Minimal 1 petugas harus dipilih','error'); return; }
+this.loading = true;
+try {
+const payload = {
+nomor_st: this.st.nomor_st || (Math.floor(Math.random()*900+100)+'/ST/'+(this.st.unit_kerja||'OPS').substring(0,3).toUpperCase()+'/'+new Date().getFullYear()),
+tanggal_st: this.st.tanggal_st,
+dasar: ['Permendagri 26/2020','Permendagri 16/2023','Perda Trenggalek 3/2019',this.st.dasarManual].filter(Boolean).join('\n'),
+unit_kerja: this.st.unit_kerja||null,
+layanan: this.st.layanan||null,
+kegiatan: this.st.kegiatan==='__manual__' ? this.st.kegiatanManual : this.st.kegiatan,
+lokasi: this.st.lokasi==='__manual__' ? this.st.lokasiManual : this.st.lokasi,
+kecamatan: this.st.kecamatan||null, desa: this.st.desa||null,
+tgl_mulai: this.st.tgl_mulai||this.st.tanggal_st, tgl_selesai: this.st.tgl_selesai||this.st.tanggal_st,
+jam_mulai: this.st.jam_mulai||'08:00', jam_selesai: this.st.jam_selesai||'16:00',
+petugas_ids: this.st.petugas_ids,
+kendaraan_ids: this.st.kendaraan_ids.length?this.st.kendaraan_ids:null,
+peralatan_ids: this.st.peralatan_ids.length?this.st.peralatan_ids:null,
+sop_ids: this.st.sop_ids.length?this.st.sop_ids:null,
+instruksi: this.st.instruksi||null,
+status: 'Aktif'
+};
+const { error } = await supa.from('surat_tugas').insert(payload);
+if(error) throw error;
+console.log('✅ ST tersimpan');
+this.addToast('✅ Surat Tugas berhasil disimpan!');
+this.resetForm();
+await this.loadST();
+} catch(e) {
+console.error('❌ Gagal simpan ST:', e.message);
+this.addToast('Gagal: '+e.message,'error');
+} finally { this.loading = false; }
+},
+exportExcel() {
+if(!this.filteredData.length) { this.addToast('Tidak ada data','error'); return; }
+const rows = this.filteredData.map((s,i)=>({
+No:i+1, Tanggal:this.formatDate(s.tanggal_st), Nomor:s.nomor_st||'-', Kegiatan:s.kegiatan||'-', Lokasi:s.lokasi||'-', Status:s.status
+}));
+const ws = XLSX.utils.json_to_sheet(rows);
+const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Surat Tugas');
+XLSX.writeFile(wb, `st_${new Date().toISOString().slice(0,10)}.xlsx`);
+this.addToast('✅ Excel terunduh');
+},
+formatDate(d) {
+if(!d) return '-';
+return new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+},
+resetFilter() {
+this.fTahun=''; this.fBulan=''; this.fLayanan=''; this.fSearch='';
+this.page=1;
+}
+},
+mounted() {
+console.log('🚀 form_st.html mounted');
+if(this.isDark) document.documentElement.classList.add('dark');
+if(this.isMobile) this.sidebarOpen = false;
+window.addEventListener('resize', ()=>{ this.isMobile = window.innerWidth<768; if(!this.isMobile) this.sidebarOpen=true; });
+this.loadMaster();
+this.loadST();
+}
+}).mount('#app');
+</script>
+</body>
+</html>

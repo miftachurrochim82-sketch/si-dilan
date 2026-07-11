@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Laporan Kegiatan - SI DILAN</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+:root {
+--bg: #f0f4ff; --bg2: #e8f0fe; --card-bg: rgba(255,255,255,0.75);
+--text: #1e293b; --text2: #3b82f6; --border: rgba(255,255,255,0.3);
+}
+.dark {
+--bg: #0f172a; --bg2: #1e293b; --card-bg: rgba(30,41,59,0.85);
+--text: #e2e8f0; --text2: #93c5fd; --border: rgba(255,255,255,0.08);
+}
+body {
+background: linear-gradient(135deg, var(--bg), var(--bg2));
+font-family: 'Segoe UI', system-ui, sans-serif;
+margin: 0; min-height: 100vh; color: var(--text);
+transition: background 0.3s, color 0.3s;
+}
+.glass-card {
+background: var(--card-bg); backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px); border: 1px solid var(--border);
+box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+}
+.sidebar {
+position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white;
+z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+overflow-y: auto;
+}
+.dark .sidebar { background: linear-gradient(180deg, #0f172a, #1e293b); }
+.sidebar.collapsed { transform: translateX(-100%); }
+.sidebar.open { transform: translateX(0); }
+.sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-item {
+display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer;
+transition: background 0.2s; text-decoration: none; color: white;
+}
+.sidebar-item:hover { background: rgba(255,255,255,0.1); }
+.sidebar-item.active { background: rgba(255,255,255,0.2); font-weight: 600; }
+.sidebar-group-title {
+display: flex; align-items: center; justify-content: space-between;
+padding: 10px 16px; font-size: 11px; font-weight: 700;
+text-transform: uppercase; letter-spacing: 1px;
+color: rgba(255,255,255,0.5); cursor: pointer; user-select: none;
+}
+.sidebar-group-title:hover { color: rgba(255,255,255,0.8); }
+.sidebar-sub { padding-left: 12px; }
+.sidebar-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 12px; }
+.main-content {
+margin-left: 260px; padding: 24px; min-height: 100vh;
+transition: margin-left 0.3s;
+}
+.main-content.expanded { margin-left: 0; }
+.mobile-overlay {
+position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+z-index: 35; display: none;
+}
+.mobile-overlay.show { display: block; }
+.btn-primary {
+background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white;
+border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer;
+}
+.btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+[v-cloak] { display: none !important; }
+@media (max-width: 768px) {
+.sidebar { width: 280px; transform: translateX(-100%); }
+.main-content { margin-left: 0; }
+.main-content.shifted { margin-left: 280px; }
+}
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+<div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+<div class="sidebar-header">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
+<button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button>
+</div>
+<p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+</div>
+<nav class="p-3 space-y-1">
+<a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+<div class="sidebar-divider"></div>
+<div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='ops'?'':'ops'"><span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span><i :class="expandedGroup==='ops'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
+<div v-show="expandedGroup==='ops'" class="sidebar-sub space-y-1">
+<a href="form_pengaduan.html" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
+<a href="form_st.html" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+<a href="form_laporan.html" class="sidebar-item active"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+<a href="peta.html" class="sidebar-item"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
+<a href="sppd.html" class="sidebar-item"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
+</div>
+<div class="sidebar-divider"></div>
+<div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='adm'?'':'adm'"><span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span><i :class="expandedGroup==='adm'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
+<div v-show="expandedGroup==='adm'" class="sidebar-sub space-y-1">
+<a href="master.html" class="sidebar-item"><i class="bi bi-server"></i> Master Data</a>
+<a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i> Pengaturan</a>
+</div>
+<div class="sidebar-divider"></div>
+<a href="about.html" class="sidebar-item"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
+<button @click="toggleDarkMode" class="sidebar-item w-full"><i :class="isDark?'bi bi-sun-fill':'bi bi-moon-fill'"></i> {{ isDark?'Mode Terang':'Mode Gelap' }}</button>
+</nav>
+</aside>
+
+<main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+<div class="max-w-4xl mx-auto">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h1 class="text-2xl font-bold" style="color: var(--text)">Laporan Kegiatan</h1>
+<p class="text-sm" style="color: var(--text2)">Buat laporan hasil kegiatan</p>
+</div>
+<button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
+</div>
+
+<!-- Toast Container -->
+<div style="position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column-reverse;gap:8px;align-items:flex-end;">
+<div v-for="t in toasts" :key="t.id" style="padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;color:white;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-width:360px;" :style="{ background: t.type === 'success' ? '#10b981' : '#ef4444' }">
+<i :class="t.type === 'success' ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i> {{ t.message }}
+</div>
+</div>
+
+<div class="space-y-6">
+<!-- I. Pilih Surat Tugas -->
+<div class="glass-card rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
+<div class="bg-gradient-to-r from-purple-50 to-indigo-50/30 dark:from-purple-900/20 dark:to-indigo-900/20 border-b border-purple-200 px-5 py-3">
+<h3 class="font-bold text-sm text-purple-700 dark:text-purple-300">I. Pilih Surat Tugas</h3>
+</div>
+<div class="p-4">
+<select v-model="laporan.surat_tugas_id" class="w-full border rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+<option value="" disabled>-- Pilih Surat Tugas --</option>
+<option v-for="st in stAktifList" :key="st.id" :value="st.id">{{ st.nomor_st || st.kegiatan }}</option>
+</select>
+</div>
+</div>
+
+<!-- II. Waktu & Kehadiran -->
+<div class="glass-card rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
+<div class="bg-gradient-to-r from-blue-50 to-indigo-50/30 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-blue-200 px-5 py-3">
+<h3 class="font-bold text-sm text-blue-700 dark:text-blue-300">II. Waktu & Kehadiran</h3>
+</div>
+<div class="p-4 space-y-3">
+<div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Jam Selesai</label><input type="time" v-model="laporan.jam_selesai" class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+<div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Yang Hadir</label><input v-model="laporan.hadir" placeholder="Nama pejabat/tamu..." class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+<div><label class="text-xs font-bold text-slate-600 dark:text-slate-300">Tanggal Laporan</label><input type="date" v-model="laporan.tanggal_laporan" required class="w-full border rounded-lg px-3 py-2.5 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+</div>
+</div>
+
+<!-- III. Dokumentasi -->
+<div class="glass-card rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
+<div class="bg-gradient-to-r from-pink-50 to-rose-50/30 dark:from-pink-900/20 dark:to-rose-900/20 border-b border-pink-200 px-5 py-3">
+<h3 class="font-bold text-sm text-pink-700 dark:text-pink-300">III. Dokumentasi (maks. 6 foto)</h3>
+</div>
+<div class="p-4 space-y-3">
+<div class="flex items-center gap-2 flex-wrap">
+<label class="bg-pink-500 hover:bg-pink-600 text-white text-xs font-semibold px-3 py-2.5 rounded-lg cursor-pointer">
+<i class="bi bi-images"></i> Pilih Foto
+<input type="file" @change="onFileChange" accept="image/*" multiple class="hidden">
+</label>
+<button @click="cetakKolase" :disabled="!previewGambar.length" class="bg-rose-500 hover:bg-rose-600 disabled:bg-slate-300 dark:disabled:bg-gray-600 text-white text-xs font-semibold px-3 py-2.5 rounded-lg transition"><i class="bi bi-printer"></i> Cetak Kolase</button>
+</div>
+<div v-if="previewGambar.length" class="grid grid-cols-3 gap-2">
+<div v-for="(img, i) in previewGambar" :key="i" class="relative aspect-square rounded-lg overflow-hidden border-2 border-slate-200 dark:border-gray-600">
+<img :src="img.data" class="w-full h-full object-cover">
+<button @click="hapusGambar(i)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✕</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- IV. Uraian -->
+<div class="glass-card rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
+<div class="bg-gradient-to-r from-emerald-50 to-teal-50/30 dark:from-emerald-900/20 dark:to-teal-900/20 border-b border-emerald-200 px-5 py-3">
+<h3 class="font-bold text-sm text-emerald-700 dark:text-emerald-300">IV. Uraian Pelaksanaan</h3>
+</div>
+<div class="p-4">
+<textarea v-model="laporan.uraian_pelaksanaan" rows="10" required class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Tulis uraian pelaksanaan..."></textarea>
+</div>
+</div>
+
+<!-- V. Temuan -->
+<div class="glass-card rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
+<div class="bg-gradient-to-r from-amber-50 to-orange-50/30 dark:from-amber-900/20 dark:to-orange-900/20 border-b border-amber-200 px-5 py-3">
+<h3 class="font-bold text-sm text-amber-700 dark:text-amber-300">V. Temuan</h3>
+</div>
+<div class="p-4">
+<textarea v-model="laporan.temuan" rows="5" class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Tulis temuan..."></textarea>
+</div>
+</div>
+
+<!-- VI & VII -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="glass-card rounded-2xl shadow-sm border border-indigo-100 overflow-hidden">
+<div class="bg-gradient-to-r from-indigo-50 to-blue-50/30 dark:from-indigo-900/20 dark:to-blue-900/20 border-b border-indigo-200 px-5 py-3">
+<h3 class="font-bold text-sm text-indigo-700 dark:text-indigo-300">VI. Tindakan</h3>
+</div>
+<div class="p-4">
+<textarea v-model="laporan.tindakan" rows="5" class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Tulis tindakan..."></textarea>
+</div>
+</div>
+<div class="glass-card rounded-2xl shadow-sm border border-cyan-100 overflow-hidden">
+<div class="bg-gradient-to-r from-cyan-50 to-blue-50/30 dark:from-cyan-900/20 dark:to-blue-900/20 border-b border-cyan-200 px-5 py-3">
+<h3 class="font-bold text-sm text-cyan-700 dark:text-cyan-300">VII. Hasil</h3>
+</div>
+<div class="p-4">
+<textarea v-model="laporan.hasil" rows="5" class="w-full border rounded-lg p-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="Terkendali / Selesai"></textarea>
+</div>
+</div>
+</div>
+
+<div class="flex justify-end gap-2">
+<button @click="resetForm()" class="bg-slate-100 hover:bg-slate-200 dark:bg-gray-600 dark:text-white text-xs font-bold px-4 py-2.5 rounded-lg"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+<button @click="simpanLaporan" :disabled="loading" class="bg-purple-500 hover:bg-purple-600 disabled:bg-slate-300 text-white text-xs font-bold px-6 py-2.5 rounded-lg transition"><i :class="loading ? 'bi bi-hourglass-split animate-spin' : 'bi bi-save'"></i> {{ loading ? 'Menyimpan...' : 'Simpan Laporan' }}</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+<script>
+const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+
+const { createApp } = Vue;
+createApp({
+data() {
+return {
+sidebarOpen: true,
+isMobile: window.innerWidth < 768,
+isDark: localStorage.getItem('darkMode')==='true',
+expandedGroup: 'ops',
+toasts: [],
+loading: false,
+// Form
+laporan: {
+surat_tugas_id:'', jam_selesai:'', hadir:'', tanggal_laporan: new Date().toISOString().split('T')[0],
+uraian_pelaksanaan:'', temuan:'', tindakan:'', hasil:'Terkendali / Selesai', gambar:[]
+},
+previewGambar: [],
+// Data
+suratTugasList: [],
+laporanList: [] // untuk info jumlah
+}
+},
+computed: {
+stAktifList() { return this.suratTugasList.filter(s => s.status === 'Aktif'); }
+},
+methods: {
+addToast(msg,type='success') {
+const id = Date.now();
+this.toasts.push({id, message:msg, type});
+setTimeout(()=>{ this.toasts = this.toasts.filter(t=>t.id!==id); },3000);
+},
+toggleDarkMode() {
+this.isDark=!this.isDark;
+localStorage.setItem('darkMode', this.isDark);
+document.documentElement.classList.toggle('dark', this.isDark);
+},
+async loadMaster() {
+console.log('📡 Memuat data ST untuk laporan...');
+try {
+const { data, error } = await supa.from('surat_tugas').select('*').order('created_at',{ascending:false});
+if(error) throw error;
+this.suratTugasList = data || [];
+console.log('✅ ST dimuat:', this.suratTugasList.length);
+} catch(e) {
+console.error('❌ Gagal load ST:', e.message);
+this.addToast('Gagal memuat ST', 'error');
+}
+},
+async loadLaporan() {
+console.log('📡 Memuat data laporan...');
+try {
+const { data } = await supa.from('laporan').select('*').order('tanggal_laporan',{ascending:false});
+this.laporanList = data || [];
+console.log('✅ Laporan dimuat:', this.laporanList.length);
+} catch(e) {
+console.error('❌ Gagal load laporan:', e.message);
+}
+},
+onFileChange(e) {
+const files = e.target.files;
+if(!files || !files.length) return;
+console.log('📷 File dipilih:', files.length);
+for(let i=0; i<files.length && this.laporan.gambar.length<6; i++) {
+const file = files[i];
+if(!file.type.startsWith('image/')) { this.addToast('Hanya gambar','error'); continue; }
+if(file.size > 5*1024*1024) { this.addToast('Maks 5MB','error'); continue; }
+const reader = new FileReader();
+reader.onload = (ev) => {
+this.laporan.gambar.push(ev.target.result);
+this.previewGambar.push({ data: ev.target.result, name: file.name });
+};
+reader.readAsDataURL(file);
+}
+e.target.value = '';
+},
+hapusGambar(i) { this.laporan.gambar.splice(i,1); this.previewGambar.splice(i,1); },
+cetakKolase() {
+console.log('🖨️ Cetak kolase dengan', this.previewGambar.length, 'foto');
+if(!this.previewGambar.length) { this.addToast('Tidak ada gambar','error'); return; }
+const win = window.open('', '_blank');
+let html = '<html><head><title>Kolase Laporan</title><style>img{width:100%;max-width:200px;margin:4px;}</style></head><body>';
+this.previewGambar.forEach(img => html += `<img src="${img.data}">`);
+html += '</body></html>';
+win.document.write(html);
+win.document.close();
+setTimeout(() => win.print(), 500);
+},
+resetForm() {
+this.laporan = {
+surat_tugas_id:'', jam_selesai:'', hadir:'', tanggal_laporan: new Date().toISOString().split('T')[0],
+uraian_pelaksanaan:'', temuan:'', tindakan:'', hasil:'Terkendali / Selesai', gambar:[]
+};
+this.previewGambar = [];
+console.log('🔄 Form laporan direset');
+},
+async simpanLaporan() {
+console.log('💾 simpanLaporan dipanggil');
+if(!this.laporan.surat_tugas_id || !this.laporan.uraian_pelaksanaan) {
+this.addToast('Pilih ST dan isi Uraian Pelaksanaan','error');
+return;
+}
+this.loading = true;
+try {
+const { error } = await supa.from('laporan').insert({
+surat_tugas_id: this.laporan.surat_tugas_id,
+tanggal_laporan: this.laporan.tanggal_laporan,
+jam_selesai: this.laporan.jam_selesai||null,
+hadir: this.laporan.hadir||null,
+uraian_pelaksanaan: this.laporan.uraian_pelaksanaan,
+temuan: this.laporan.temuan||null,
+tindakan: this.laporan.tindakan||null,
+hasil: this.laporan.hasil,
+gambar_urls: this.laporan.gambar.length ? this.laporan.gambar : null
+});
+if(error) throw error;
+// Update status ST menjadi Selesai Lapor
+await supa.from('surat_tugas').update({ status: 'Selesai Lapor' }).eq('id', this.laporan.surat_tugas_id);
+console.log('✅ Laporan tersimpan');
+this.addToast('✅ Laporan berhasil disimpan!');
+this.resetForm();
+await this.loadMaster(); // refresh daftar ST
+await this.loadLaporan();
+} catch(e) {
+console.error('❌ Gagal simpan laporan:', e.message);
+this.addToast('Gagal: '+e.message,'error');
+} finally { this.loading = false; }
+}
+},
+mounted() {
+console.log('🚀 form_laporan.html mounted');
+if(this.isDark) document.documentElement.classList.add('dark');
+if(this.isMobile) this.sidebarOpen = false;
+window.addEventListener('resize', ()=>{ this.isMobile = window.innerWidth<768; if(!this.isMobile) this.sidebarOpen=true; });
+this.loadMaster();
+this.loadLaporan();
+}
+}).mount('#app');
+</script>
+</body>
+</html>
