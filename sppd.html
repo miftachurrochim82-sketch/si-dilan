@@ -211,6 +211,7 @@
   </div>
 
   <script>
+    console.log('🚀 sppd.html script dimulai');
     const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
 
     const AppSidebar = {
@@ -273,9 +274,15 @@
         }
       },
       computed: {
-        stAktifList() { return this.suratTugasList.filter(s => s.status === 'Aktif'); },
+        stAktifList() {
+          const filtered = this.suratTugasList.filter(s => s.status === 'Aktif');
+          console.log('📋 stAktifList:', filtered.length);
+          return filtered;
+        },
         totalBiaya() {
-          return (this.sppdBiaya.uangHarian || 0) + (this.sppdBiaya.transport || 0) + (this.sppdBiaya.penginapan || 0) + (this.sppdBiaya.lainnya || 0);
+          const total = (this.sppdBiaya.uangHarian || 0) + (this.sppdBiaya.transport || 0) + (this.sppdBiaya.penginapan || 0) + (this.sppdBiaya.lainnya || 0);
+          console.log('💰 totalBiaya:', total);
+          return total;
         }
       },
       methods: {
@@ -283,13 +290,16 @@
           this.isDark = !this.isDark;
           localStorage.setItem('darkMode', this.isDark);
           document.documentElement.classList.toggle('dark', this.isDark);
+          console.log('🌙 Dark mode:', this.isDark);
         },
         addToast(message, type = 'success') {
           const id = Date.now();
           this.toasts.push({ id, message, type });
+          console.log(`🔔 Toast [${type}]: ${message}`);
           setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000);
         },
         async loadData() {
+          console.log('📡 Memuat data ST dan Personil...');
           try {
             const [stRes, petRes] = await Promise.all([
               supa.from('surat_tugas').select('*').order('created_at', { ascending: false }),
@@ -299,11 +309,14 @@
             if (petRes.error) throw petRes.error;
             this.suratTugasList = stRes.data || [];
             this.personilList = petRes.data || [];
+            console.log('✅ ST:', this.suratTugasList.length, 'Personil:', this.personilList.length);
           } catch (e) {
+            console.error('❌ Gagal load data:', e.message);
             this.addToast('Gagal memuat data: ' + e.message, 'error');
           }
         },
         onSPPDSTChange() {
+          console.log('🔄 onSPPDSTChange, ST dipilih:', this.sppdST);
           this.sppdPetugas = [];
           this.sppdPetugasList = [];
           this.sppdBiayaSaved = false;
@@ -315,19 +328,26 @@
               const p = this.personilList.find(x => x.id === id);
               return { id: p?.id || id, nama: p?.nama || id, nip: p?.nip || '...' };
             });
+            console.log('👥 Petugas terdaftar:', this.sppdPetugasList.length);
+          } else {
+            console.log('⚠️ ST tidak memiliki petugas_ids');
           }
         },
         toggleAllPetugas(e) {
           this.sppdPetugas = e.target.checked ? this.sppdPetugasList.map(p => p.id) : [];
+          console.log('✅ Pilih semua petugas:', this.sppdPetugas.length);
         },
         resetBiaya() {
           Object.assign(this.sppdBiaya, { uangHarian: 0, transport: 0, penginapan: 0, lainnya: 0 });
           this.sppdBiayaSaved = false;
+          console.log('🔄 Biaya direset');
         },
         generateSPD() {
+          console.log('🖨️ generateSPD dipanggil');
           this.addToast('Fitur Cetak SPD akan segera hadir (menunggu Edge Functions).', 'success');
         },
         async simpanBiayaSPPD() {
+          console.log('💾 simpanBiayaSPPD dipanggil');
           if (!this.sppdST || !this.sppdPetugas.length) return;
           this.loading = true;
           try {
@@ -340,27 +360,34 @@
               lainnya: this.sppdBiaya.lainnya || 0,
               total_biaya: this.totalBiaya
             }));
+            console.log('📦 Data yang akan diupsert:', records.length, 'record');
             const { error } = await supa.from('sppd').upsert(records, { onConflict: 'surat_tugas_id,personil_id' });
             if (error) throw error;
             this.sppdBiayaSaved = true;
             this.addToast('✅ Biaya berhasil disimpan!');
+            console.log('✅ Biaya tersimpan');
           } catch (e) {
+            console.error('❌ Gagal simpan biaya:', e.message);
             this.addToast('❌ Gagal menyimpan biaya: ' + e.message, 'error');
           } finally {
             this.loading = false;
           }
         },
         cetakKwitansiSPPD() {
+          console.log('🖨️ cetakKwitansiSPPD dipanggil');
           this.addToast('Fitur Cetak Rincian akan segera hadir.', 'success');
         },
         cetakRekapBiaya() {
+          console.log('🖨️ cetakRekapBiaya dipanggil');
           this.addToast('Fitur Rekap Biaya akan segera hadir.', 'success');
         },
         cetakKwitansiPembayaran() {
+          console.log('🖨️ cetakKwitansiPembayaran dipanggil');
           this.addToast('Fitur Kwitansi Pembayaran akan segera hadir.', 'success');
         }
       },
       mounted() {
+        console.log('🚀 sppd.html mounted');
         if (this.isDark) document.documentElement.classList.add('dark');
         if (this.isMobile) this.sidebarOpen = false;
         window.addEventListener('resize', () => {
