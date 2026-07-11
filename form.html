@@ -506,26 +506,141 @@
     </div>
   </div>
 </div>
-    <!-- ========== TAB LAPORAN ========== -->
-    <div v-if="tab==='laporan'" class="space-y-6">
-      <div class="glass-card rounded-2xl p-5">
-        <h2 class="text-lg font-bold text-purple-800 mb-4">📊 Form Laporan</h2>
-        <form @submit.prevent="simpanLaporan" class="space-y-3">
-          <select v-model="laporan.surat_tugas_id" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Pilih Surat Tugas --</option><option v-for="s in stAktifList" :key="s.id" :value="s.id">{{ s.nomor_st || s.kegiatan }}</option></select>
-          <textarea v-model="laporan.uraian_pelaksanaan" placeholder="Uraian Pelaksanaan *" required class="w-full border rounded-lg px-3 py-2 text-sm" rows="4"></textarea>
-          <div class="grid grid-cols-2 gap-3">
-            <input v-model="laporan.temuan" placeholder="Temuan" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="laporan.tindakan" placeholder="Tindakan" class="w-full border rounded-lg px-3 py-2 text-sm">
+
+<!-- ========== TAB LAPORAN ========== -->
+<div v-if="tab==='laporan'" class="space-y-6 fade-in">
+
+  <!-- Header -->
+  <div class="bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl p-5 text-white shadow-xl">
+    <div class="flex items-center justify-between">
+      <div><h2 class="text-xl font-bold flex items-center gap-2"><i class="bi bi-file-earmark-bar-graph"></i> Laporan Kegiatan</h2><p class="text-purple-200 text-xs mt-1">Buat laporan hasil kegiatan</p></div>
+      <span class="bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-semibold">{{ laporanList.length }} data</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-11 gap-5">
+    <!-- KOLOM KIRI: Form Input -->
+    <div class="lg:col-span-6 space-y-4">
+      <!-- I. Pilih Surat Tugas -->
+      <div class="glass-card rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-50 to-indigo-50/30 border-b border-purple-200 px-5 py-3">
+          <h3 class="font-bold text-purple-700 text-sm">I. Pilih Surat Tugas</h3>
+        </div>
+        <div class="p-4">
+          <select v-model="laporan.surat_tugas_id" @change="onLaporanSTChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-purple-200 focus:border-purple-500 transition">
+            <option value="" disabled>-- Pilih Surat Tugas --</option>
+            <option v-for="st in stAktifList" :key="st.id" :value="st.id">{{ st.nomor_st || st.kegiatan }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- II. Waktu & Kehadiran -->
+      <div class="glass-card rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50/30 border-b border-blue-200 px-5 py-3">
+          <h3 class="font-bold text-blue-700 text-sm">II. Waktu & Kehadiran</h3>
+        </div>
+        <div class="p-4 space-y-3">
+          <div>
+            <label class="text-xs font-bold text-gray-600">Jam Selesai</label>
+            <input type="time" v-model="laporan.jam_selesai" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs mt-1">
           </div>
-          <input v-model="laporan.hasil" placeholder="Hasil" class="w-full border rounded-lg px-3 py-2 text-sm">
-          <button type="submit" class="btn-primary w-full">Simpan Laporan</button>
-          <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
-        </form>
+          <div>
+            <label class="text-xs font-bold text-gray-600">Yang Hadir</label>
+            <input v-model="laporan.hadir" placeholder="Nama pejabat/tamu..." class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs mt-1">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-gray-600">Tanggal Laporan</label>
+            <input type="date" v-model="laporan.tanggal_laporan" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs mt-1">
+          </div>
+        </div>
+      </div>
+
+      <!-- III. Dokumentasi -->
+      <div class="glass-card rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-pink-50 to-rose-50/30 border-b border-pink-200 px-5 py-3">
+          <h3 class="font-bold text-pink-700 text-sm">III. Dokumentasi (maks. 6 foto)</h3>
+        </div>
+        <div class="p-4 space-y-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <label class="bg-pink-500 hover:bg-pink-600 text-white text-xs font-semibold px-3 py-2.5 rounded-lg cursor-pointer transition">
+              <i class="bi bi-images"></i> Pilih Foto
+              <input type="file" @change="uploadGambarLaporan" accept="image/*" multiple class="hidden">
+            </label>
+            <button @click="cetakKolaseLaporan" :disabled="!laporan.gambar.length || loading" class="bg-rose-500 hover:bg-rose-600 disabled:bg-slate-300 text-white text-xs font-semibold px-3 py-2.5 rounded-lg transition">
+              <i :class="loading ? 'bi bi-hourglass-split animate-spin' : 'bi bi-printer'"></i> Cetak Kolase
+            </button>
+          </div>
+          <!-- Preview Gambar -->
+          <div v-if="laporanPreviewGambar.length > 0" class="grid grid-cols-3 gap-2">
+            <div v-for="(img, i) in laporanPreviewGambar" :key="i" class="relative aspect-square rounded-lg overflow-hidden border-2 border-slate-200">
+              <img :src="img.data" class="w-full h-full object-cover">
+              <button @click="hapusGambarLaporan(i)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✕</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </main>
-</div>
 
+    <!-- KOLOM KANAN: Pratinjau Kolase -->
+    <div class="lg:col-span-5">
+      <div class="lg:sticky lg:top-2 glass-card rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-50 to-indigo-50/30 border-b border-purple-200 px-4 py-3">
+          <span class="font-bold text-purple-700 text-xs">Pratinjau Kolase</span>
+        </div>
+        <div class="p-3 bg-slate-100">
+          <div id="kolasePreview" class="bg-white shadow-md rounded-lg" style="padding:5mm 7mm; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+            <span class="text-gray-400 text-xs">Pilih ST dan unggah foto untuk melihat pratinjau</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- URAIAN, TEMUAN, TINDAKAN, HASIL -->
+  <div class="space-y-4">
+    <div class="glass-card rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
+      <div class="bg-gradient-to-r from-emerald-50 to-teal-50/30 border-b border-emerald-200 px-5 py-3">
+        <h3 class="font-bold text-emerald-700 text-sm">IV. Uraian Pelaksanaan</h3>
+      </div>
+      <div class="p-4">
+        <textarea v-model="laporan.uraian_pelaksanaan" rows="10" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-emerald-200 focus:border-emerald-500 transition" placeholder="Tulis uraian pelaksanaan..."></textarea>
+      </div>
+    </div>
+
+    <div class="glass-card rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
+      <div class="bg-gradient-to-r from-amber-50 to-orange-50/30 border-b border-amber-200 px-5 py-3">
+        <h3 class="font-bold text-amber-700 text-sm">V. Temuan</h3>
+      </div>
+      <div class="p-4">
+        <textarea v-model="laporan.temuan" rows="5" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-amber-200 focus:border-amber-500 transition" placeholder="Tulis temuan..."></textarea>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="glass-card rounded-2xl shadow-sm border border-indigo-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-50 to-blue-50/30 border-b border-indigo-200 px-5 py-3">
+          <h3 class="font-bold text-indigo-700 text-sm">VI. Tindakan</h3>
+        </div>
+        <div class="p-4">
+          <textarea v-model="laporan.tindakan" rows="5" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 transition" placeholder="Tulis tindakan..."></textarea>
+        </div>
+      </div>
+      <div class="glass-card rounded-2xl shadow-sm border border-cyan-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-cyan-50 to-blue-50/30 border-b border-cyan-200 px-5 py-3">
+          <h3 class="font-bold text-cyan-700 text-sm">VII. Hasil</h3>
+        </div>
+        <div class="p-4">
+          <textarea v-model="laporan.hasil" rows="5" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 transition" placeholder="Terkendali / Selesai"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-2">
+      <button @click="resetLaporanForm()" class="bg-slate-100 hover:bg-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg transition"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+      <button @click="simpanLaporan" :disabled="!laporan.surat_tugas_id || loading" class="bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold px-6 py-2.5 rounded-lg transition"><i :class="loading ? 'bi bi-hourglass-split animate-spin' : 'bi bi-save'"></i> {{ loading ? 'Menyimpan...' : 'Simpan Laporan' }}</button>
+    </div>
+  </div>
+</div>
 <script>
   const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
   const DATA_KECAMATAN = ['Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan','Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'];
