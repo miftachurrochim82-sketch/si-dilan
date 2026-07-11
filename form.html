@@ -642,4 +642,310 @@
   </div>
 </div>
     
-    
+<script>
+  const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+  const DATA_KECAMATAN = ['Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan','Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'];
+  const DATA_DESA = {
+    'Bendungan':['Botoputih','Depok','Masaran','Sengon','Surenlor'],'Dongko':['Dongko','Pandean','Petung','Pringapus','Salam'],'Durenan':['Durenan','Gador','Kamulan','Pakis','Pandean'],'Gandusari':['Gandusari','Jajar','Krandegan','Sukorame','Widoro'],'Kampak':['Bogoran','Karangrejo','Ngadimulyo','Senden','Timahan'],'Karangan':['Buluagung','Jati','Karangan','Kayen','Sumber'],'Munjungan':['Besuki','Munjungan','Sobo','Tawing','Bangun'],'Panggul':['Banjar','Depok','Manggis','Panggul','Wonocoyo'],'Pogalan':['Bendorejo','Kedunglurah','Ngadirejo','Pogalan','Wonocoyo'],'Pule':['Joho','Kembangan','Pule','Puyung','Sidomulyo'],'Suruh':['Gamping','Mlinjon','Ngrandu','Suruh','Wonokerto'],'Trenggalek':['Kelutan','Ngantru','Sumbergedong','Surondakan','Tamanan'],'Tugu':['Duren','Gading','Prambon','Tumpuk','Winong'],'Watulimo':['Dukuh','Gemaharjo','Prigi','Slawe','Watulimo']
+  };
+  const params = new URLSearchParams(window.location.search);
+  const initTab = params.get('tab') || 'pengaduan';
+
+  Vue.createApp({
+    data() {
+      return {
+        // UI
+        tab: initTab,
+        sidebarOpen: true, isMobile: window.innerWidth < 768, isDark: localStorage.getItem('darkMode')==='true',
+        expandedGroup: 'ops',
+        pesan: { teks:'', warna:'' },
+        loading: false,
+
+        // Sub-tab untuk Pengaduan dan Surat Tugas
+        pengaduanSubTab: 'form',
+        stSubTab: 'form',
+
+        // Form Pengaduan
+        aduan: {
+          nama:'', kontak:'', alamat_pelapor:'', kategori_id:'', sumber_aduan:'', potensi_ancaman:'',
+          kecamatan:'', desa:'', lokasi:'', tgl_kejadian:'', waktu_kejadian:'', deskripsi:'', gambar:[]
+        },
+        previewGambar: [],
+        selectedBidang: '',
+
+        // Form Surat Tugas
+        st: {
+          nomor_st:'', tanggal_st:'', dasarManual:null,
+          unit_kerja:'', layanan:'', kegiatan:'', kegiatanManual:'',
+          kecamatan:'', desa:'', lokasi:'', lokasiManual:'',
+          tgl_mulai:'', tgl_selesai:'', jam_mulai:'08:00', jam_selesai:'16:00',
+          petugas_ids:[], kendaraan_ids:[], peralatan_ids:[], sop_ids:[],
+          instruksi:''
+        },
+
+        // Form Laporan
+        laporan: {
+          surat_tugas_id:'', jam_selesai:'', hadir:'', tanggal_laporan: new Date().toISOString().split('T')[0],
+          uraian_pelaksanaan:'', temuan:'', tindakan:'', hasil:'Terkendali / Selesai',
+          gambar:[]
+        },
+        laporanPreviewGambar: [],
+
+        // Data Master dari Supabase
+        kategoriList: [], personilList: [], unitKerjaList: [], layananList: [], sopList: [],
+        kendaraanList: [], peralatanList: [], lokasiList: [],
+        
+        // Data Transaksional
+        pengaduanList: [], suratTugasList: [], laporanList: [],
+
+        // Filter & Pagination Pengaduan
+        fAduTahun:'', fAduBulan:'', fAduBidang:'', fAduStatus:'', fAduSearch:'',
+        pageAdu:1, perPageAdu:15,
+
+        // Filter & Pagination Surat Tugas
+        fSTTahun:'', fSTBulan:'', fSTLayanan:'', fSTSearch:'',
+        pageST:1, perPageST:15,
+
+        statusOptions: ['Baru','Diverifikasi','Diproses','Selesai','Ditolak'],
+        listKecamatan: DATA_KECAMATAN
+      }
+    },
+
+    computed: {
+      // ========== PENGADUAN ==========
+      filteredDesaAduan() { return DATA_DESA[this.aduan.kecamatan] || []; },
+      bidangList() {
+        const s = new Set();
+        this.kategoriList.forEach(k => { if (k.bidang) s.add(k.bidang); });
+        return [...s].sort();
+      },
+      filteredKategoriByBidang() {
+        if (!this.selectedBidang) return [];
+        return this.kategoriList.filter(k => k.bidang === this.selectedBidang);
+      },
+      filteredPengaduan() {
+        let d = this.pengaduanList;
+        if (this.fAduTahun) d = d.filter(p => new Date(p.tanggal_lapor).getFullYear().toString()===this.fAduTahun);
+        if (this.fAduBulan) d = d.filter(p => String(new Date(p.tanggal_lapor).getMonth()+1).padStart(2,'0')===this.fAduBulan);
+        if (this.fAduBidang) d = d.filter(p => p.kategori_pengaduan?.bidang === this.fAduBidang);
+        if (this.fAduStatus) d = d.filter(p => p.status===this.fAduStatus);
+        if (this.fAduSearch) { const kw = this.fAduSearch.toLowerCase(); d = d.filter(p => (p.nama_pelapor||'').toLowerCase().includes(kw) || (p.deskripsi||'').toLowerCase().includes(kw)); }
+        return d;
+      },
+      paginatedAdu() { return this.filteredPengaduan.slice((this.pageAdu-1)*this.perPageAdu, this.pageAdu*this.perPageAdu); },
+      totalPageAdu() { return Math.ceil(this.filteredPengaduan.length/this.perPageAdu)||1; },
+      listTahunAdu() {
+        const y=new Set();
+        this.pengaduanList.forEach(p=>{const d=new Date(p.tanggal_lapor); if(!isNaN(d)) y.add(d.getFullYear());});
+        if(y.size===0) y.add(new Date().getFullYear());
+        return [...y].sort((a,b)=>b-a);
+      },
+
+      // ========== SURAT TUGAS ==========
+      filteredDesaST() { return DATA_DESA[this.st.kecamatan] || []; },
+      filteredLayanan() { return this.st.unit_kerja ? this.layananList.filter(l => l.unit_kerja === this.st.unit_kerja) : []; },
+      filteredSOP() { return this.st.layanan ? this.sopList.filter(s => s.layanan === this.st.layanan) : []; },
+      filteredLokasi() {
+        if (!this.st.kecamatan || !this.lokasiList) return [];
+        return this.lokasiList.filter(l => l.kecamatan === this.st.kecamatan);
+      },
+      filteredST() {
+        let d = this.suratTugasList;
+        if (this.fSTTahun) d = d.filter(s => new Date(s.tanggal_st).getFullYear().toString()===this.fSTTahun);
+        if (this.fSTBulan) d = d.filter(s => String(new Date(s.tanggal_st).getMonth()+1).padStart(2,'0')===this.fSTBulan);
+        if (this.fSTLayanan) d = d.filter(s => s.layanan === this.fSTLayanan);
+        if (this.fSTSearch) { const kw = this.fSTSearch.toLowerCase(); d = d.filter(s => (s.kegiatan||'').toLowerCase().includes(kw) || (s.lokasi||'').toLowerCase().includes(kw) || (s.nomor_st||'').toLowerCase().includes(kw)); }
+        return d;
+      },
+      paginatedST() { return this.filteredST.slice((this.pageST-1)*this.perPageST, this.pageST*this.perPageST); },
+      totalPageST() { return Math.ceil(this.filteredST.length/this.perPageST)||1; },
+      listTahunST() {
+        const y=new Set();
+        this.suratTugasList.forEach(s=>{const d=new Date(s.tanggal_st); if(!isNaN(d)) y.add(d.getFullYear());});
+        if(y.size===0) y.add(new Date().getFullYear());
+        return [...y].sort((a,b)=>b-a);
+      },
+      listLayananST() {
+        const s = new Set();
+        this.suratTugasList.forEach(st => { if (st.layanan) s.add(st.layanan); });
+        return [...s].sort();
+      },
+
+      // ========== LAPORAN ==========
+      stAktifList() { return this.suratTugasList.filter(s => s.status==='Aktif'); }
+    },
+
+    methods: {
+      // ========== UI & NAVIGASI ==========
+      toggleDarkMode() { this.isDark=!this.isDark; localStorage.setItem('darkMode', this.isDark); document.documentElement.classList.toggle('dark', this.isDark); },
+      switchTab(t) { this.tab=t; const url=new URL(window.location); url.searchParams.set('tab',t); window.history.replaceState({},'',url); },
+      formatDate(d) { if(!d) return '-'; return new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}); },
+      statusBadge(s) { return {'Baru':'bg-amber-100 text-amber-700','Diverifikasi':'bg-sky-100 text-sky-700','Diproses':'bg-violet-100 text-violet-700','Selesai':'bg-emerald-100 text-emerald-700','Ditolak':'bg-rose-100 text-rose-700'}[s]||'bg-gray-100'; },
+
+      // ========== RESET FILTER ==========
+      resetFilterAdu() { this.fAduTahun=''; this.fAduBulan=''; this.fAduBidang=''; this.fAduStatus=''; this.fAduSearch=''; this.pageAdu=1; },
+      resetFilterST() { this.fSTTahun=''; this.fSTBulan=''; this.fSTLayanan=''; this.fSTSearch=''; this.pageST=1; },
+
+      // ========== PENGADUAN ==========
+      onBidangChange() { this.aduan.kategori_id = ''; },
+      resetFormPengaduan() {
+        this.aduan = { nama:'', kontak:'', alamat_pelapor:'', kategori_id:'', sumber_aduan:'', potensi_ancaman:'', kecamatan:'', desa:'', lokasi:'', tgl_kejadian:'', waktu_kejadian:'', deskripsi:'', gambar:[] };
+        this.previewGambar = []; this.selectedBidang = '';
+      },
+      onFileChange(e) {
+        const files = e.target.files; if (!files || !files.length) return;
+        if (this.aduan.gambar.length >= 2) { this.pesan = {teks:'Maks 2 foto', warna:'text-red-500'}; return; }
+        const reader = new FileReader();
+        reader.onload = (ev) => { this.aduan.gambar.push(ev.target.result); this.previewGambar.push({data:ev.target.result, name:files[0].name, size:files[0].size}); };
+        reader.readAsDataURL(files[0]);
+      },
+      hapusGambar(i) { this.aduan.gambar.splice(i,1); this.previewGambar.splice(i,1); },
+      getPrioritas(item) {
+        const kat = this.kategoriList.find(k => k.id === item.kategori_id);
+        return kat?.prioritas || 'Sedang';
+      },
+      getGambarArray(item) {
+        if (!item.gambar) return [];
+        if (Array.isArray(item.gambar)) return item.gambar;
+        try { return JSON.parse(item.gambar); } catch(e) { return []; }
+      },
+      getGambarCount(item) { return this.getGambarArray(item).length; },
+      async simpanPengaduan() {
+        if (!this.aduan.nama || !this.aduan.deskripsi) { this.pesan = {teks:'Nama dan Deskripsi wajib diisi!', warna:'text-red-500'}; return; }
+        const { error } = await supa.from('pengaduan').insert({
+          no_pengaduan: 'ADU-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*9000+1000),
+          nama_pelapor: this.aduan.nama, kontak: this.aduan.kontak, alamat_pelapor: this.aduan.alamat_pelapor||null,
+          kategori_id: this.aduan.kategori_id||null, sumber_aduan: this.aduan.sumber_aduan||null,
+          potensi_ancaman: this.aduan.potensi_ancaman||null, kecamatan: this.aduan.kecamatan||null, desa: this.aduan.desa||null,
+          lokasi: this.aduan.lokasi||null, tgl_kejadian: this.aduan.tgl_kejadian||null, waktu_kejadian: this.aduan.waktu_kejadian||null,
+          deskripsi: this.aduan.deskripsi, gambar: this.aduan.gambar.length ? this.aduan.gambar : null, status: 'Baru'
+        });
+        if (error) { this.pesan = {teks:'Gagal: '+error.message, warna:'text-red-500'}; }
+        else { this.pesan = {teks:'✅ Pengaduan berhasil dikirim!', warna:'text-green-600'}; this.resetFormPengaduan(); await this.loadAll(); }
+      },
+      exportExcel() { alert('Fitur export Excel akan segera hadir.'); },
+      exportCSV() { alert('Fitur export CSV akan segera hadir.'); },
+
+      // ========== SURAT TUGAS ==========
+      resetSTForm() {
+        this.st = {
+          nomor_st:'', tanggal_st:'', dasarManual:null,
+          unit_kerja:'', layanan:'', kegiatan:'', kegiatanManual:'',
+          kecamatan:'', desa:'', lokasi:'', lokasiManual:'',
+          tgl_mulai:'', tgl_selesai:'', jam_mulai:'08:00', jam_selesai:'16:00',
+          petugas_ids:[], kendaraan_ids:[], peralatan_ids:[], sop_ids:[],
+          instruksi:''
+        };
+      },
+      onUnitChange() { this.st.layanan = ''; this.st.kegiatan = ''; this.st.sop_ids = []; },
+      onLayananChange() {
+        this.st.kegiatan = this.st.layanan; this.st.sop_ids = [];
+        const sopTerkait = this.sopList.filter(s => s.layanan === this.st.layanan);
+        if (sopTerkait.length > 0) this.st.instruksi = sopTerkait.map(s => `[${s.kode_sop}] ${s.isi_instruksi}`).join('\n\n');
+      },
+      getPetugasNama(ids) {
+        if (!ids || !ids.length) return '';
+        return ids.map(id => { const p = this.personilList.find(x => x.id === id); return p ? p.nama : id; }).join(', ');
+      },
+      async simpanST() {
+        if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) { this.pesan = {teks:'Kegiatan, Lokasi, dan Tanggal ST wajib diisi!', warna:'text-red-500'}; return; }
+        if (!this.st.petugas_ids.length) { this.pesan = {teks:'Minimal 1 petugas harus dipilih!', warna:'text-red-500'}; return; }
+        const payload = {
+          nomor_st: this.st.nomor_st || (Math.floor(Math.random()*900+100)+'/ST/'+(this.st.unit_kerja||'OPS').substring(0,3).toUpperCase()+'/'+new Date().getFullYear()),
+          tanggal_st: this.st.tanggal_st,
+          dasar: ['Permendagri Nomor 26 Tahun 2020','Permendagri Nomor 16 Tahun 2023','Perda Trenggalek Nomor 03 Tahun 2019',this.st.dasarManual].filter(Boolean).join('\n'),
+          unit_kerja: this.st.unit_kerja||null, layanan: this.st.layanan||null,
+          kegiatan: this.st.kegiatan==='__manual__'?this.st.kegiatanManual:this.st.kegiatan,
+          lokasi: this.st.lokasi==='__manual__'?this.st.lokasiManual:this.st.lokasi,
+          kecamatan: this.st.kecamatan||null, desa: this.st.desa||null,
+          tgl_mulai: this.st.tgl_mulai||this.st.tanggal_st, tgl_selesai: this.st.tgl_selesai||this.st.tanggal_st,
+          jam_mulai: this.st.jam_mulai||'08:00', jam_selesai: this.st.jam_selesai||'16:00',
+          petugas_ids: this.st.petugas_ids,
+          kendaraan_ids: this.st.kendaraan_ids.length?this.st.kendaraan_ids:null,
+          peralatan_ids: this.st.peralatan_ids.length?this.st.peralatan_ids:null,
+          sop_ids: this.st.sop_ids.length?this.st.sop_ids:null,
+          instruksi: this.st.instruksi||null, status: 'Aktif'
+        };
+        const { error } = await supa.from('surat_tugas').insert(payload);
+        if (error) { this.pesan = {teks:'Gagal: '+error.message, warna:'text-red-500'}; }
+        else { this.pesan = {teks:'✅ Surat Tugas berhasil disimpan!', warna:'text-green-600'}; this.resetSTForm(); await this.loadAll(); }
+      },
+      exportExcelST() { alert('Fitur export Excel akan segera hadir.'); },
+
+      // ========== LAPORAN ==========
+      onLaporanSTChange() {},
+      uploadGambarLaporan(e) {
+        const files = e.target.files; if (!files || !files.length) return;
+        for (let i = 0; i < files.length && this.laporan.gambar.length < 6; i++) {
+          const file = files[i];
+          if (!file.type.startsWith('image/')) continue;
+          const reader = new FileReader();
+          reader.onload = (ev) => { this.laporan.gambar.push(ev.target.result); this.laporanPreviewGambar.push({data:ev.target.result, name:file.name}); };
+          reader.readAsDataURL(file);
+        }
+        e.target.value = '';
+      },
+      hapusGambarLaporan(i) { this.laporan.gambar.splice(i,1); this.laporanPreviewGambar.splice(i,1); },
+      cetakKolaseLaporan() { alert('Fitur cetak kolase akan segera hadir.'); },
+      resetLaporanForm() {
+        this.laporan = { surat_tugas_id:'', jam_selesai:'', hadir:'', tanggal_laporan: new Date().toISOString().split('T')[0], uraian_pelaksanaan:'', temuan:'', tindakan:'', hasil:'Terkendali / Selesai', gambar:[] };
+        this.laporanPreviewGambar = [];
+      },
+      async simpanLaporan() {
+        if (!this.laporan.surat_tugas_id) { this.pesan = {teks:'Pilih Surat Tugas terlebih dahulu!', warna:'text-red-500'}; return; }
+        if (!this.laporan.uraian_pelaksanaan || this.laporan.uraian_pelaksanaan.trim().length < 10) { this.pesan = {teks:'Uraian Pelaksanaan wajib diisi (min. 10 karakter)!', warna:'text-red-500'}; return; }
+        const payload = {
+          surat_tugas_id: this.laporan.surat_tugas_id,
+          tanggal_laporan: this.laporan.tanggal_laporan || new Date().toISOString().split('T')[0],
+          jam_selesai: this.laporan.jam_selesai||null, hadir: this.laporan.hadir||null,
+          uraian_pelaksanaan: this.laporan.uraian_pelaksanaan,
+          temuan: this.laporan.temuan||null, tindakan: this.laporan.tindakan||null,
+          hasil: this.laporan.hasil||'Terkendali / Selesai',
+          gambar_urls: this.laporan.gambar.length ? this.laporan.gambar : null
+        };
+        const { error } = await supa.from('laporan').insert(payload);
+        if (error) { this.pesan = {teks:'Gagal: '+error.message, warna:'text-red-500'}; }
+        else {
+          await supa.from('surat_tugas').update({ status: 'Selesai Lapor' }).eq('id', this.laporan.surat_tugas_id);
+          this.pesan = {teks:'✅ Laporan berhasil disimpan!', warna:'text-green-600'};
+          this.resetLaporanForm(); await this.loadAll();
+        }
+      },
+
+      // ========== AKSI DATA ==========
+      async updateStatus(id, newStatus) { await supa.from('pengaduan').update({ status: newStatus }).eq('id', id); await this.loadAll(); },
+      async hapusPengaduan(id) { if(confirm('Hapus?')){ await supa.from('pengaduan').delete().eq('id',id); await this.loadAll(); } },
+      async hapusST(id) { if(confirm('Hapus?')){ await supa.from('surat_tugas').delete().eq('id',id); await this.loadAll(); } },
+
+      // ========== LOAD DATA ==========
+      async loadAll() {
+        const [kat, pet, unit, lay, sop, ken, alt, lok, adu, st, lap] = await Promise.all([
+          supa.from('kategori_pengaduan').select('*').eq('status','Aktif'),
+          supa.from('personil').select('*').eq('status','Aktif'),
+          supa.from('unit_kerja').select('*').eq('status','Aktif'),
+          supa.from('layanan').select('*').eq('status','Aktif'),
+          supa.from('sop').select('*').eq('status','Aktif'),
+          supa.from('kendaraan').select('*'),
+          supa.from('peralatan').select('*'),
+          supa.from('lokasi').select('*'),
+          supa.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang)').order('tanggal_lapor',{ascending:false}),
+          supa.from('surat_tugas').select('*').order('created_at',{ascending:false}),
+          supa.from('laporan').select('*').order('tanggal_laporan',{ascending:false})
+        ]);
+        this.kategoriList = kat.data||[]; this.personilList = pet.data||[];
+        this.unitKerjaList = unit.data||[]; this.layananList = lay.data||[];
+        this.sopList = sop.data||[]; this.kendaraanList = ken.data||[];
+        this.peralatanList = alt.data||[]; this.lokasiList = lok.data||[];
+        this.pengaduanList = adu.data||[]; this.suratTugasList = st.data||[];
+        this.laporanList = lap.data||[];
+      }
+    },
+
+    mounted() {
+      if (this.isDark) document.documentElement.classList.add('dark');
+      if (this.isMobile) this.sidebarOpen = false;
+      window.addEventListener('resize', () => { this.isMobile = window.innerWidth < 768; if (!this.isMobile) this.sidebarOpen = true; });
+      this.loadAll();
+    }
+  }).mount('#app');
+</script>
