@@ -9,437 +9,359 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14' font-size='14'>📝</text></svg>">
-
   <style>
-    body {
-      background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      margin: 0;
-      min-height: 100vh;
-    }
-    .glass-card {
-      background: rgba(255, 255, 255, 0.75);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      border: none; transition: all 0.2s ease;
-    }
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #1d4ed8, #1e40af);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    }
-
-    /* Sidebar */
-    .sidebar {
-      position: fixed; top: 0; left: 0; bottom: 0;
-      width: 260px; background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
-      color: white; z-index: 40; transition: transform 0.3s ease;
-      box-shadow: 4px 0 20px rgba(0,0,0,0.2);
-    }
+    body { background: linear-gradient(135deg, #f0f4ff, #e8f0fe); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
+    .glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
+    .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white; z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); }
     .sidebar.collapsed { transform: translateX(-100%); }
-    .sidebar-header {
-      padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    .sidebar-menu { padding: 16px 12px; flex: 1; }
-    .sidebar-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 16px; border-radius: 12px; font-size: 14px;
-      font-weight: 500; cursor: pointer; transition: background 0.2s;
-      text-decoration: none; color: white;
-    }
+    .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; color: white; text-decoration: none; transition: background 0.2s; }
     .sidebar-item:hover { background: rgba(255,255,255,0.1); }
     .sidebar-item.active { background: rgba(255,255,255,0.2); }
-
-    .main-content {
-      margin-left: 260px; padding: 24px; min-height: 100vh;
-      transition: margin-left 0.3s ease;
-    }
+    .main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
     .main-content.expanded { margin-left: 0; }
-
-    .mobile-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      z-index: 35; display: none;
-    }
-    .mobile-overlay.show { display: block; }
-
-    @media (max-width: 768px) {
-      .sidebar { width: 280px; transform: translateX(-100%); }
-      .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; }
-      .main-content.shifted { margin-left: 280px; }
-    }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 12px; color: #1e40af; }
+    td { padding: 8px 10px; border-top: 1px solid #e2e8f0; font-size: 13px; }
+    .tab-btn { padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; white-space: nowrap; }
+    @media (max-width: 768px) { .sidebar { width: 280px; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .main-content { margin-left: 0; } .main-content.shifted { margin-left: 280px; } }
   </style>
 </head>
 <body>
+<div id="app">
+  <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+    <div class="sidebar-header">
+      <div class="flex items-center justify-between mb-4"><div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div><button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button></div>
+      <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+    </div>
+    <nav class="p-4 space-y-1">
+      <a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="form.html?tab=pengaduan" class="sidebar-item active"><i class="bi bi-megaphone"></i> Pengaduan</a>
+      <a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+      <a href="form.html?tab=laporan" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+      <a href="master.html" class="sidebar-item"><i class="bi bi-server"></i> Master Data</a>
+      <a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i> Pengaturan</a>
+    </nav>
+  </aside>
+  <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex justify-between items-center mb-6"><div><h1 class="text-2xl font-bold text-blue-800">Form & Data</h1><p class="text-sm text-blue-500">Input pengaduan, surat tugas, dan laporan</p></div><button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button></div>
 
-  <div id="app">
-    <!-- Mobile Overlay -->
-    <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
-
-    <!-- Sidebar -->
-    <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
-      <div class="sidebar-header">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-2">
-            <i class="bi bi-shield-shaded text-2xl"></i>
-            <span class="font-bold text-lg">SI DILAN</span>
-          </div>
-          <button @click="sidebarOpen = !sidebarOpen" class="text-white/70 hover:text-white p-1">
-            <i :class="sidebarOpen ? 'bi bi-chevron-left' : 'bi bi-chevron-right'" class="text-xl"></i>
-          </button>
-        </div>
-        <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+      <!-- Sub Tab -->
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <button @click="switchTab('pengaduan')" class="tab-btn" :class="tab==='pengaduan'?'bg-blue-500 text-white':'bg-gray-200'">📢 Pengaduan</button>
+        <button @click="switchTab('st')" class="tab-btn" :class="tab==='st'?'bg-blue-500 text-white':'bg-gray-200'">📋 Surat Tugas</button>
+        <button @click="switchTab('laporan')" class="tab-btn" :class="tab==='laporan'?'bg-blue-500 text-white':'bg-gray-200'">📊 Laporan</button>
       </div>
-      <nav class="sidebar-menu">
-        <a href="index.html" class="sidebar-item">
-          <i class="bi bi-speedometer2 text-lg"></i> Dashboard
-        </a>
-        <a href="form.html?tab=pengaduan" class="sidebar-item" :class="{ active: tab === 'pengaduan' }">
-          <i class="bi bi-megaphone text-lg"></i> Pengaduan
-        </a>
-        <a href="form.html?tab=st" class="sidebar-item" :class="{ active: tab === 'st' }">
-          <i class="bi bi-envelope-paper text-lg"></i> Surat Tugas
-        </a>
-        <a href="master.html" class="sidebar-item">
-          <i class="bi bi-server text-lg"></i> Master Data
-        </a>
-        <a href="settings.html" class="sidebar-item">
-          <i class="bi bi-gear text-lg"></i> Pengaturan
-        </a>
-      </nav>
-    </aside>
 
-    <!-- Main Content -->
-    <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
-      <div class="max-w-2xl mx-auto">
-        <div class="flex items-center justify-between mb-6">
-          <div>
-            <h1 class="text-2xl font-bold text-blue-800">Form Input</h1>
-            <p class="text-sm text-blue-500">Isi data pengaduan atau surat tugas</p>
-          </div>
-          <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden btn-primary px-4 py-2 rounded-lg text-white text-sm">
-            <i class="bi bi-list"></i> Menu
-          </button>
+      <!-- ========== TAB PENGADUAN ========== -->
+      <div v-if="tab==='pengaduan'" class="space-y-6">
+        <div class="glass-card rounded-2xl p-5">
+          <h2 class="text-lg font-bold text-blue-800 mb-4">📢 Form Pengaduan Baru</h2>
+          <form @submit.prevent="simpanPengaduan" class="space-y-3">
+            <div class="grid grid-cols-2 gap-3"><input v-model="aduan.nama" placeholder="Nama Pelapor *" required class="w-full border rounded-lg px-3 py-2 text-sm"><input v-model="aduan.kontak" placeholder="Kontak (HP/WA)" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+            <select v-model="aduan.kategori_id" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Pilih Kategori --</option><option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">{{ kat.permasalahan }} ({{ kat.bidang }})</option></select>
+            <textarea v-model="aduan.deskripsi" placeholder="Deskripsi Pengaduan *" required class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+            <div class="grid grid-cols-2 gap-3"><select v-model="aduan.kecamatan" @change="onKecamatanAduanChange" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Kecamatan --</option><option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option></select><select v-model="aduan.desa" :disabled="!aduan.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Desa --</option><option v-for="desa in filteredDesaAduan" :key="desa" :value="desa">{{ desa }}</option></select></div>
+            <div class="grid grid-cols-2 gap-3"><input v-model="aduan.lokasi" placeholder="Lokasi Spesifik" class="w-full border rounded-lg px-3 py-2 text-sm"><input v-model="aduan.tgl_kejadian" type="date" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+            <button type="submit" class="btn-primary w-full">Kirim Pengaduan</button>
+            <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
+          </form>
         </div>
 
-        <!-- Tab navigasi -->
-        <div class="flex gap-2 mb-4">
-          <button @click="switchTab('pengaduan')" :class="tab === 'pengaduan' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Pengaduan</button>
-          <button @click="switchTab('st')" :class="tab === 'st' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">Surat Tugas</button>
+        <!-- Riwayat Pengaduan -->
+        <div class="glass-card rounded-2xl p-5">
+          <h2 class="text-lg font-bold text-blue-800 mb-4">📋 Riwayat Pengaduan ({{ filteredPengaduan.length }})</h2>
+          <div class="grid grid-cols-5 gap-3 mb-4">
+            <select v-model="riwayatFilterTahun" class="border rounded-lg px-3 py-2 text-xs"><option value="">Semua Tahun</option><option v-for="t in listTahunAduan" :key="t" :value="t">{{ t }}</option></select>
+            <select v-model="riwayatFilterBulan" class="border rounded-lg px-3 py-2 text-xs"><option value="">Semua Bulan</option><option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">Mei</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Agt</option><option value="09">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select>
+            <select v-model="riwayatFilterStatus" class="border rounded-lg px-3 py-2 text-xs"><option value="">Semua Status</option><option value="Baru">Baru</option><option value="Diverifikasi">Diverifikasi</option><option value="Diproses">Diproses</option><option value="Selesai">Selesai</option><option value="Ditolak">Ditolak</option></select>
+            <input v-model="riwayatFilterSearch" placeholder="Cari..." class="border rounded-lg px-3 py-2 text-xs">
+            <button @click="resetFilterAduan" class="bg-amber-500 text-white rounded-lg text-xs font-bold">Reset</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table>
+              <thead><tr><th>No</th><th>Tanggal</th><th>Pelapor</th><th>Kategori</th><th>Lokasi</th><th>Status</th><th>Aksi</th></tr></thead>
+              <tbody>
+                <tr v-for="(p, idx) in paginatedPengaduan" :key="p.id">
+                  <td>{{ (halamanAduan-1)*perHalamanAduan + idx + 1 }}</td>
+                  <td>{{ formatDate(p.tanggal_lapor) }}</td>
+                  <td>{{ p.nama_pelapor }}</td>
+                  <td>{{ p.kategori_pengaduan?.permasalahan || '-' }}</td>
+                  <td>{{ p.lokasi || '-' }}</td>
+                  <td><select @change="updateStatus(p.id, $event.target.value)" class="text-xs border rounded px-2 py-1" :class="statusBadge(p.status)"><option v-for="s in statusOptions" :key="s" :value="s" :selected="p.status===s">{{ s }}</option></select></td>
+                  <td><button @click="lihatDetail(p)" class="text-blue-500"><i class="bi bi-eye"></i></button> <button @click="hapusPengaduan(p.id)" class="text-red-500"><i class="bi bi-trash"></i></button></td>
+                </tr>
+                <tr v-if="!paginatedPengaduan.length"><td colspan="7" class="text-center py-4 text-gray-400">Belum ada data</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="flex justify-between mt-3 text-xs">
+            <span>Hal {{ halamanAduan }}/{{ totalHalamanAduan }}</span>
+            <div class="flex gap-1">
+              <button @click="halamanAduan=1" :disabled="halamanAduan===1" class="px-2 py-1 rounded bg-gray-200">«</button>
+              <button @click="halamanAduan--" :disabled="halamanAduan===1" class="px-2 py-1 rounded bg-gray-200">‹</button>
+              <template v-for="hal in totalHalamanAduan">
+                <button v-if="hal===1||hal===totalHalamanAduan||(hal>=halamanAduan-1&&hal<=halamanAduan+1)" @click="halamanAduan=hal" class="px-2 py-1 rounded" :class="halamanAduan===hal?'bg-blue-500 text-white':'bg-gray-200'">{{ hal }}</button>
+                <span v-else-if="hal===halamanAduan-2||hal===halamanAduan+2">...</span>
+              </template>
+              <button @click="halamanAduan++" :disabled="halamanAduan===totalHalamanAduan" class="px-2 py-1 rounded bg-gray-200">›</button>
+              <button @click="halamanAduan=totalHalamanAduan" :disabled="halamanAduan===totalHalamanAduan" class="px-2 py-1 rounded bg-gray-200">»</button>
+            </div>
+          </div>
         </div>
-        
-        <!-- Form Pengaduan (DIPERKAYA) -->
-        <form v-if="tab === 'pengaduan'" @submit.prevent="simpanPengaduan" class="glass-card rounded-2xl p-6 space-y-3">
-          <h2 class="text-lg font-bold text-gray-700">📢 Form Pengaduan Masyarakat</h2>
-          
-          <div class="grid grid-cols-2 gap-3">
-            <input v-model="aduan.nama" placeholder="Nama Pelapor *" required class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="aduan.kontak" placeholder="Kontak (HP/WA)" class="w-full border rounded-lg px-3 py-2 text-sm">
-          </div>
-        
-          <select v-model="aduan.kategori_id" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <option value="">-- Pilih Kategori Pengaduan --</option>
-            <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">{{ kat.permasalahan }} ({{ kat.bidang }})</option>
-          </select>
-        
-          <select v-model="aduan.sumber_aduan" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <option value="">-- Sumber Aduan --</option>
-            <option value="WhatsApp">WhatsApp</option>
-            <option value="Website">Website</option>
-            <option value="Telepon">Telepon</option>
-            <option value="Surat">Surat</option>
-            <option value="Lainnya">Lainnya</option>
-          </select>
-        
-          <textarea v-model="aduan.deskripsi" placeholder="Deskripsi Pengaduan *" required class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
-          
-          <div class="grid grid-cols-2 gap-3">
-            <select v-model="aduan.kecamatan" @change="onKecamatanAduanChange" class="w-full border rounded-lg px-3 py-2 text-sm">
-              <option value="">-- Kecamatan --</option>
-              <option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
-            </select>
-            <select v-model="aduan.desa" :disabled="!aduan.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm">
-              <option value="">-- Desa/Kelurahan --</option>
-              <option v-for="desa in filteredDesaAduan" :key="desa" :value="desa">{{ desa }}</option>
-            </select>
-          </div>
-        
-          <div class="grid grid-cols-2 gap-3">
-            <input v-model="aduan.lokasi" placeholder="Lokasi Spesifik" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="aduan.tgl_kejadian" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
-          </div>
-          
-          <button type="submit" class="btn-primary w-full text-white px-6 py-3 rounded-xl font-bold text-sm">Kirim Pengaduan</button>
-          <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
-        </form>
-
-        <!-- Form Surat Tugas (DIPERKAYA) -->
-        <form v-if="tab === 'st'" @submit.prevent="simpanST" class="glass-card rounded-2xl p-6 space-y-3">
-          <h2 class="text-lg font-bold text-gray-700">📋 Form Surat Tugas</h2>
-          
-          <!-- Dasar Hukum -->
-          <div>
-            <label class="text-xs font-bold text-gray-600">Dasar Hukum</label>
-            <textarea v-model="st.dasar" placeholder="Dasar hukum penugasan..." class="w-full border rounded-lg px-3 py-2 text-sm mt-1" rows="2"></textarea>
-          </div>
-
-          <!-- Unit Kerja + Layanan -->
-          <div class="grid grid-cols-2 gap-3">
-            <select v-model="st.unit_kerja" @change="onUnitKerjaChange" class="w-full border rounded-lg px-3 py-2 text-sm">
-              <option value="">-- Pilih Unit Kerja --</option>
-              <option v-for="u in unitKerjaList" :key="u.id" :value="u.nama_unit">{{ u.nama_unit }}</option>
-            </select>
-            <select v-model="st.layanan" class="w-full border rounded-lg px-3 py-2 text-sm">
-              <option value="">-- Pilih Layanan --</option>
-              <option v-for="l in filteredLayanan" :key="l.id" :value="l.nama_layanan">{{ l.nama_layanan }}</option>
-            </select>
-          </div>
-
-          <!-- SOP (multi-select) -->
-          <select v-model="st.sop_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
-            <option v-for="s in filteredSOP" :key="s.id" :value="s.id">{{ s.kode_sop }} - {{ s.nama_sop }}</option>
-          </select>
-          <p class="text-xs text-gray-400">Pilih SOP yang relevan (tekan Ctrl/Cmd untuk multi-pilih)</p>
-
-          <input v-model="st.kegiatan" placeholder="Kegiatan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
-          
-          <!-- Kecamatan + Desa -->
-          <div class="grid grid-cols-2 gap-3">
-            <select v-model="st.kecamatan" @change="onKecamatanChange" class="w-full border rounded-lg px-3 py-2 text-sm">
-              <option value="">-- Pilih Kecamatan --</option>
-              <option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
-            </select>
-            <select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm">
-              <option value="">-- Pilih Desa/Kelurahan --</option>
-              <option v-for="desa in filteredDesa" :key="desa" :value="desa">{{ desa }}</option>
-            </select>
-          </div>
-
-          <input v-model="st.lokasi" placeholder="Lokasi Spesifik *" required class="w-full border rounded-lg px-3 py-2 text-sm">
-          
-          <!-- Petugas + Kendaraan + Peralatan -->
-          <select v-model="st.petugas_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
-            <option v-for="p in personilList" :key="p.id" :value="p.id">{{ p.nama }} ({{ p.jabatan }})</option>
-          </select>
-          <p class="text-xs text-gray-400">Petugas (tekan Ctrl/Cmd untuk multi-pilih)</p>
-
-          <div class="grid grid-cols-2 gap-3">
-            <select v-model="st.kendaraan_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
-              <option v-for="k in kendaraanList" :key="k.id" :value="k.id">{{ k.nama }} ({{ k.plat || '-' }})</option>
-            </select>
-            <select v-model="st.peralatan_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm">
-              <option v-for="a in peralatanList" :key="a.id" :value="a.id">{{ a.nama }}</option>
-            </select>
-          </div>
-          <p class="text-xs text-gray-400">Kendaraan & Peralatan (tekan Ctrl/Cmd untuk multi-pilih)</p>
-
-          <!-- Waktu -->
-          <div class="grid grid-cols-4 gap-3">
-            <input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="st.tgl_mulai" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="st.jam_mulai" type="time" class="w-full border rounded-lg px-3 py-2 text-sm" value="08:00">
-            <input v-model="st.jam_selesai" type="time" class="w-full border rounded-lg px-3 py-2 text-sm" value="16:00">
-          </div>
-
-          <!-- Instruksi -->
-          <textarea v-model="st.instruksi" placeholder="Instruksi Khusus (opsional)" class="w-full border rounded-lg px-3 py-2 text-sm" rows="2"></textarea>
-          
-          <button type="submit" class="btn-primary w-full text-white px-6 py-3 rounded-xl font-bold text-sm">Simpan Surat Tugas</button>
-          <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
-        </form>
       </div>
-    </main>
-  </div>
 
-  <script>
-    const supabaseUrl = 'https://msdacugqzxprxajdudsx.supabase.co';
-    const supabaseKey = 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf';
-    const supa = window.supabase.createClient(supabaseUrl, supabaseKey);
+      <!-- ========== TAB SURAT TUGAS ========== -->
+      <div v-if="tab==='st'" class="space-y-6">
+        <div class="glass-card rounded-2xl p-5">
+          <h2 class="text-lg font-bold text-emerald-800 mb-4">📋 Form Surat Tugas</h2>
+          <form @submit.prevent="simpanST" class="space-y-3">
+            <textarea v-model="st.dasar" placeholder="Dasar Hukum" class="w-full border rounded-lg px-3 py-2 text-sm" rows="2"></textarea>
+            <div class="grid grid-cols-2 gap-3">
+              <select v-model="st.unit_kerja" @change="onUnitKerjaChange" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Unit Kerja --</option><option v-for="u in unitKerjaList" :key="u.id" :value="u.nama_unit">{{ u.nama_unit }}</option></select>
+              <select v-model="st.layanan" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Layanan --</option><option v-for="l in filteredLayanan" :key="l.id" :value="l.nama_layanan">{{ l.nama_layanan }}</option></select>
+            </div>
+            <select v-model="st.sop_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm"><option v-for="s in filteredSOP" :key="s.id" :value="s.id">{{ s.kode_sop }} - {{ s.nama_sop }}</option></select>
+            <input v-model="st.kegiatan" placeholder="Kegiatan *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+            <div class="grid grid-cols-2 gap-3">
+              <select v-model="st.kecamatan" @change="onKecamatanChange" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Kecamatan --</option><option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option></select>
+              <select v-model="st.desa" :disabled="!st.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Desa --</option><option v-for="desa in filteredDesa" :key="desa" :value="desa">{{ desa }}</option></select>
+            </div>
+            <input v-model="st.lokasi" placeholder="Lokasi Spesifik *" required class="w-full border rounded-lg px-3 py-2 text-sm">
+            <select v-model="st.petugas_ids" multiple class="w-full border rounded-lg px-3 py-2 text-sm"><option v-for="p in personilList" :key="p.id" :value="p.id">{{ p.nama }} ({{ p.jabatan }})</option></select>
+            <div class="grid grid-cols-4 gap-3">
+              <input v-model="st.tanggal_st" type="date" required class="w-full border rounded-lg px-3 py-2 text-sm">
+              <input v-model="st.tgl_mulai" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
+              <input v-model="st.jam_mulai" type="time" value="08:00" class="w-full border rounded-lg px-3 py-2 text-sm">
+              <input v-model="st.jam_selesai" type="time" value="16:00" class="w-full border rounded-lg px-3 py-2 text-sm">
+            </div>
+            <textarea v-model="st.instruksi" placeholder="Instruksi Khusus" class="w-full border rounded-lg px-3 py-2 text-sm" rows="2"></textarea>
+            <button type="submit" class="btn-primary w-full">Simpan Surat Tugas</button>
+            <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
+          </form>
+        </div>
 
-    // Data statis kecamatan & desa
-    const DATA_KECAMATAN = [
-      'Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan',
-      'Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'
-    ];
-    const DATA_DESA = {
-      'Bendungan':['Botoputih','Depok','Masaran','Sengon','Surenlor'],
-      'Dongko':['Dongko','Pandean','Petung','Pringapus','Salam'],
-      'Durenan':['Durenan','Gador','Kamulan','Pakis','Pandean'],
-      'Gandusari':['Gandusari','Jajar','Krandegan','Sukorame','Widoro'],
-      'Kampak':['Bogoran','Karangrejo','Ngadimulyo','Senden','Timahan'],
-      'Karangan':['Buluagung','Jati','Karangan','Kayen','Sumber'],
-      'Munjungan':['Besuki','Munjungan','Sobo','Tawing','Bangun'],
-      'Panggul':['Banjar','Depok','Manggis','Panggul','Wonocoyo'],
-      'Pogalan':['Bendorejo','Kedunglurah','Ngadirejo','Pogalan','Wonocoyo'],
-      'Pule':['Joho','Kembangan','Pule','Puyung','Sidomulyo'],
-      'Suruh':['Gamping','Mlinjon','Ngrandu','Suruh','Wonokerto'],
-      'Trenggalek':['Kelutan','Ngantru','Sumbergedong','Surondakan','Tamanan'],
-      'Tugu':['Duren','Gading','Prambon','Tumpuk','Winong'],
-      'Watulimo':['Dukuh','Gemaharjo','Prigi','Slawe','Watulimo']
-    };
+        <!-- Riwayat Surat Tugas -->
+        <div class="glass-card rounded-2xl p-5">
+          <h2 class="text-lg font-bold text-emerald-800 mb-4">📋 Riwayat Surat Tugas ({{ filteredST.length }})</h2>
+          <div class="grid grid-cols-5 gap-3 mb-4">
+            <select v-model="riwayatFilterTahunST" class="border rounded-lg px-3 py-2 text-xs"><option value="">Semua Tahun</option><option v-for="t in listTahunST" :key="t" :value="t">{{ t }}</option></select>
+            <input v-model="riwayatFilterSearchST" placeholder="Cari..." class="border rounded-lg px-3 py-2 text-xs">
+            <button @click="resetFilterST" class="bg-amber-500 text-white rounded-lg text-xs font-bold">Reset</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table>
+              <thead><tr><th>No</th><th>Nomor ST</th><th>Kegiatan</th><th>Lokasi</th><th>Status</th><th>Aksi</th></tr></thead>
+              <tbody>
+                <tr v-for="(s, idx) in paginatedST" :key="s.id">
+                  <td>{{ (halamanST-1)*perHalamanST + idx + 1 }}</td>
+                  <td>{{ s.nomor_st || '-' }}</td>
+                  <td>{{ s.kegiatan }}</td>
+                  <td>{{ s.lokasi }}</td>
+                  <td><span :class="s.status==='Aktif'?'bg-amber-100 text-amber-700':'bg-emerald-100 text-emerald-700'" class="px-2 py-1 rounded-full text-xs font-bold">{{ s.status }}</span></td>
+                  <td><button @click="hapusST(s.id)" class="text-red-500"><i class="bi bi-trash"></i></button></td>
+                </tr>
+                <tr v-if="!paginatedST.length"><td colspan="6" class="text-center py-4 text-gray-400">Belum ada data</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="flex justify-between mt-3 text-xs">
+            <span>Hal {{ halamanST }}/{{ totalHalamanST }}</span>
+            <div class="flex gap-1">
+              <button @click="halamanST=1" :disabled="halamanST===1" class="px-2 py-1 rounded bg-gray-200">«</button>
+              <button @click="halamanST--" :disabled="halamanST===1" class="px-2 py-1 rounded bg-gray-200">‹</button>
+              <template v-for="hal in totalHalamanST">
+                <button v-if="hal===1||hal===totalHalamanST||(hal>=halamanST-1&&hal<=halamanST+1)" @click="halamanST=hal" class="px-2 py-1 rounded" :class="halamanST===hal?'bg-emerald-500 text-white':'bg-gray-200'">{{ hal }}</button>
+                <span v-else-if="hal===halamanST-2||hal===halamanST+2">...</span>
+              </template>
+              <button @click="halamanST++" :disabled="halamanST===totalHalamanST" class="px-2 py-1 rounded bg-gray-200">›</button>
+              <button @click="halamanST=totalHalamanST" :disabled="halamanST===totalHalamanST" class="px-2 py-1 rounded bg-gray-200">»</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    function generateNoPengaduan() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      const rand = Math.floor(Math.random() * 9000) + 1000;
-      return `ADU-${y}${m}${d}-${rand}`;
-    }
+      <!-- ========== TAB LAPORAN ========== -->
+      <div v-if="tab==='laporan'" class="space-y-6">
+        <div class="glass-card rounded-2xl p-5">
+          <h2 class="text-lg font-bold text-purple-800 mb-4">📊 Form Laporan</h2>
+          <form @submit.prevent="simpanLaporan" class="space-y-3">
+            <select v-model="laporan.surat_tugas_id" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Pilih Surat Tugas --</option><option v-for="st in stAktifList" :key="st.id" :value="st.id">{{ st.nomor_st || st.kegiatan }}</option></select>
+            <textarea v-model="laporan.uraian_pelaksanaan" placeholder="Uraian Pelaksanaan *" required class="w-full border rounded-lg px-3 py-2 text-sm" rows="4"></textarea>
+            <div class="grid grid-cols-2 gap-3">
+              <input v-model="laporan.temuan" placeholder="Temuan" class="w-full border rounded-lg px-3 py-2 text-sm">
+              <input v-model="laporan.tindakan" placeholder="Tindakan" class="w-full border rounded-lg px-3 py-2 text-sm">
+            </div>
+            <input v-model="laporan.hasil" placeholder="Hasil" class="w-full border rounded-lg px-3 py-2 text-sm">
+            <button type="submit" class="btn-primary w-full">Simpan Laporan</button>
+            <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
+          </form>
+        </div>
+      </div>
 
-    function generateNomorST(unit) {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const rand = Math.floor(Math.random() * 900) + 100;
-      const kode = unit ? unit.substring(0, 3).toUpperCase() : 'OPS';
-      return `${rand}/ST/${kode}/${y}`;
-    }
+      <!-- Modal Detail Pengaduan -->
+      <div v-if="detailModal.show" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="detailModal.show=false">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto">
+          <div class="sticky top-0 bg-gradient-to-r from-blue-500 to-indigo-500 px-4 py-3 flex justify-between text-white rounded-t-2xl"><h3 class="font-bold text-sm">Detail Pengaduan</h3><button @click="detailModal.show=false" class="text-white/70 hover:text-white text-xl"><i class="bi bi-x-lg"></i></button></div>
+          <div class="p-4 space-y-3" v-if="detailModal.data">
+            <div class="bg-teal-50 rounded-xl p-3 border border-teal-200">
+              <h4 class="text-xs font-bold text-teal-700 mb-2">👤 DATA PELAPOR</h4>
+              <div class="text-xs space-y-1"><div class="flex"><span class="w-20 text-gray-400">Nama</span>: <span class="font-medium">{{ detailModal.data.nama_pelapor }}</span></div><div class="flex"><span class="w-20 text-gray-400">Kontak</span>: {{ detailModal.data.kontak || '-' }}</div></div>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-3 border">
+              <h4 class="text-xs font-bold text-slate-700 mb-2">📋 DATA KEJADIAN</h4>
+              <div class="text-xs space-y-1"><div class="flex"><span class="w-20 text-gray-400">Kategori</span>: <span class="font-medium">{{ detailModal.data.kategori_pengaduan?.permasalahan || '-' }}</span></div><div class="flex"><span class="w-20 text-gray-400">Lokasi</span>: {{ detailModal.data.lokasi || '-' }}</div></div>
+            </div>
+            <div class="bg-amber-50 rounded-xl p-3 border">
+              <h4 class="text-xs font-bold text-amber-700 mb-2">📝 DESKRIPSI</h4>
+              <p class="text-xs whitespace-pre-wrap">{{ detailModal.data.deskripsi }}</p>
+            </div>
+            <div class="border-t pt-3">
+              <select v-model="detailModal.newStatus" class="w-full border rounded-lg px-3 py-2 text-xs mb-2"><option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option></select>
+              <button @click="updateStatus(detailModal.data.id, detailModal.newStatus); detailModal.show=false" class="btn-primary w-full">Update Status</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
 
-    // Baca query string ?tab=
-    const params = new URLSearchParams(window.location.search);
-    const initialTab = params.get('tab') === 'st' ? 'st' : 'pengaduan';
+<script>
+  const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+  const DATA_KECAMATAN = ['Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan','Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'];
+  const DATA_DESA = {
+    'Bendungan':['Botoputih','Depok','Masaran','Sengon','Surenlor'],'Dongko':['Dongko','Pandean','Petung','Pringapus','Salam'],'Durenan':['Durenan','Gador','Kamulan','Pakis','Pandean'],'Gandusari':['Gandusari','Jajar','Krandegan','Sukorame','Widoro'],'Kampak':['Bogoran','Karangrejo','Ngadimulyo','Senden','Timahan'],'Karangan':['Buluagung','Jati','Karangan','Kayen','Sumber'],'Munjungan':['Besuki','Munjungan','Sobo','Tawing','Bangun'],'Panggul':['Banjar','Depok','Manggis','Panggul','Wonocoyo'],'Pogalan':['Bendorejo','Kedunglurah','Ngadirejo','Pogalan','Wonocoyo'],'Pule':['Joho','Kembangan','Pule','Puyung','Sidomulyo'],'Suruh':['Gamping','Mlinjon','Ngrandu','Suruh','Wonokerto'],'Trenggalek':['Kelutan','Ngantru','Sumbergedong','Surondakan','Tamanan'],'Tugu':['Duren','Gading','Prambon','Tumpuk','Winong'],'Watulimo':['Dukuh','Gemaharjo','Prigi','Slawe','Watulimo']
+  };
+  const params = new URLSearchParams(window.location.search);
+  const initTab = params.get('tab') || 'pengaduan';
 
-    Vue.createApp({
-      data() {
-        return {
-          tab: initialTab,
-          aduan: { nama: '', kontak: '', kategori_id: '', sumber_aduan: '', kecamatan: '', desa: '', deskripsi: '', lokasi: '', tgl_kejadian: '' },
-          st: { kegiatan: '', unit_kerja: '', layanan: '', dasar: '', sop_ids: [], kecamatan: '', desa: '', lokasi: '', petugas_ids: [], kendaraan_ids: [], peralatan_ids: [], tanggal_st: '', tgl_mulai: '', jam_mulai: '08:00', jam_selesai: '16:00', instruksi: '' },
-          pesan: { teks: '', warna: '' },
-          kategoriList: [],
-          personilList: [],
-          unitKerjaList: [],
-          layananList: [],
-          sopList: [],
-          kendaraanList: [],
-          peralatanList: [],
-          listKecamatan: DATA_KECAMATAN,
-          filteredDesa: [],
-          filteredDesaAduan: [],
-          sidebarOpen: true,
-          isMobile: window.innerWidth < 768
-        }
-      },
-      computed: {
-        filteredLayanan() {
-          if (!this.st.unit_kerja) return [];
-          return this.layananList.filter(l => l.unit_kerja === this.st.unit_kerja);
-        },
-        filteredSOP() {
-          if (!this.st.layanan) return [];
-          return this.sopList.filter(s => s.layanan === this.st.layanan);
-        }
-      },
-      methods: {
-        switchTab(t) {
-          this.tab = t;
-          const url = new URL(window.location);
-          url.searchParams.set('tab', t);
-          window.history.replaceState({}, '', url);
-        },
-        onUnitKerjaChange() {
-          this.st.layanan = '';
-          this.st.sop_ids = [];
-        },
-        onKecamatanChange() {
-          this.st.desa = '';
-          this.filteredDesa = DATA_DESA[this.st.kecamatan] || [];
-        },
-        onKecamatanAduanChange() {
-          this.aduan.desa = '';
-          this.filteredDesaAduan = DATA_DESA[this.aduan.kecamatan] || [];
-        },
-        async simpanPengaduan() {
-          this.pesan = { teks: '', warna: '' };
-          if (!this.aduan.nama || !this.aduan.deskripsi) {
-            this.pesan = { teks: 'Nama dan Deskripsi wajib diisi!', warna: 'text-red-500' };
-            return;
-          }
-          const { error } = await supa.from('pengaduan').insert({
-            no_pengaduan: generateNoPengaduan(),
-            nama_pelapor: this.aduan.nama,
-            kontak: this.aduan.kontak,
-            kategori_id: this.aduan.kategori_id || null,
-            sumber_aduan: this.aduan.sumber_aduan || null,
-            kecamatan: this.aduan.kecamatan || null,
-            desa: this.aduan.desa || null,
-            deskripsi: this.aduan.deskripsi,
-            lokasi: this.aduan.lokasi || null,
-            tgl_kejadian: this.aduan.tgl_kejadian || null,
-            status: 'Baru'
-          });
-          if (error) { this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' }; }
-          else {
-            this.pesan = { teks: '✅ Pengaduan berhasil dikirim!', warna: 'text-green-600' };
-            this.aduan = { nama: '', kontak: '', kategori_id: '', sumber_aduan: '', kecamatan: '', desa: '', deskripsi: '', lokasi: '', tgl_kejadian: '' };
-          }
-        },
-        async simpanST() {
-          this.pesan = { teks: '', warna: '' };
-          if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) {
-            this.pesan = { teks: 'Kegiatan, Lokasi, dan Tanggal wajib diisi!', warna: 'text-red-500' };
-            return;
-          }
-          const payload = {
-            nomor_st: generateNomorST(this.st.unit_kerja),
-            dasar: this.st.dasar || null,
-            kegiatan: this.st.kegiatan,
-            unit_kerja: this.st.unit_kerja || null,
-            layanan: this.st.layanan || null,
-            sop_ids: this.st.sop_ids.length > 0 ? this.st.sop_ids : null,
-            kecamatan: this.st.kecamatan || null,
-            desa: this.st.desa || null,
-            lokasi: this.st.lokasi,
-            petugas_ids: this.st.petugas_ids.length > 0 ? this.st.petugas_ids : null,
-            kendaraan_ids: this.st.kendaraan_ids.length > 0 ? this.st.kendaraan_ids : null,
-            peralatan_ids: this.st.peralatan_ids.length > 0 ? this.st.peralatan_ids : null,
-            tanggal_st: this.st.tanggal_st,
-            tgl_mulai: this.st.tgl_mulai || this.st.tanggal_st,
-            jam_mulai: this.st.jam_mulai || '08:00',
-            jam_selesai: this.st.jam_selesai || '16:00',
-            instruksi: this.st.instruksi || null,
-            status: 'Aktif'
-          };
-          const { error } = await supa.from('surat_tugas').insert(payload);
-          if (error) { this.pesan = { teks: 'Gagal: ' + error.message, warna: 'text-red-500' }; }
-          else {
-            this.pesan = { teks: '✅ Surat Tugas berhasil disimpan!', warna: 'text-green-600' };
-            this.st = { kegiatan: '', unit_kerja: '', layanan: '', dasar: '', sop_ids: [], kecamatan: '', desa: '', lokasi: '', petugas_ids: [], kendaraan_ids: [], peralatan_ids: [], tanggal_st: '', tgl_mulai: '', jam_mulai: '08:00', jam_selesai: '16:00', instruksi: '' };
-          }
-        }
-      },
-      async mounted() {
-        if (this.isMobile) this.sidebarOpen = false;
-        window.addEventListener('resize', () => {
-          this.isMobile = window.innerWidth < 768;
-          if (!this.isMobile) this.sidebarOpen = true;
-        });
-        const [
-          { data: kat }, { data: pet }, { data: unit },
-          { data: lay }, { data: sop }, { data: ken }, { data: alt }
-        ] = await Promise.all([
-          supa.from('kategori_pengaduan').select('*').eq('status', 'Aktif'),
-          supa.from('personil').select('*').eq('status', 'Aktif'),
-          supa.from('unit_kerja').select('*').eq('status', 'Aktif'),
-          supa.from('layanan').select('*').eq('status', 'Aktif'),
-          supa.from('sop').select('*').eq('status', 'Aktif'),
-          supa.from('kendaraan').select('*'),
-          supa.from('peralatan').select('*')
-        ]);
-        this.kategoriList = kat || [];
-        this.personilList = pet || [];
-        this.unitKerjaList = unit || [];
-        this.layananList = lay || [];
-        this.sopList = sop || [];
-        this.kendaraanList = ken || [];
-        this.peralatanList = alt || [];
+  Vue.createApp({
+    data() {
+      return {
+        tab: initTab,
+        sidebarOpen: true, isMobile: window.innerWidth < 768,
+        pesan: { teks: '', warna: '' },
+        aduan: { nama:'', kontak:'', kategori_id:'', deskripsi:'', kecamatan:'', desa:'', lokasi:'', tgl_kejadian:'' },
+        st: { dasar:'', unit_kerja:'', layanan:'', sop_ids:[], kegiatan:'', kecamatan:'', desa:'', lokasi:'', petugas_ids:[], tanggal_st:'', tgl_mulai:'', jam_mulai:'08:00', jam_selesai:'16:00', instruksi:'' },
+        laporan: { surat_tugas_id:'', uraian_pelaksanaan:'', temuan:'', tindakan:'', hasil:'Terkendali / Selesai' },
+        kategoriList:[], personilList:[], unitKerjaList:[], layananList:[], sopList:[],
+        pengaduanList:[], suratTugasList:[],
+        filteredDesa:[], filteredDesaAduan:[],
+        riwayatFilterTahun:'', riwayatFilterBulan:'', riwayatFilterStatus:'', riwayatFilterSearch:'',
+        riwayatFilterTahunST:'', riwayatFilterSearchST:'',
+        halamanAduan:1, perHalamanAduan:15, halamanST:1, perHalamanST:15,
+        detailModal: { show:false, data:null, newStatus:'Diproses' },
+        statusOptions: ['Baru','Diverifikasi','Diproses','Selesai','Ditolak'],
+        listKecamatan: DATA_KECAMATAN
       }
-    }).mount('#app');
-  </script>
+    },
+    computed: {
+      filteredDesa() { return DATA_DESA[this.st.kecamatan] || []; },
+      filteredDesaAduan() { return DATA_DESA[this.aduan.kecamatan] || []; },
+      filteredLayanan() { return this.st.unit_kerja ? this.layananList.filter(l => l.unit_kerja === this.st.unit_kerja) : []; },
+      filteredSOP() { return this.st.layanan ? this.sopList.filter(s => s.layanan === this.st.layanan) : []; },
+      stAktifList() { return this.suratTugasList.filter(s => s.status === 'Aktif'); },
+      filteredPengaduan() {
+        let d = this.pengaduanList;
+        if (this.riwayatFilterTahun) d = d.filter(p => new Date(p.tanggal_lapor).getFullYear().toString() === this.riwayatFilterTahun);
+        if (this.riwayatFilterBulan) d = d.filter(p => String(new Date(p.tanggal_lapor).getMonth()+1).padStart(2,'0') === this.riwayatFilterBulan);
+        if (this.riwayatFilterStatus) d = d.filter(p => p.status === this.riwayatFilterStatus);
+        if (this.riwayatFilterSearch) { const kw = this.riwayatFilterSearch.toLowerCase(); d = d.filter(p => (p.nama_pelapor||'').toLowerCase().includes(kw) || (p.deskripsi||'').toLowerCase().includes(kw)); }
+        return d;
+      },
+      filteredST() {
+        let d = this.suratTugasList;
+        if (this.riwayatFilterTahunST) d = d.filter(s => new Date(s.tanggal_st).getFullYear().toString() === this.riwayatFilterTahunST);
+        if (this.riwayatFilterSearchST) { const kw = this.riwayatFilterSearchST.toLowerCase(); d = d.filter(s => (s.kegiatan||'').toLowerCase().includes(kw) || (s.lokasi||'').toLowerCase().includes(kw)); }
+        return d;
+      },
+      paginatedPengaduan() { return this.filteredPengaduan.slice((this.halamanAduan-1)*this.perHalamanAduan, this.halamanAduan*this.perHalamanAduan); },
+      paginatedST() { return this.filteredST.slice((this.halamanST-1)*this.perHalamanST, this.halamanST*this.perHalamanST); },
+      totalHalamanAduan() { return Math.ceil(this.filteredPengaduan.length / this.perHalamanAduan) || 1; },
+      totalHalamanST() { return Math.ceil(this.filteredST.length / this.perHalamanST) || 1; },
+      listTahunAduan() { const y=new Set(); this.pengaduanList.forEach(p=>{const d=new Date(p.tanggal_lapor); if(!isNaN(d)) y.add(d.getFullYear());}); if(y.size===0) y.add(new Date().getFullYear()); return [...y].sort((a,b)=>b-a); },
+      listTahunST() { const y=new Set(); this.suratTugasList.forEach(s=>{const d=new Date(s.tanggal_st); if(!isNaN(d)) y.add(d.getFullYear());}); if(y.size===0) y.add(new Date().getFullYear()); return [...y].sort((a,b)=>b-a); }
+    },
+    methods: {
+      switchTab(t) { this.tab = t; const url = new URL(window.location); url.searchParams.set('tab', t); window.history.replaceState({}, '', url); },
+      onKecamatanChange() { this.st.desa = ''; },
+      onKecamatanAduanChange() { this.aduan.desa = ''; },
+      onUnitKerjaChange() { this.st.layanan = ''; this.st.sop_ids = []; },
+      resetFilterAduan() { this.riwayatFilterTahun=''; this.riwayatFilterBulan=''; this.riwayatFilterStatus=''; this.riwayatFilterSearch=''; this.halamanAduan=1; },
+      resetFilterST() { this.riwayatFilterTahunST=''; this.riwayatFilterSearchST=''; this.halamanST=1; },
+      formatDate(d) { if(!d) return '-'; return new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}); },
+      statusBadge(s) { return {'Baru':'bg-amber-100 text-amber-700','Diverifikasi':'bg-sky-100 text-sky-700','Diproses':'bg-violet-100 text-violet-700','Selesai':'bg-emerald-100 text-emerald-700','Ditolak':'bg-rose-100 text-rose-700'}[s] || 'bg-gray-100'; },
+      async loadAll() {
+        const [kat, pet, unit, lay, sop, adu, st] = await Promise.all([
+          supa.from('kategori_pengaduan').select('*').eq('status','Aktif'),
+          supa.from('personil').select('*').eq('status','Aktif'),
+          supa.from('unit_kerja').select('*').eq('status','Aktif'),
+          supa.from('layanan').select('*').eq('status','Aktif'),
+          supa.from('sop').select('*').eq('status','Aktif'),
+          supa.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang)').order('tanggal_lapor',{ascending:false}),
+          supa.from('surat_tugas').select('*').order('created_at',{ascending:false})
+        ]);
+        this.kategoriList = kat.data || []; this.personilList = pet.data || []; this.unitKerjaList = unit.data || [];
+        this.layananList = lay.data || []; this.sopList = sop.data || []; this.pengaduanList = adu.data || []; this.suratTugasList = st.data || [];
+      },
+      async simpanPengaduan() {
+        if (!this.aduan.nama || !this.aduan.deskripsi) { this.pesan = {teks:'Nama dan Deskripsi wajib diisi!', warna:'text-red-500'}; return; }
+        const { error } = await supa.from('pengaduan').insert({
+          no_pengaduan: 'ADU-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.floor(Math.random()*9000+1000),
+          nama_pelapor: this.aduan.nama, kontak: this.aduan.kontak, kategori_id: this.aduan.kategori_id || null,
+          deskripsi: this.aduan.deskripsi, kecamatan: this.aduan.kecamatan, desa: this.aduan.desa,
+          lokasi: this.aduan.lokasi, tgl_kejadian: this.aduan.tgl_kejadian || null, status: 'Baru'
+        });
+        if (error) { this.pesan = {teks:'Gagal: '+error.message, warna:'text-red-500'}; }
+        else { this.pesan = {teks:'✅ Pengaduan berhasil dikirim!', warna:'text-green-600'}; this.aduan = { nama:'', kontak:'', kategori_id:'', deskripsi:'', kecamatan:'', desa:'', lokasi:'', tgl_kejadian:'' }; await this.loadAll(); }
+      },
+      async simpanST() {
+        if (!this.st.kegiatan || !this.st.lokasi || !this.st.tanggal_st) { this.pesan = {teks:'Kegiatan, Lokasi, Tanggal wajib diisi!', warna:'text-red-500'}; return; }
+        const { error } = await supa.from('surat_tugas').insert({
+          nomor_st: Math.floor(Math.random()*900+100)+'/ST/'+(this.st.unit_kerja||'OPS').substring(0,3).toUpperCase()+'/'+new Date().getFullYear(),
+          dasar: this.st.dasar, unit_kerja: this.st.unit_kerja, layanan: this.st.layanan,
+          sop_ids: this.st.sop_ids.length ? this.st.sop_ids : null, kegiatan: this.st.kegiatan,
+          kecamatan: this.st.kecamatan, desa: this.st.desa, lokasi: this.st.lokasi,
+          petugas_ids: this.st.petugas_ids.length ? this.st.petugas_ids : null,
+          tanggal_st: this.st.tanggal_st, tgl_mulai: this.st.tgl_mulai || this.st.tanggal_st,
+          jam_mulai: this.st.jam_mulai || '08:00', jam_selesai: this.st.jam_selesai || '16:00',
+          instruksi: this.st.instruksi, status: 'Aktif'
+        });
+        if (error) { this.pesan = {teks:'Gagal: '+error.message, warna:'text-red-500'}; }
+        else { this.pesan = {teks:'✅ Surat Tugas berhasil disimpan!', warna:'text-green-600'}; this.st = { dasar:'', unit_kerja:'', layanan:'', sop_ids:[], kegiatan:'', kecamatan:'', desa:'', lokasi:'', petugas_ids:[], tanggal_st:'', tgl_mulai:'', jam_mulai:'08:00', jam_selesai:'16:00', instruksi:'' }; await this.loadAll(); }
+      },
+      async simpanLaporan() {
+        if (!this.laporan.surat_tugas_id || !this.laporan.uraian_pelaksanaan) { this.pesan = {teks:'ST dan Uraian wajib diisi!', warna:'text-red-500'}; return; }
+        const { error } = await supa.from('laporan').insert({
+          surat_tugas_id: this.laporan.surat_tugas_id, uraian_pelaksanaan: this.laporan.uraian_pelaksanaan,
+          temuan: this.laporan.temuan, tindakan: this.laporan.tindakan, hasil: this.laporan.hasil
+        });
+        if (error) { this.pesan = {teks:'Gagal: '+error.message, warna:'text-red-500'}; }
+        else {
+          await supa.from('surat_tugas').update({ status: 'Selesai Lapor' }).eq('id', this.laporan.surat_tugas_id);
+          this.pesan = {teks:'✅ Laporan berhasil disimpan!', warna:'text-green-600'};
+          this.laporan = { surat_tugas_id:'', uraian_pelaksanaan:'', temuan:'', tindakan:'', hasil:'Terkendali / Selesai' };
+          await this.loadAll();
+        }
+      },
+      async updateStatus(id, newStatus) {
+        await supa.from('pengaduan').update({ status: newStatus }).eq('id', id);
+        await supa.from('activity_log').insert({ action: 'Update Status', detail: `Pengaduan #${id} → ${newStatus}`, status: 'INFO' });
+        await this.loadAll();
+      },
+      async hapusPengaduan(id) { if(confirm('Hapus?')){ await supa.from('pengaduan').delete().eq('id',id); await this.loadAll(); } },
+      async hapusST(id) { if(confirm('Hapus?')){ await supa.from('surat_tugas').delete().eq('id',id); await this.loadAll(); } },
+      lihatDetail(item) { this.detailModal.data = item; this.detailModal.newStatus = item.status; this.detailModal.show = true; }
+    },
+    mounted() {
+      if (this.isMobile) this.sidebarOpen = false;
+      window.addEventListener('resize', () => { this.isMobile = window.innerWidth < 768; if (!this.isMobile) this.sidebarOpen = true; });
+      this.loadAll();
+    }
+  }).mount('#app');
+</script>
 </body>
 </html>
