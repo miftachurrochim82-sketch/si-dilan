@@ -1,212 +1,252 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Master Data - SI DILAN</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<style>
-body { background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
-.glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
-.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white; z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); }
-.sidebar.collapsed { transform: translateX(-100%); }
-.sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; color: white; text-decoration: none; transition: background 0.2s; }
-.sidebar-item:hover { background: rgba(255,255,255,0.1); }
-.sidebar-item.active { background: rgba(255,255,255,0.2); }
-.main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
-.main-content.expanded { margin-left: 0; }
-.btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-.btn-danger { background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
-table { width: 100%; border-collapse: collapse; }
-th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 12px; color: #1e40af; }
-td { padding: 8px 10px; border-top: 1px solid #e2e8f0; font-size: 13px; }
-@media (max-width: 768px) {
-.sidebar { width: 280px; transform: translateX(-100%); }
-.sidebar.open { transform: translateX(0); }
-.main-content { margin-left: 0; }
-.main-content.shifted { margin-left: 280px; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Data - SI DILAN</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    body { background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
+    .glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white; z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); }
+    .sidebar.collapsed { transform: translateX(-100%); }
+    .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; color: white; text-decoration: none; transition: background 0.2s; }
+    .sidebar-item:hover { background: rgba(255,255,255,0.1); }
+    .sidebar-item.active { background: rgba(255,255,255,0.2); }
+    .main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
+    .main-content.expanded { margin-left: 0; }
+    .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-danger { background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 12px; color: #1e40af; }
+    td { padding: 8px 10px; border-top: 1px solid #e2e8f0; font-size: 13px; }
+    .tab-container { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tab-btn { padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; white-space: nowrap; }
+    @media (max-width: 768px) {
+      .sidebar { width: 280px; transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+      .main-content.shifted { margin-left: 280px; }
+    }
+  </style>
 </head>
 <body>
 
 <div id="app">
-<!-- SIDEBAR -->
-<aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
-<div class="sidebar-header">
-<div class="flex items-center justify-between mb-4">
-<div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
-<button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button>
-</div>
-<p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
-</div>
-<nav class="p-4 space-y-1">
-<a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
-<a href="form.html?tab=pengaduan" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
-<a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
-<a href="master.html" class="sidebar-item active"><i class="bi bi-server"></i> Master Data</a>
-</nav>
-</aside>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+    <div class="sidebar-header">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
+        <button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button>
+      </div>
+      <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+    </div>
+    <nav class="p-4 space-y-1">
+      <a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+      <a href="form.html?tab=pengaduan" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
+      <a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+      <a href="master.html" class="sidebar-item active"><i class="bi bi-server"></i> Master Data</a>
+      <a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i> Pengaturan</a>
+    </nav>
+  </aside>
 
-<!-- MAIN -->
-<main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
-<div class="max-w-6xl mx-auto">
-<div class="flex justify-between items-center mb-6">
-<div><h1 class="text-2xl font-bold text-blue-800">Master Data</h1><p class="text-sm text-blue-500">Kelola data referensi aplikasi</p></div>
-<button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
-</div>
+  <!-- MAIN -->
+  <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex justify-between items-center mb-6">
+        <div><h1 class="text-2xl font-bold text-blue-800">Master Data</h1><p class="text-sm text-blue-500">Kelola data referensi aplikasi</p></div>
+        <button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
+      </div>
 
-<!-- TABS -->
-<div class="flex gap-2 mb-4 flex-wrap">
-<button v-for="t in tabs" :key="t.key" @click="activeTab = t.key" :class="activeTab===t.key?'bg-blue-500 text-white':'bg-gray-200'" class="px-4 py-2 rounded-lg font-bold text-sm">{{ t.label }}</button>
-</div>
+      <!-- TABS -->
+      <div class="tab-container">
+        <button v-for="t in tabs" :key="t.key" @click="activeTab = t.key" class="tab-btn" :class="activeTab===t.key?'bg-blue-500 text-white':'bg-gray-200'">{{ t.label }}</button>
+      </div>
 
-<!-- TABLE + FORM -->
-<div class="glass-card rounded-2xl p-5">
-<div class="flex justify-between items-center mb-4">
-<h2 class="text-lg font-bold text-blue-800">{{ currentTabLabel }}</h2>
-<button @click="showForm = !showForm" class="btn-primary"><i :class="showForm?'bi bi-x-lg':'bi bi-plus-lg'"></i> {{ showForm ? 'Tutup' : 'Tambah' }}</button>
-</div>
+      <!-- TABLE + FORM -->
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold text-blue-800">{{ currentTabLabel }}</h2>
+          <button @click="showForm = !showForm" class="btn-primary"><i :class="showForm?'bi bi-x-lg':'bi bi-plus-lg'"></i> {{ showForm ? 'Tutup' : 'Tambah' }}</button>
+        </div>
 
-<!-- FORM -->
-<div v-if="showForm" class="bg-blue-50 rounded-xl p-4 mb-4 grid grid-cols-2 gap-3">
-<div v-for="col in currentColumns.filter(c => c.key !== 'id' && c.key !== 'created_at')" :key="col.key">
-<label class="text-xs font-bold text-gray-600">{{ col.label }}</label>
-<input v-if="col.type==='text'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
-<select v-else-if="col.type==='select'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
-<option value="">-- Pilih --</option>
-<option v-for="opt in col.options" :key="opt" :value="opt">{{ opt }}</option>
-</select>
-</div>
-<div class="col-span-2 flex gap-2 justify-end">
-<button @click="cancelForm" class="bg-gray-300 px-4 py-2 rounded-lg text-sm font-bold">Batal</button>
-<button @click="saveItem" class="btn-primary">{{ editingId ? 'Update' : 'Simpan' }}</button>
-</div>
-</div>
+        <!-- FORM -->
+        <div v-if="showForm" class="bg-blue-50 rounded-xl p-4 mb-4 grid grid-cols-2 gap-3">
+          <div v-for="col in currentColumns.filter(c => c.key !== 'id' && c.key !== 'created_at')" :key="col.key">
+            <label class="text-xs font-bold text-gray-600">{{ col.label }}</label>
+            <input v-if="col.type==='text'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            <select v-else-if="col.type==='select'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+              <option value="">-- Pilih --</option>
+              <option v-for="opt in col.options" :key="opt" :value="opt">{{ opt }}</option>
+            </select>
+          </div>
+          <div class="col-span-2 flex gap-2 justify-end">
+            <button @click="cancelForm" class="bg-gray-300 px-4 py-2 rounded-lg text-sm font-bold">Batal</button>
+            <button @click="saveItem" class="btn-primary">{{ editingId ? 'Update' : 'Simpan' }}</button>
+          </div>
+        </div>
 
-<!-- TABLE -->
-<div class="overflow-x-auto">
-<table>
-<thead><tr><th v-for="col in currentColumns" :key="col.key">{{ col.label }}</th><th>Aksi</th></tr></thead>
-<tbody>
-<tr v-for="item in currentData" :key="item.id">
-<td v-for="col in currentColumns" :key="col.key">{{ item[col.key] || '-' }}</td>
-<td>
-<div class="flex gap-1">
-<button @click="editItem(item)" class="text-blue-500 hover:bg-blue-50 p-1 rounded"><i class="bi bi-pencil-square"></i></button>
-<button @click="deleteItem(item.id)" class="text-red-500 hover:bg-red-50 p-1 rounded"><i class="bi bi-trash"></i></button>
-</div>
-</td>
-</tr>
-<tr v-if="!currentData.length"><td :colspan="currentColumns.length+1" class="text-center text-gray-400 py-6">Belum ada data</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</main>
+        <!-- TABLE -->
+        <div class="overflow-x-auto">
+          <table>
+            <thead><tr><th v-for="col in currentColumns" :key="col.key">{{ col.label }}</th><th>Aksi</th></tr></thead>
+            <tbody>
+              <tr v-for="item in currentData" :key="item.id">
+                <td v-for="col in currentColumns" :key="col.key">{{ item[col.key] || '-' }}</td>
+                <td>
+                  <div class="flex gap-1">
+                    <button @click="editItem(item)" class="text-blue-500 hover:bg-blue-50 p-1 rounded"><i class="bi bi-pencil-square"></i></button>
+                    <button @click="deleteItem(item.id)" class="text-red-500 hover:bg-red-50 p-1 rounded"><i class="bi bi-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="!currentData.length"><td :colspan="currentColumns.length+1" class="text-center text-gray-400 py-6">Belum ada data</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
 
 <script>
-const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+  const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
 
-const TABS = [
-{ key: 'kategori_pengaduan', label: 'Kategori Pengaduan', columns: [
-{ key: 'id', label: 'ID', type: 'text' },
-{ key: 'bidang', label: 'Bidang', type: 'text' },
-{ key: 'permasalahan', label: 'Permasalahan', type: 'text' },
-{ key: 'prioritas', label: 'Prioritas', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
-{ key: 'sla_jam', label: 'SLA (Jam)', type: 'text' }
-]},
-{ key: 'personil', label: 'Personil', columns: [
-{ key: 'id', label: 'ID', type: 'text' },
-{ key: 'nip', label: 'NIP', type: 'text' },
-{ key: 'nama', label: 'Nama', type: 'text' },
-{ key: 'jabatan', label: 'Jabatan', type: 'text' },
-{ key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },
-{ key: 'jenis', label: 'Jenis', type: 'select', options: ['Manajerial','Non-Manajerial'] }
-]},
-{ key: 'unit_kerja', label: 'Unit Kerja', columns: [
-{ key: 'id', label: 'ID', type: 'text' },
-{ key: 'nama_unit', label: 'Nama Unit', type: 'text' }
-]},
-{ key: 'layanan', label: 'Layanan', columns: [
-{ key: 'id', label: 'ID', type: 'text' },
-{ key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },
-{ key: 'nama_layanan', label: 'Nama Layanan', type: 'text' }
-]},
-{ key: 'lokasi', label: 'Lokasi', columns: [
-{ key: 'id', label: 'ID', type: 'text' },
-{ key: 'nama_lokasi', label: 'Nama Lokasi', type: 'text' },
-{ key: 'kecamatan', label: 'Kecamatan', type: 'text' }
-]}
-];
+  const TABS = [
+    { key: 'kategori_pengaduan', label: 'Kategori', columns: [
+      { key: 'id', label: 'ID', type: 'text' },
+      { key: 'bidang', label: 'Bidang', type: 'text' },
+      { key: 'permasalahan', label: 'Permasalahan', type: 'text' },
+      { key: 'prioritas', label: 'Prioritas', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
+      { key: 'sla_jam', label: 'SLA (Jam)', type: 'text' }
+    ]},
+    { key: 'personil', label: 'Personil', columns: [
+      { key: 'id', label: 'ID', type: 'text' },
+      { key: 'nip', label: 'NIP', type: 'text' },
+      { key: 'nama', label: 'Nama', type: 'text' },
+      { key: 'pangkat', label: 'Pangkat', type: 'text' },
+      { key: 'jabatan', label: 'Jabatan', type: 'text' },
+      { key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },
+      { key: 'jenis', label: 'Jenis', type: 'select', options: ['Manajerial','Non-Manajerial'] },
+      { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
+    ]},
+    { key: 'unit_kerja', label: 'Unit Kerja', columns: [
+      { key: 'id', label: 'ID', type: 'text' },
+      { key: 'nama_unit', label: 'Nama Unit', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
+    ]},
+    { key: 'layanan', label: 'Layanan', columns: [
+      { key: 'id', label: 'ID', type: 'text' },
+      { key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },
+      { key: 'nama_layanan', label: 'Nama Layanan', type: 'text' },
+      { key: 'kategori', label: 'Kategori', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
+    ]},
+    { key: 'lokasi', label: 'Lokasi', columns: [
+      { key: 'id', label: 'ID', type: 'text' },
+      { key: 'nama_lokasi', label: 'Nama Lokasi', type: 'text' },
+      { key: 'kecamatan', label: 'Kecamatan', type: 'text' },
+      { key: 'desa_kelurahan', label: 'Desa/Kel', type: 'text' },
+      { key: 'kerawanan', label: 'Kerawanan', type: 'select', options: ['Rendah','Sedang','Tinggi'] }
+    ]},
+    { key: 'sop', label: 'SOP', columns: [
+      { key: 'id', label: 'ID', type: 'text' },
+      { key: 'kode_sop', label: 'Kode SOP', type: 'text' },
+      { key: 'layanan', label: 'Layanan', type: 'text' },
+      { key: 'nama_sop', label: 'Nama SOP', type: 'text' },
+      { key: 'isi_instruksi', label: 'Instruksi', type: 'text' },
+      { key: 'tingkat_risiko', label: 'Risiko', type: 'select', options: ['Rendah','Sedang','Tinggi'] }
+    ]},
+    { key: 'kendaraan', label: 'Kendaraan', columns: [
+      { key: 'id', label: 'ID', type: 'text' },
+      { key: 'nama', label: 'Nama', type: 'text' },
+      { key: 'plat', label: 'Plat', type: 'text' },
+      { key: 'tipe', label: 'Tipe', type: 'text' },
+      { key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Prima','Servis','Rusak'] }
+    ]},
+    { key: 'peralatan', label: 'Peralatan', columns: [
+      { key: 'id', label: 'ID', type: 'text' },
+      { key: 'nama', label: 'Nama', type: 'text' },
+      { key: 'merk', label: 'Merk', type: 'text' },
+      { key: 'kategori', label: 'Kategori', type: 'select', options: ['Komunikasi','Pelindung Diri','Penerangan','Pertahanan','Pemadaman','Penyelamatan','Kesehatan','Lainnya'] },
+      { key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Baik','Rusak Ringan','Rusak Berat'] }
+    ]},
+    { key: 'standar_biaya', label: 'Standar Biaya', columns: [
+      { key: 'id', label: 'ID', type: 'text' },
+      { key: 'golongan', label: 'Golongan', type: 'text' },
+      { key: 'jenis_perjalanan', label: 'Jenis Perjalanan', type: 'select', options: ['Dalam Daerah','Luar Daerah (Prov)','Luar Provinsi'] },
+      { key: 'uang_harian', label: 'Uang Harian', type: 'text' },
+      { key: 'transport', label: 'Transport', type: 'text' },
+      { key: 'penginapan', label: 'Penginapan', type: 'text' }
+    ]}
+  ];
 
-Vue.createApp({
-data() {
-return {
-tabs: TABS,
-activeTab: 'kategori_pengaduan',
-showForm: false,
-formData: {},
-editingId: null,
-sidebarOpen: true,
-isMobile: window.innerWidth < 768,
-dataCache: {}
-}
-},
-computed: {
-currentTab() { return this.tabs.find(t => t.key === this.activeTab); },
-currentColumns() { return this.currentTab?.columns || []; },
-currentTabLabel() { return this.currentTab?.label || ''; },
-currentData() { return this.dataCache[this.activeTab] || []; }
-},
-methods: {
-async loadData() {
-const { data } = await supa.from(this.activeTab).select('*');
-this.dataCache[this.activeTab] = data || [];
-},
-editItem(item) {
-this.editingId = item.id;
-this.formData = { ...item };
-this.showForm = true;
-},
-cancelForm() {
-this.showForm = false;
-this.formData = {};
-this.editingId = null;
-},
-async saveItem() {
-if (this.editingId) {
-await supa.from(this.activeTab).update(this.formData).eq('id', this.editingId);
-} else {
-await supa.from(this.activeTab).insert(this.formData);
-}
-this.cancelForm();
-await this.loadData();
-},
-async deleteItem(id) {
-if (!confirm('Hapus data ini?')) return;
-await supa.from(this.activeTab).delete().eq('id', id);
-await this.loadData();
-}
-},
-watch: {
-activeTab() { this.loadData(); this.cancelForm(); }
-},
-mounted() {
-if (this.isMobile) this.sidebarOpen = false;
-window.addEventListener('resize', () => {
-this.isMobile = window.innerWidth < 768;
-if (!this.isMobile) this.sidebarOpen = true;
-});
-this.loadData();
-}
-}).mount('#app');
+  Vue.createApp({
+    data() {
+      return {
+        tabs: TABS,
+        activeTab: 'kategori_pengaduan',
+        showForm: false,
+        formData: {},
+        editingId: null,
+        sidebarOpen: true,
+        isMobile: window.innerWidth < 768,
+        dataCache: {}
+      }
+    },
+    computed: {
+      currentTab() { return this.tabs.find(t => t.key === this.activeTab); },
+      currentColumns() { return this.currentTab?.columns || []; },
+      currentTabLabel() { return this.currentTab?.label || ''; },
+      currentData() { return this.dataCache[this.activeTab] || []; }
+    },
+    methods: {
+      async loadData() {
+        const { data } = await supa.from(this.activeTab).select('*');
+        this.dataCache[this.activeTab] = data || [];
+      },
+      editItem(item) {
+        this.editingId = item.id;
+        this.formData = { ...item };
+        this.showForm = true;
+      },
+      cancelForm() {
+        this.showForm = false;
+        this.formData = {};
+        this.editingId = null;
+      },
+      async saveItem() {
+        if (this.editingId) {
+          await supa.from(this.activeTab).update(this.formData).eq('id', this.editingId);
+        } else {
+          await supa.from(this.activeTab).insert(this.formData);
+        }
+        this.cancelForm();
+        await this.loadData();
+      },
+      async deleteItem(id) {
+        if (!confirm('Hapus data ini?')) return;
+        await supa.from(this.activeTab).delete().eq('id', id);
+        await this.loadData();
+      }
+    },
+    watch: {
+      activeTab() { this.loadData(); this.cancelForm(); }
+    },
+    mounted() {
+      if (this.isMobile) this.sidebarOpen = false;
+      window.addEventListener('resize', () => {
+        this.isMobile = window.innerWidth < 768;
+        if (!this.isMobile) this.sidebarOpen = true;
+      });
+      this.loadData();
+    }
+  }).mount('#app');
 </script>
 </body>
 </html>
