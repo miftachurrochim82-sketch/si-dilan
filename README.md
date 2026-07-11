@@ -8,38 +8,49 @@ Dibangun dengan teknologi modern dan gratis:
 
 ---
 
-## Modul Tersedia
+## 🚀 Modul & Fitur
 
 | Modul | Status | Deskripsi |
 |-------|--------|-----------|
-| 📢 **DUMAS** | ✅ Aktif | Pengaduan Masyarakat (Dumas) |
-| 📋 **TUGAS** | ✅ Aktif | Surat Tugas dan Laporan Hasil Kegiatan |
+| 📊 **Dashboard** | ✅ Aktif | Ringkasan pengaduan, surat tugas, dan personil |
+| 📢 **DUMAS** | ✅ Aktif | Pengaduan Masyarakat (Form + Tracking Status) |
+| 📋 **TUGAS** | ✅ Aktif | Surat Tugas (Form lengkap + Riwayat) |
 | 🧾 **SPPD** | ⏳ Coming Soon | Surat Perintah Perjalanan Dinas & Kwitansi |
-| ⚙️ **Master Data** | ✅ Aktif | Personil, Layanan, Lokasi, Kendaraan, dll. |
+| 🗃️ **Master Data** | ✅ Aktif | Personil, Layanan, SOP, Lokasi, Kendaraan, Peralatan, dll. |
+| ⚙️ **Pengaturan** | ✅ Aktif | Identitas Instansi, Pejabat, Kontak, Default Perjalanan |
 
 ---
 
-## Akses Aplikasi
+## 🌐 Akses Aplikasi
 
-- **Dashboard:** [https://miftachurrochim82-sketch.github.io/si-dilan/](https://miftachurrochim82-sketch.github.io/si-dilan/)
-- **Form Input:** [https://miftachurrochim82-sketch.github.io/si-dilan/form.html](https://miftachurrochim82-sketch.github.io/si-dilan/form.html)
+| Halaman | URL |
+|---------|-----|
+| **Dashboard** | [si-dilan](https://miftachurrochim82-sketch.github.io/si-dilan/) |
+| **Form Input** | [si-dilan/form.html](https://miftachurrochim82-sketch.github.io/si-dilan/form.html) |
+| **Master Data** | [si-dilan/master.html](https://miftachurrochim82-sketch.github.io/si-dilan/master.html) |
+| **Pengaturan** | [si-dilan/settings.html](https://miftachurrochim82-sketch.github.io/si-dilan/settings.html) |
 
 ---
 
-## Teknologi
+## 🛠 Teknologi
 
-- **Frontend:** HTML5, CSS3 (Tailwind CSS), JavaScript (Vue 3)
+- **Frontend:** HTML5, CSS3 (Tailwind CSS), JavaScript (Vue 3 CDN)
 - **Backend/Database:** [Supabase](https://supabase.com) (PostgreSQL, REST API)
 - **Hosting:** [GitHub Pages](https://pages.github.com)
+- **Icon:** Bootstrap Icons
 
 ---
 
-## Status Proyek
+## 📌 Status Proyek
 
-🟢 **Fase 1 - MVP (Minimum Viable Product):** Selesai. Dashboard & Form Input berfungsi.
-🟡 **Fase 2 - Pelengkapan Fitur:** Sedang dalam pengembangan.
-⚪ **Fase 3 - VS Code & Vercel:** Rencana migrasi ke environment development profesional.
+- 🟢 **Fase 1 – MVP (Minimum Viable Product):** Selesai  
+  Dashboard, Form Input (Pengaduan & Surat Tugas), Master Data, Pengaturan — semua sudah berfungsi dengan database live.
+
+- 🟡 **Fase 2 – Pelengkapan Fitur:** Sedang dalam pengembangan  
+  Fitur tracking publik, generate PDF (SPPD/Kwitansi), dan notifikasi WhatsApp.
+
+- ⚪ **Fase 3 – VS Code & Vercel:** Rencana migrasi ke environment development profesional untuk kolaborasi dan deployment yang lebih optimal.
 
 ---
 
-_Dibuat dengan ❤️ oleh Tim Satpol PPK Kabupaten Trenggalek._
+_Dibangun dengan ❤️ oleh Tim Satpol PPK Kabupaten Trenggalek._
