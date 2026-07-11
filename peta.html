@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peta & Crosstab - SI DILAN</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+body { background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
+.glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white; z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); overflow-y: auto; }
+.sidebar.collapsed { transform: translateX(-100%); }
+.sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; text-decoration: none; color: white; }
+.sidebar-item:hover { background: rgba(255,255,255,0.1); }
+.sidebar-item.active { background: rgba(255,255,255,0.2); font-weight: 600; }
+.sidebar-group-title { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); cursor: pointer; user-select: none; }
+.sidebar-group-title:hover { color: rgba(255,255,255,0.8); }
+.sidebar-sub { padding-left: 12px; }
+.sidebar-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 12px; }
+.main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
+.main-content.expanded { margin-left: 0; }
+.btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.map-container { height: 450px; border-radius: 16px; overflow: hidden; }
+@media (max-width: 768px) { .sidebar { width: 280px; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .main-content { margin-left: 0; } .main-content.shifted { margin-left: 280px; } }
+</style>
+</head>
+<body>
+
+<div id="app">
+<!-- SIDEBAR -->
+<aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+<div class="sidebar-header">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
+<button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button>
+</div>
+<p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+</div>
+<nav class="p-3 space-y-1">
+<a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+<div class="sidebar-divider"></div>
+<div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='ops'?'':'ops'"><span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span><i :class="expandedGroup==='ops'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
+<div v-show="expandedGroup==='ops'" class="sidebar-sub space-y-1">
+<a href="form.html?tab=pengaduan" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
+<a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+<a href="form.html?tab=laporan" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+<a href="peta.html" class="sidebar-item active"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
+</div>
+<div class="sidebar-divider"></div>
+<div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='adm'?'':'adm'"><span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span><i :class="expandedGroup==='adm'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
+<div v-show="expandedGroup==='adm'" class="sidebar-sub space-y-1">
+<a href="master.html" class="sidebar-item"><i class="bi bi-server"></i> Master Data</a>
+<a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i> Pengaturan</a>
+</div>
+<div class="sidebar-divider"></div>
+<a href="about.html" class="sidebar-item"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
+<button @click="toggleDarkMode" class="sidebar-item w-full"><i :class="isDark?'bi bi-sun-fill':'bi bi-moon-fill'"></i> {{ isDark?'Mode Terang':'Mode Gelap' }}</button>
+</nav>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+<div class="max-w-7xl mx-auto">
+<div class="flex justify-between items-center mb-6">
+<div><h1 class="text-2xl font-bold text-blue-800">Peta & Crosstab</h1><p class="text-sm text-blue-500">Analisis sebaran pengaduan masyarakat</p></div>
+<button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
+</div>
+
+<!-- ==================== TABEL CROSSTAB ==================== -->
+<div class="glass-card rounded-2xl shadow-lg border-2 border-teal-100 overflow-hidden mb-6">
+<div class="bg-gradient-to-r from-teal-50 to-emerald-50 border-b-2 border-teal-200 px-5 py-3 flex items-center justify-between flex-wrap gap-3">
+<div>
+<h3 class="font-bold text-teal-700 text-sm flex items-center gap-2"><i class="bi bi-table"></i> Tabulasi Kecamatan × Kategori</h3>
+<p class="text-[10px] text-teal-400 mt-0.5">Klik baris kecamatan untuk lihat detail kategori</p>
+</div>
+</div>
+
+<!-- Filter Crosstab -->
+<div class="p-4 border-b border-teal-100 bg-teal-50/30">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+<div>
+<label class="text-[10px] font-bold text-slate-500 mb-1 block">Tahun</label>
+<select v-model="crosstabFilterTahun" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition">
+<option value="">Semua</option>
+<option v-for="t in crosstabListTahun" :key="t" :value="t">{{ t }}</option>
+</select>
+</div>
+<div>
+<label class="text-[10px] font-bold text-slate-500 mb-1 block">Bidang</label>
+<select v-model="crosstabFilterBidang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition">
+<option value="">Semua Bidang</option>
+<option v-for="b in bidangList" :key="b" :value="b">{{ b }}</option>
+</select>
+</div>
+<div class="md:col-span-2 text-right">
+<span class="text-[10px] text-teal-500 bg-white px-3 py-1.5 rounded-full font-semibold">{{ crosstabDataKecamatan.length }} kec × {{ crosstabKolomKategori.length }} kategori</span>
+</div>
+</div>
+</div>
+
+<!-- Tabel Crosstab -->
+<div class="responsive-table" style="max-height:530px;overflow-y:auto;">
+<table class="w-full text-[10px]">
+<thead>
+<tr class="text-teal-700 uppercase font-bold text-[9px] tracking-wider">
+<th class="p-2.5 text-left sticky left-0 z-30 bg-teal-600 text-white" style="min-width:130px;max-width:130px;width:130px;">Kecamatan</th>
+<th class="p-2.5 text-center bg-teal-100/70" v-for="kat in crosstabKolomKategori" :key="kat" :title="kat" style="min-width:75px;"><span class="block mx-auto" style="max-width:90px;word-wrap:break-word;white-space:normal;line-height:1.2;">{{ kat }}</span></th>
+<th class="p-2.5 text-center bg-teal-500 text-white font-extrabold" style="min-width:55px;width:55px;">Total</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-teal-50">
+<tr v-if="crosstabDataKecamatan.length === 0">
+<td :colspan="crosstabKolomKategori.length + 2" class="p-8 text-center text-slate-400">Tidak ada data</td>
+</tr>
+<tr v-for="row in crosstabDataKecamatan" :key="row.kecamatan" class="hover:bg-teal-50/30 transition cursor-pointer" @click="showCrosstabDetail = (showCrosstabDetail === row.kecamatan ? '' : row.kecamatan)">
+<td class="p-2.5 font-bold text-slate-700 sticky left-0 z-20 bg-teal-50 hover:bg-teal-100/50" style="max-width:130px;" :title="row.kecamatan">
+<span class="flex items-center gap-1"><i :class="showCrosstabDetail === row.kecamatan ? 'bi bi-chevron-down text-teal-500' : 'bi bi-chevron-right text-slate-300'" class="text-[8px] flex-shrink-0"></i><span class="truncate block">{{ row.kecamatan || '-' }}</span></span>
+</td>
+<td class="p-2.5 text-center" v-for="kat in crosstabKolomKategori" :key="kat" :class="(row.data[kat] || 0) > 0 ? 'font-bold text-teal-700 bg-teal-50/50' : 'text-slate-300'">{{ row.data[kat] || 0 }}</td>
+<td class="p-2.5 text-center font-extrabold text-teal-700 bg-teal-50/30" style="width:55px;">{{ row.total }}</td>
+</tr>
+<!-- Detail expandable -->
+<tr v-if="showCrosstabDetail" class="bg-teal-50/30">
+<td :colspan="crosstabKolomKategori.length + 2" class="p-3">
+<div class="flex items-center justify-end mb-2"><button @click="showCrosstabDetail = ''" class="text-[10px] text-slate-400 hover:text-red-500 transition">✕ Tutup</button></div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+<div v-for="kat in getCrosstabDetail(showCrosstabDetail)" :key="kat.nama" class="bg-white rounded-lg px-3 py-2 border border-teal-100 flex justify-between items-center gap-2 text-[10px]"><span class="text-slate-600 break-words flex-1" :title="kat.nama">{{ kat.nama }}</span><span class="font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full flex-shrink-0">{{ kat.count }}</span></div>
+<div v-if="getCrosstabDetail(showCrosstabDetail).length === 0" class="text-slate-400 text-[10px] col-span-full text-center py-2">Tidak ada data kategori</div>
+</div>
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr v-if="crosstabDataKecamatan.length > 0" class="font-extrabold text-white text-[10px]">
+<td class="p-2.5 text-left sticky left-0 z-20 bg-teal-600" style="max-width:130px;">TOTAL</td>
+<td class="p-2.5 text-center bg-teal-500" v-for="kat in crosstabKolomKategori" :key="kat">{{ crosstabTotalKolom[kat] || 0 }}</td>
+<td class="p-2.5 text-center bg-teal-700" style="width:55px;">{{ crosstabGrandTotal }}</td>
+</tr>
+</tfoot>
+</table>
+</div>
+</div>
+
+<!-- ==================== PETA SEBARAN ==================== -->
+<div class="glass-card rounded-2xl shadow-lg border-2 border-emerald-100 p-3 mb-6">
+<div class="flex items-center justify-between mb-3">
+<h3 class="font-bold text-emerald-700 text-sm"><i class="bi bi-geo-alt"></i> Peta Sebaran Pengaduan</h3>
+<div class="flex gap-2">
+<select v-model="petaFilterKecamatan" @change="zoomToKecamatan()" class="border-2 border-emerald-200 rounded-xl px-4 py-2.5 text-xs bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition font-medium text-slate-600" style="width:220px;">
+<option value="">🏘️ Semua Kecamatan</option>
+<option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
+</select>
+<button @click="resetPetaView()" class="bg-white border-2 border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-400 font-bold text-[10px] px-4 py-2.5 rounded-xl transition flex items-center gap-1.5"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+</div>
+</div>
+<div id="map-sebaran" class="map-container rounded-xl"></div>
+<p class="text-[10px] text-emerald-500 mt-2 flex items-center gap-1"><i class="bi bi-info-circle"></i> Klik marker untuk melihat detail pengaduan</p>
+</div>
+</div>
+</main>
+</div>
+
+<script>
+const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+
+Vue.createApp({
+data() {
+return {
+sidebarOpen: true, isMobile: window.innerWidth < 768, isDark: localStorage.getItem('darkMode')==='true',
+expandedGroup: 'ops',
+pengaduanList: [], kategoriList: [],
+crosstabFilterTahun: '', crosstabFilterBidang: '',
+showCrosstabDetail: '',
+petaFilterKecamatan: '',
+mapInstance: null,
+listKecamatan: ['Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan','Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo']
+}
+},
+computed: {
+// Daftar tahun unik dari data pengaduan
+crosstabListTahun() {
+const years = new Set();
+this.pengaduanList.forEach(p => {
+const d = new Date(p.tanggal_lapor);
+if (!isNaN(d)) years.add(d.getFullYear());
+});
+if (years.size === 0) years.add(new Date().getFullYear());
+return [...years].sort((a,b) => b-a);
+},
+// Daftar bidang unik dari kategori
+bidangList() {
+const s = new Set();
+this.kategoriList.forEach(k => { if (k.bidang) s.add(k.bidang); });
+return [...s].sort();
+},
+// Data yang sudah difilter untuk crosstab
+crosstabFilteredData() {
+let d = this.pengaduanList;
+if (this.crosstabFilterTahun) {
+d = d.filter(p => {
+const date = new Date(p.tanggal_lapor);
+return !isNaN(date) && date.getFullYear().toString() === this.crosstabFilterTahun;
+});
+}
+if (this.crosstabFilterBidang) {
+d = d.filter(p => p.kategori_pengaduan?.bidang === this.crosstabFilterBidang);
+}
+return d;
+},
+// Kolom kategori (permasalahan) untuk crosstab
+crosstabKolomKategori() {
+const kats = new Set();
+this.crosstabFilteredData.forEach(p => {
+if (p.kategori_pengaduan?.permasalahan) kats.add(p.kategori_pengaduan.permasalahan);
+});
+return [...kats].sort();
+},
+// Data kecamatan untuk crosstab
+crosstabDataKecamatan() {
+const kecSet = new Set();
+this.crosstabFilteredData.forEach(p => { if (p.kecamatan) kecSet.add(p.kecamatan); });
+const result = [];
+kecSet.forEach(kec => {
+const row = { kecamatan: kec, data: {}, total: 0 };
+this.crosstabKolomKategori.forEach(kat => {
+const count = this.crosstabFilteredData.filter(p => p.kecamatan === kec && p.kategori_pengaduan?.permasalahan === kat).length;
+row.data[kat] = count;
+row.total += count;
+});
+result.push(row);
+});
+return result.sort((a,b) => b.total - a.total);
+},
+// Total per kolom
+crosstabTotalKolom() {
+const totals = {};
+this.crosstabKolomKategori.forEach(kat => {
+totals[kat] = this.crosstabDataKecamatan.reduce((sum, row) => sum + (row.data[kat] || 0), 0);
+});
+return totals;
+},
+// Grand total
+crosstabGrandTotal() {
+return this.crosstabDataKecamatan.reduce((sum, row) => sum + row.total, 0);
+}
+},
+methods: {
+toggleDarkMode() {
+this.isDark = !this.isDark;
+localStorage.setItem('darkMode', this.isDark);
+document.documentElement.classList.toggle('dark', this.isDark);
+},
+// Detail kategori untuk satu kecamatan
+getCrosstabDetail(kecamatan) {
+const catMap = {};
+this.crosstabFilteredData.forEach(p => {
+if (p.kecamatan === kecamatan && p.kategori_pengaduan?.permasalahan) {
+const nama = p.kategori_pengaduan.permasalahan;
+catMap[nama] = (catMap[nama] || 0) + 1;
+}
+});
+return Object.keys(catMap).sort().map(k => ({ nama: k, count: catMap[k] }));
+},
+// Inisialisasi peta Leaflet
+initMap() {
+if (this.mapInstance) { this.mapInstance.remove(); this.mapInstance = null; }
+const mapEl = document.getElementById('map-sebaran');
+if (!mapEl) return;
+this.mapInstance = L.map('map-sebaran', { zoomControl: true, attributionControl: false }).setView([-8.05, 111.71], 11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.mapInstance);
+
+// Filter data yang punya koordinat
+const dataDenganKoordinat = this.pengaduanList.filter(p => p.latitude && p.longitude);
+if (dataDenganKoordinat.length === 0) {
+// Jika tidak ada koordinat, gunakan data dummy atau tetap tampilkan peta kosong
+return;
+}
+
+dataDenganKoordinat.forEach(p => {
+const iconColor = { 'Baru':'red', 'Diverifikasi':'blue', 'Diproses':'orange', 'Selesai':'green', 'Ditolak':'black' }[p.status] || 'gray';
+const icon = L.icon({
+iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${iconColor}.png`,
+shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+});
+L.marker([parseFloat(p.latitude), parseFloat(p.longitude)], { icon })
+.addTo(this.mapInstance)
+.bindPopup(`<b>${p.kategori_pengaduan?.permasalahan || 'Pengaduan'}</b><br>📍 ${p.lokasi || p.desa}, ${p.kecamatan}<br>📅 ${p.tanggal_lapor}<br>📊 Status: <b>${p.status}</b>`);
+});
+},
+// Zoom ke kecamatan yang dipilih
+zoomToKecamatan() {
+if (!this.mapInstance || !this.petaFilterKecamatan) return;
+const found = this.pengaduanList.filter(p => p.kecamatan === this.petaFilterKecamatan && p.latitude && p.longitude);
+if (found.length > 0) {
+this.mapInstance.setView([parseFloat(found[0].latitude), parseFloat(found[0].longitude)], 14);
+}
+},
+// Reset view peta
+resetPetaView() {
+this.petaFilterKecamatan = '';
+if (this.mapInstance) this.mapInstance.setView([-8.05, 111.71], 11);
+},
+// Load data dari Supabase
+async loadData() {
+try {
+const [aduRes, katRes] = await Promise.all([
+supa.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang)').order('tanggal_lapor', { ascending: false }),
+supa.from('kategori_pengaduan').select('*').eq('status', 'Aktif')
+]);
+this.pengaduanList = aduRes.data || [];
+this.kategoriList = katRes.data || [];
+} catch (e) {
+console.error('Gagal load data:', e.message);
+}
+}
+},
+async mounted() {
+if (this.isDark) document.documentElement.classList.add('dark');
+if (this.isMobile) this.sidebarOpen = false;
+window.addEventListener('resize', () => {
+this.isMobile = window.innerWidth < 768;
+if (!this.isMobile) this.sidebarOpen = true;
+});
+await this.loadData();
+this.$nextTick(() => { this.initMap(); });
+}
+}).mount('#app');
+</script>
+</body>
+</html>
