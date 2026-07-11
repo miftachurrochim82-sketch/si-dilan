@@ -21,6 +21,15 @@
     .main-content.expanded { margin-left: 0; }
     .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; }
     .section-title { font-size: 16px; font-weight: 700; color: #1e3a8a; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+
+    /* Toggle Switch */
+    .toggle-switch { width: 48px; height: 28px; border-radius: 14px; display: flex; align-items: center; padding: 2px; cursor: pointer; transition: background 0.25s ease; border: none; flex-shrink: 0; }
+    .toggle-switch.on { background: #2563eb; }
+    .toggle-switch.off { background: #cbd5e1; }
+    .toggle-switch .toggle-knob { width: 24px; height: 24px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.25s ease; }
+    .toggle-switch.on .toggle-knob { transform: translateX(20px); }
+    .toggle-switch.off .toggle-knob { transform: translateX(0); }
+
     @media (max-width: 768px) {
       .sidebar { width: 280px; transform: translateX(-100%); }
       .sidebar.open { transform: translateX(0); }
@@ -54,18 +63,24 @@
   <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
     <div class="max-w-2xl mx-auto">
       <div class="flex justify-between items-center mb-6">
-        <div><h1 class="text-2xl font-bold text-blue-800">Pengaturan</h1><p class="text-sm text-blue-500">Konfigurasi identitas, pejabat, dan kontak</p></div>
+        <div><h1 class="text-2xl font-bold text-blue-800">Pengaturan</h1><p class="text-sm text-blue-500">Konfigurasi lengkap aplikasi</p></div>
         <button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
       </div>
 
       <div class="space-y-6">
-        <!-- Identitas Instansi -->
+        <!-- 1. Identitas Instansi -->
         <div class="glass-card rounded-2xl p-6">
           <h3 class="section-title"><i class="bi bi-building"></i> Identitas Instansi</h3>
           <div class="space-y-3">
-            <div>
-              <label class="text-xs font-bold text-gray-600">Nama Kabupaten</label>
-              <input v-model="settings.SETTING_NAMA_KABUPATEN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-bold text-gray-600">Nama Instansi</label>
+                <input v-model="settings.SETTING_NAMA_INSTANSI" class="w-full border rounded-lg px-3 py-2 text-sm mt-1" placeholder="DINAS KOMUNIKASI DAN INFORMATIKA">
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600">Nama Kabupaten</label>
+                <input v-model="settings.SETTING_NAMA_KABUPATEN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+              </div>
             </div>
             <div>
               <label class="text-xs font-bold text-gray-600">Nama Satuan</label>
@@ -75,10 +90,20 @@
               <label class="text-xs font-bold text-gray-600">Alamat</label>
               <textarea v-model="settings.SETTING_ALAMAT" class="w-full border rounded-lg px-3 py-2 text-sm mt-1" rows="2"></textarea>
             </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-bold text-gray-600">URL Logo (Kiri)</label>
+                <input v-model="settings.SETTING_LOGO_KIRI" class="w-full border rounded-lg px-3 py-2 text-sm mt-1" placeholder="https://drive.google.com/thumbnail?id=...">
+              </div>
+              <div>
+                <label class="text-xs font-bold text-gray-600">URL Logo (Kanan)</label>
+                <input v-model="settings.SETTING_LOGO_KANAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1" placeholder="https://drive.google.com/thumbnail?id=...">
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Data Pejabat -->
+        <!-- 2. Data Pejabat -->
         <div class="glass-card rounded-2xl p-6">
           <h3 class="section-title"><i class="bi bi-person-badge"></i> Data Pejabat</h3>
           <div class="grid grid-cols-2 gap-3">
@@ -95,17 +120,44 @@
               <input v-model="settings.SETTING_PANGKAT_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
             </div>
             <div>
+              <label class="text-xs font-bold text-gray-600">Nama Admin</label>
+              <input v-model="settings.SETTING_NAMA_ADMIN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+            <div>
               <label class="text-xs font-bold text-gray-600">Nama Bendahara</label>
               <input v-model="settings.SETTING_NAMA_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
             </div>
-            <div class="col-span-2">
+            <div>
               <label class="text-xs font-bold text-gray-600">NIP Bendahara</label>
               <input v-model="settings.SETTING_NIP_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
             </div>
           </div>
         </div>
 
-        <!-- Default & Kontak -->
+        <!-- 3. Preferensi Sistem -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="section-title"><i class="bi bi-sliders"></i> Preferensi Sistem</h3>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between py-2">
+              <div><p class="font-semibold text-sm text-gray-700">Notifikasi Browser</p><p class="text-xs text-gray-400">Tampilkan notifikasi saat pengaduan baru masuk</p></div>
+              <button @click="settings.SETTING_NOTIFIKASI = !settings.SETTING_NOTIFIKASI" :class="settings.SETTING_NOTIFIKASI ? 'on' : 'off'" class="toggle-switch"><span class="toggle-knob"></span></button>
+            </div>
+            <div class="flex items-center justify-between py-2">
+              <div><p class="font-semibold text-sm text-gray-700">Auto Assign Petugas</p><p class="text-xs text-gray-400">Otomatis tugaskan petugas saat pengaduan masuk</p></div>
+              <button @click="settings.SETTING_AUTO_ASSIGN = !settings.SETTING_AUTO_ASSIGN" :class="settings.SETTING_AUTO_ASSIGN ? 'on' : 'off'" class="toggle-switch"><span class="toggle-knob"></span></button>
+            </div>
+            <div class="flex items-center justify-between py-2">
+              <div><p class="font-semibold text-sm text-gray-700">Tampilan Publik</p><p class="text-xs text-gray-400">Izinkan publik melihat status pengaduan</p></div>
+              <button @click="settings.SETTING_PUBLIC_VIEW = !settings.SETTING_PUBLIC_VIEW" :class="settings.SETTING_PUBLIC_VIEW ? 'on' : 'off'" class="toggle-switch"><span class="toggle-knob"></span></button>
+            </div>
+            <div class="flex items-center justify-between py-2">
+              <div><p class="font-semibold text-sm text-gray-700">Laporan Mingguan</p><p class="text-xs text-gray-400">Kirim ringkasan otomatis setiap Senin pagi</p></div>
+              <button @click="settings.SETTING_WEEKLY_REPORT = !settings.SETTING_WEEKLY_REPORT" :class="settings.SETTING_WEEKLY_REPORT ? 'on' : 'off'" class="toggle-switch"><span class="toggle-knob"></span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Default & Kontak -->
         <div class="glass-card rounded-2xl p-6">
           <h3 class="section-title"><i class="bi bi-gear-wide"></i> Default & Kontak</h3>
           <div class="space-y-3">
@@ -119,11 +171,11 @@
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-xs font-bold text-gray-600">WhatsApp Satpol PP</label>
+                <label class="text-xs font-bold text-gray-600">WA Satpol PP</label>
                 <input v-model="settings.SETTING_WA_SATPOL" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
               </div>
               <div>
-                <label class="text-xs font-bold text-gray-600">WhatsApp Damkar</label>
+                <label class="text-xs font-bold text-gray-600">WA Damkar</label>
                 <input v-model="settings.SETTING_WA_DAMKAR" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
               </div>
               <div>
@@ -134,6 +186,52 @@
                 <label class="text-xs font-bold text-gray-600">Facebook</label>
                 <input v-model="settings.SETTING_FB" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Link Eksternal -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="section-title"><i class="bi bi-link-45deg"></i> Link Eksternal</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs font-bold text-gray-600">Link Perangkat Daerah</label>
+              <input v-model="settings.SETTING_LINK_OPD" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-600">Link Satu Data</label>
+              <input v-model="settings.SETTING_LINK_SATUDATA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-600">Link Pemkab</label>
+              <input v-model="settings.SETTING_LINK_PEMKAB" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-gray-600">Link Tambahan</label>
+              <input v-model="settings.SETTING_LINK_LAIN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. Informasi Sistem -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="section-title"><i class="bi bi-info-circle"></i> Informasi Sistem</h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
+            <div class="bg-blue-50 rounded-xl p-3 border border-blue-200">
+              <p class="text-xs text-gray-400">Versi</p>
+              <p class="font-bold text-blue-700">v2.5 Terpadu</p>
+            </div>
+            <div class="bg-blue-50 rounded-xl p-3 border border-blue-200">
+              <p class="text-xs text-gray-400">Total Pengaduan</p>
+              <p class="font-bold text-blue-700">{{ stats.pengaduan }}</p>
+            </div>
+            <div class="bg-blue-50 rounded-xl p-3 border border-blue-200">
+              <p class="text-xs text-gray-400">Total Surat Tugas</p>
+              <p class="font-bold text-blue-700">{{ stats.suratTugas }}</p>
+            </div>
+            <div class="bg-blue-50 rounded-xl p-3 border border-blue-200">
+              <p class="text-xs text-gray-400">Personil</p>
+              <p class="font-bold text-blue-700">{{ stats.personil }}</p>
             </div>
           </div>
         </div>
@@ -156,20 +254,33 @@
     data() {
       return {
         settings: {
+          SETTING_NAMA_INSTANSI: '',
           SETTING_NAMA_KABUPATEN: '',
           SETTING_NAMA_SATUAN: '',
           SETTING_ALAMAT: '',
+          SETTING_LOGO_KIRI: '',
+          SETTING_LOGO_KANAN: '',
           SETTING_NAMA_KEPALA: '',
           SETTING_NIP_KEPALA: '',
           SETTING_PANGKAT_KEPALA: '',
+          SETTING_NAMA_ADMIN: '',
           SETTING_NAMA_BENDAHARA: '',
           SETTING_NIP_BENDAHARA: '',
           SETTING_JENIS_PERJALANAN: 'Dalam Daerah',
+          SETTING_NOTIFIKASI: false,
+          SETTING_AUTO_ASSIGN: false,
+          SETTING_PUBLIC_VIEW: true,
+          SETTING_WEEKLY_REPORT: true,
           SETTING_WA_SATPOL: '',
           SETTING_WA_DAMKAR: '',
           SETTING_IG: '',
-          SETTING_FB: ''
+          SETTING_FB: '',
+          SETTING_LINK_OPD: '',
+          SETTING_LINK_SATUDATA: '',
+          SETTING_LINK_PEMKAB: '',
+          SETTING_LINK_LAIN: ''
         },
+        stats: { pengaduan: 0, suratTugas: 0, personil: 0 },
         sidebarOpen: true,
         isMobile: window.innerWidth < 768,
         message: '',
@@ -177,12 +288,25 @@
       }
     },
     methods: {
+      async loadStats() {
+        const [{ count: adu }, { count: st }, { count: pet }] = await Promise.all([
+          supa.from('pengaduan').select('*', { count: 'exact', head: true }),
+          supa.from('surat_tugas').select('*', { count: 'exact', head: true }),
+          supa.from('personil').select('*', { count: 'exact', head: true }).eq('status', 'Aktif')
+        ]);
+        this.stats = { pengaduan: adu || 0, suratTugas: st || 0, personil: pet || 0 };
+      },
       async loadSettings() {
         const { data } = await supa.from('settings').select('*');
         if (data) {
           data.forEach(s => {
             if (this.settings.hasOwnProperty(s.key)) {
-              this.settings[s.key] = s.value || '';
+              // Konversi string 'true'/'false' ke boolean
+              if (['SETTING_NOTIFIKASI','SETTING_AUTO_ASSIGN','SETTING_PUBLIC_VIEW','SETTING_WEEKLY_REPORT'].includes(s.key)) {
+                this.settings[s.key] = s.value === 'true';
+              } else {
+                this.settings[s.key] = s.value || '';
+              }
             }
           });
         }
@@ -190,11 +314,12 @@
       async saveSettings() {
         try {
           for (const [key, value] of Object.entries(this.settings)) {
+            const stringValue = typeof value === 'boolean' ? String(value) : value;
             const { data: existing } = await supa.from('settings').select('*').eq('key', key).maybeSingle();
             if (existing) {
-              await supa.from('settings').update({ value: value }).eq('key', key);
+              await supa.from('settings').update({ value: stringValue }).eq('key', key);
             } else {
-              await supa.from('settings').insert({ key, value });
+              await supa.from('settings').insert({ key, value: stringValue });
             }
           }
           this.message = '✅ Pengaturan berhasil disimpan!';
@@ -212,6 +337,7 @@
         if (!this.isMobile) this.sidebarOpen = true;
       });
       this.loadSettings();
+      this.loadStats();
     }
   }).mount('#app');
 </script>
