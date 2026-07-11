@@ -227,12 +227,12 @@
             <a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <div class="sidebar-divider"></div>
             <div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='ops'?'':'ops'"><span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span><i :class="expandedGroup==='ops'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
-            <div v-show="expandedGroup==='ops'" class="sidebar-sub space-y-1">
-              <a href="form.html?tab=pengaduan" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
-              <a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
-              <a href="form.html?tab=laporan" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+            <div v-show="expandedGroup === 'operasional'" class="sidebar-sub space-y-1">
+              <a href="form_pengaduan.html" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
+              <a href="form_st.html" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+              <a href="form_laporan.html" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
               <a href="peta.html" class="sidebar-item"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
-              <a href="sppd.html" class="sidebar-item active"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
+              <a href="sppd.html" class="sidebar-item"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
             </div>
             <div class="sidebar-divider"></div>
             <div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='adm'?'':'adm'"><span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span><i :class="expandedGroup==='adm'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
