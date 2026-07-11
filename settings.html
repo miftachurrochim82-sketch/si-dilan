@@ -4,357 +4,243 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Pengaturan - SI DILAN</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/css/styles.css">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
   <style>
-    :root {
-      --bg: #f0f4ff; --bg2: #e8f0fe; --card-bg: rgba(255,255,255,0.75);
-      --text: #1e293b; --text2: #3b82f6; --border: rgba(255,255,255,0.3);
-    }
-    .dark {
-      --bg: #0f172a; --bg2: #1e293b; --card-bg: rgba(30,41,59,0.85);
-      --text: #e2e8f0; --text2: #93c5fd; --border: rgba(255,255,255,0.08);
-    }
-    body {
-      background: linear-gradient(135deg, var(--bg), var(--bg2));
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      margin: 0; min-height: 100vh; color: var(--text);
-      transition: background 0.3s, color 0.3s;
-    }
-    .glass-card {
-      background: var(--card-bg); backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
-      transition: background 0.3s, border 0.3s;
-    }
-    .sidebar {
-      position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
-      background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white;
-      z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2);
-      overflow-y: auto;
-    }
-    .dark .sidebar { background: linear-gradient(180deg, #0f172a, #1e293b); }
-    .sidebar.collapsed { transform: translateX(-100%); }
-    .sidebar.open { transform: translateX(0); }
-    .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .sidebar-item {
-      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
-      border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer;
-      transition: background 0.2s; text-decoration: none; color: white;
-    }
-    .sidebar-item:hover { background: rgba(255,255,255,0.1); }
-    .sidebar-item.active { background: rgba(255,255,255,0.2); font-weight: 600; }
-    .sidebar-group-title {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px; font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 1px;
-      color: rgba(255,255,255,0.5); cursor: pointer; user-select: none;
-    }
-    .sidebar-group-title:hover { color: rgba(255,255,255,0.8); }
-    .sidebar-sub { padding-left: 12px; }
-    .sidebar-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 12px; }
-    .main-content {
-      margin-left: 260px; padding: 24px; min-height: 100vh;
-      transition: margin-left 0.3s;
-    }
-    .main-content.expanded { margin-left: 0; }
-    .mobile-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      z-index: 35; display: none;
-    }
-    .mobile-overlay.show { display: block; }
-    .btn-primary {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white;
-      border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
-    .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
-    .section-title {
-      font-size: 16px; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px;
-      border-bottom: 2px solid var(--border); color: var(--text2);
-    }
+    /* Style khusus untuk toggle switch (hanya di halaman ini) */
     .toggle-switch {
       width: 48px; height: 28px; border-radius: 14px; display: flex; align-items: center;
-      padding: 2px; cursor: pointer; transition: background 0.25s ease; border: none;
+      padding: 2px; cursor: pointer; transition: background 0.25s; border: none;
     }
     .toggle-switch.on { background: #2563eb; }
     .toggle-switch.off { background: #cbd5e1; }
     .toggle-switch .toggle-knob {
       width: 24px; height: 24px; border-radius: 50%; background: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.25s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.25s;
     }
     .toggle-switch.on .toggle-knob { transform: translateX(20px); }
     .toggle-switch.off .toggle-knob { transform: translateX(0); }
-    [v-cloak] { display: none !important; }
-    @media (max-width: 768px) {
-      .sidebar { width: 280px; transform: translateX(-100%); }
-      .main-content { margin-left: 0; }
-      .main-content.shifted { margin-left: 280px; }
+    .section-title {
+      font-size: 16px; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px;
+      border-bottom: 2px solid var(--border); color: var(--text2);
     }
   </style>
 </head>
 <body>
-  <div id="app" v-cloak>
-    <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
 
-    <!-- Sidebar -->
-    <app-sidebar 
-      :sidebar-open="sidebarOpen" 
-      :is-mobile="isMobile" 
-      current-page="settings"
-      :dark-mode="isDark"
-      @toggle-sidebar="sidebarOpen = !sidebarOpen"
-      @toggle-dark="toggleDarkMode"
-    ></app-sidebar>
+<div id="app" v-cloak>
+  <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
 
-    <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
-      <div class="max-w-2xl mx-auto">
-        <div class="flex justify-between items-center mb-6">
-          <div>
-            <h1 class="text-2xl font-bold" style="color: var(--text)">Pengaturan</h1>
-            <p class="text-sm" style="color: var(--text2)">Konfigurasi identitas, pejabat, dan kontak</p>
-          </div>
-          <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
+  <app-sidebar
+    :sidebar-open="sidebarOpen"
+    :is-mobile="isMobile"
+    current-page="settings"
+    :dark-mode="isDark"
+    @toggle-sidebar="sidebarOpen = !sidebarOpen"
+    @toggle-dark="toggleDarkMode"
+  ></app-sidebar>
+
+  <toast-container ref="toastContainer"></toast-container>
+  <loading-overlay ref="loadingOverlay"></loading-overlay>
+
+  <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+    <div class="max-w-2xl mx-auto">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h1 class="text-2xl font-bold" style="color: var(--text)">Pengaturan</h1>
+          <p class="text-sm" style="color: var(--text2)">Konfigurasi identitas, pejabat, dan kontak</p>
         </div>
-
-        <!-- Toast Container -->
-        <div style="position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column-reverse;gap:8px;align-items:flex-end;">
-          <div v-for="(toast, i) in toasts" :key="i" style="padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;color:white;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-width:360px;" :style="{ background: toast.type === 'success' ? '#10b981' : '#ef4444' }">
-            <i :class="toast.type === 'success' ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i> {{ toast.message }}
-          </div>
-        </div>
-
-        <div class="space-y-6">
-          <!-- Identitas Instansi -->
-          <div class="glass-card rounded-2xl p-6">
-            <h3 class="section-title"><i class="bi bi-building"></i> Identitas Instansi</h3>
-            <div class="space-y-3">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Instansi</label><input v-model="s.SETTING_NAMA_INSTANSI" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-                <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Kabupaten</label><input v-model="s.SETTING_NAMA_KABUPATEN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              </div>
-              <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Satuan</label><input v-model="s.SETTING_NAMA_SATUAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              <div><label class="text-xs font-bold" style="color: var(--text2)">Alamat</label><textarea v-model="s.SETTING_ALAMAT" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></textarea></div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label class="text-xs font-bold" style="color: var(--text2)">URL Logo Kiri</label><input v-model="s.SETTING_LOGO_KIRI" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-                <div><label class="text-xs font-bold" style="color: var(--text2)">URL Logo Kanan</label><input v-model="s.SETTING_LOGO_KANAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Data Pejabat -->
-          <div class="glass-card rounded-2xl p-6">
-            <h3 class="section-title"><i class="bi bi-person-badge"></i> Data Pejabat</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Kepala</label><input v-model="s.SETTING_NAMA_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              <div><label class="text-xs font-bold" style="color: var(--text2)">NIP Kepala</label><input v-model="s.SETTING_NIP_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              <div><label class="text-xs font-bold" style="color: var(--text2)">Pangkat Kepala</label><input v-model="s.SETTING_PANGKAT_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Admin</label><input v-model="s.SETTING_NAMA_ADMIN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Bendahara</label><input v-model="s.SETTING_NAMA_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              <div><label class="text-xs font-bold" style="color: var(--text2)">NIP Bendahara</label><input v-model="s.SETTING_NIP_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-            </div>
-          </div>
-
-          <!-- Preferensi Sistem -->
-          <div class="glass-card rounded-2xl p-6">
-            <h3 class="section-title"><i class="bi bi-sliders"></i> Preferensi Sistem</h3>
-            <div class="space-y-3">
-              <div v-for="pref in booleanSettings" :key="pref.key" class="flex items-center justify-between">
-                <div><p class="font-semibold text-sm" style="color: var(--text)">{{ pref.label }}</p></div>
-                <button 
-                  @click="s[pref.key] = !s[pref.key]" 
-                  :class="s[pref.key] ? 'on' : 'off'" 
-                  class="toggle-switch"
-                  :aria-pressed="s[pref.key]"
-                  :aria-label="pref.label"
-                >
-                  <span class="toggle-knob"></span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Default & Kontak -->
-          <div class="glass-card rounded-2xl p-6">
-            <h3 class="section-title"><i class="bi bi-gear-wide"></i> Default & Kontak</h3>
-            <div>
-              <label class="text-xs font-bold" style="color: var(--text2)">Default Jenis Perjalanan</label>
-              <select v-model="s.SETTING_JENIS_PERJALANAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
-                <option>Dalam Daerah</option>
-                <option>Luar Daerah (Prov)</option>
-                <option>Luar Provinsi</option>
-              </select>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-              <div><label class="text-xs font-bold" style="color: var(--text2)">WA Satpol PP</label><input v-model="s.SETTING_WA_SATPOL" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              <div><label class="text-xs font-bold" style="color: var(--text2)">WA Damkar</label><input v-model="s.SETTING_WA_DAMKAR" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              <div><label class="text-xs font-bold" style="color: var(--text2)">Instagram</label><input v-model="s.SETTING_IG" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-              <div><label class="text-xs font-bold" style="color: var(--text2)">Facebook</label><input v-model="s.SETTING_FB" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-            </div>
-          </div>
-
-          <div class="flex justify-end gap-3">
-            <button @click="loadSettings" :disabled="loading" class="bg-gray-200 dark:bg-gray-600 dark:text-white px-5 py-2.5 rounded-lg text-sm font-bold">Muat Ulang</button>
-            <button @click="saveSettings" :disabled="loading || saving" class="btn-primary">
-              <span v-if="saving"><i class="bi bi-hourglass-split animate-spin"></i> Menyimpan...</span>
-              <span v-else>Simpan Pengaturan</span>
-            </button>
-          </div>
-        </div>
-        <div class="text-center text-xs mt-8 py-4" style="color: var(--text2)">© 2026 SI DILAN Terpadu — Satpol PP & Kebakaran Kab. Trenggalek</div>
+        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
       </div>
-    </main>
-  </div>
 
-  <script>
-    const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+      <div class="space-y-6">
+        <!-- Identitas Instansi -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="section-title"><i class="bi bi-building"></i> Identitas Instansi</h3>
+          <div class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Instansi</label><input v-model="s.SETTING_NAMA_INSTANSI" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+              <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Kabupaten</label><input v-model="s.SETTING_NAMA_KABUPATEN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            </div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Satuan</label><input v-model="s.SETTING_NAMA_SATUAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">Alamat</label><textarea v-model="s.SETTING_ALAMAT" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></textarea></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="text-xs font-bold" style="color: var(--text2)">URL Logo Kiri</label><input v-model="s.SETTING_LOGO_KIRI" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+              <div><label class="text-xs font-bold" style="color: var(--text2)">URL Logo Kanan</label><input v-model="s.SETTING_LOGO_KANAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            </div>
+          </div>
+        </div>
 
-    // Komponen Sidebar (identik dengan file lain)
-    const AppSidebar = {
-      template: `
-        <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
-          <div class="sidebar-header">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-2">
-                <i class="bi bi-shield-shaded text-2xl"></i>
-                <span class="font-bold text-lg">SI DILAN</span>
-              </div>
-              <button @click="$emit('toggle-sidebar')" class="text-white/70 hover:text-white p-1">
-                <i :class="sidebarOpen ? 'bi bi-chevron-left' : 'bi bi-chevron-right'" class="text-xl"></i>
+        <!-- Data Pejabat -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="section-title"><i class="bi bi-person-badge"></i> Data Pejabat</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Kepala</label><input v-model="s.SETTING_NAMA_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">NIP Kepala</label><input v-model="s.SETTING_NIP_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">Pangkat Kepala</label><input v-model="s.SETTING_PANGKAT_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Admin</label><input v-model="s.SETTING_NAMA_ADMIN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Bendahara</label><input v-model="s.SETTING_NAMA_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">NIP Bendahara</label><input v-model="s.SETTING_NIP_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          </div>
+        </div>
+
+        <!-- Preferensi Sistem -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="section-title"><i class="bi bi-sliders"></i> Preferensi Sistem</h3>
+          <div class="space-y-3">
+            <div v-for="pref in booleanSettings" :key="pref.key" class="flex items-center justify-between">
+              <div><p class="font-semibold text-sm" style="color: var(--text)">{{ pref.label }}</p></div>
+              <button 
+                @click="s[pref.key] = !s[pref.key]" 
+                :class="s[pref.key] ? 'on' : 'off'" 
+                class="toggle-switch"
+                :aria-pressed="s[pref.key]"
+                :aria-label="pref.label"
+              >
+                <span class="toggle-knob"></span>
               </button>
             </div>
-            <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
           </div>
-          <nav class="p-3 space-y-1">
-            <a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
-            <div class="sidebar-divider"></div>
-            <div class="sidebar-group-title" @click="toggleGroup('operasional')">
-              <span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span>
-              <i :class="expandedGroup === 'operasional' ? 'bi bi-chevron-down' : 'bi bi-chevron-right'" class="text-xs"></i>
-            </div>
-            <div v-show="expandedGroup === 'operasional'" class="sidebar-sub space-y-1">
-              <a href="form_pengaduan.html" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
-              <a href="form_st.html" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
-              <a href="form_laporan.html" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
-              <a href="peta.html" class="sidebar-item"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
-              <a href="sppd.html" class="sidebar-item"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
-            </div>
-            <div class="sidebar-divider"></div>
-            <div class="sidebar-group-title" @click="toggleGroup('admin')">
-              <span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span>
-              <i :class="expandedGroup === 'admin' ? 'bi bi-chevron-down' : 'bi bi-chevron-right'" class="text-xs"></i>
-            </div>
-            <div v-show="expandedGroup === 'admin'" class="sidebar-sub space-y-1">
-              <a href="master.html" class="sidebar-item"><i class="bi bi-server"></i> Master Data</a>
-              <a href="settings.html" class="sidebar-item active"><i class="bi bi-gear"></i> Pengaturan</a>
-            </div>
-            <div class="sidebar-divider"></div>
-            <a href="about.html" class="sidebar-item"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
-            <button @click="$emit('toggle-dark')" class="sidebar-item w-full">
-              <i :class="darkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
-              {{ darkMode ? 'Mode Terang' : 'Mode Gelap' }}
-            </button>
-          </nav>
-        </aside>
-      `,
-      props: { sidebarOpen: Boolean, isMobile: Boolean, currentPage: String, darkMode: Boolean },
-      emits: ['toggle-sidebar', 'toggle-dark'],
-      data() { return { expandedGroup: 'admin' }; },
-      methods: {
-        toggleGroup(name) { this.expandedGroup = this.expandedGroup === name ? '' : name; }
-      }
-    };
+        </div>
 
-    Vue.createApp({
-      components: { AppSidebar },
-      data() {
-        return {
-          s: {
-            SETTING_NAMA_INSTANSI:'', SETTING_NAMA_KABUPATEN:'', SETTING_NAMA_SATUAN:'', SETTING_ALAMAT:'',
-            SETTING_LOGO_KIRI:'', SETTING_LOGO_KANAN:'',
-            SETTING_NAMA_KEPALA:'', SETTING_NIP_KEPALA:'', SETTING_PANGKAT_KEPALA:'',
-            SETTING_NAMA_ADMIN:'', SETTING_NAMA_BENDAHARA:'', SETTING_NIP_BENDAHARA:'',
-            SETTING_JENIS_PERJALANAN:'Dalam Daerah',
-            SETTING_NOTIFIKASI:false, SETTING_AUTO_ASSIGN:false, SETTING_PUBLIC_VIEW:true, SETTING_WEEKLY_REPORT:true,
-            SETTING_WA_SATPOL:'', SETTING_WA_DAMKAR:'', SETTING_IG:'', SETTING_FB:''
-          },
-          booleanSettings: [
-            { key: 'SETTING_NOTIFIKASI', label: 'Notifikasi Browser' },
-            { key: 'SETTING_AUTO_ASSIGN', label: 'Auto Assign Petugas' },
-            { key: 'SETTING_PUBLIC_VIEW', label: 'Tampilan Publik' },
-            { key: 'SETTING_WEEKLY_REPORT', label: 'Laporan Mingguan' }
-          ],
-          sidebarOpen: true,
-          isMobile: window.innerWidth < 768,
-          isDark: localStorage.getItem('darkMode') === 'true',
-          loading: false,
-          saving: false,
-          toasts: []
-        }
+        <!-- Default & Kontak -->
+        <div class="glass-card rounded-2xl p-6">
+          <h3 class="section-title"><i class="bi bi-gear-wide"></i> Default & Kontak</h3>
+          <div>
+            <label class="text-xs font-bold" style="color: var(--text2)">Default Jenis Perjalanan</label>
+            <select v-model="s.SETTING_JENIS_PERJALANAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+              <option>Dalam Daerah</option>
+              <option>Luar Daerah (Prov)</option>
+              <option>Luar Provinsi</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+            <div><label class="text-xs font-bold" style="color: var(--text2)">WA Satpol PP</label><input v-model="s.SETTING_WA_SATPOL" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">WA Damkar</label><input v-model="s.SETTING_WA_DAMKAR" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">Instagram</label><input v-model="s.SETTING_IG" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">Facebook</label><input v-model="s.SETTING_FB" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+          <button @click="loadSettings" :disabled="loading" class="bg-gray-200 dark:bg-gray-600 dark:text-white px-5 py-2.5 rounded-lg text-sm font-bold">Muat Ulang</button>
+          <button @click="saveSettings" :disabled="loading || saving" class="btn-primary">
+            <span v-if="saving"><i class="bi bi-hourglass-split animate-spin"></i> Menyimpan...</span>
+            <span v-else>Simpan Pengaturan</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- JS Global -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/supabase.js"></script>
+<script src="assets/js/utils.js"></script>
+
+<!-- Components -->
+<script src="components/sidebar.js"></script>
+<script src="components/toast.js"></script>
+<script src="components/loading.js"></script>
+
+<!-- Page Logic -->
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      s: {
+        SETTING_NAMA_INSTANSI:'', SETTING_NAMA_KABUPATEN:'', SETTING_NAMA_SATUAN:'', SETTING_ALAMAT:'',
+        SETTING_LOGO_KIRI:'', SETTING_LOGO_KANAN:'',
+        SETTING_NAMA_KEPALA:'', SETTING_NIP_KEPALA:'', SETTING_PANGKAT_KEPALA:'',
+        SETTING_NAMA_ADMIN:'', SETTING_NAMA_BENDAHARA:'', SETTING_NIP_BENDAHARA:'',
+        SETTING_JENIS_PERJALANAN:'Dalam Daerah',
+        SETTING_NOTIFIKASI:false, SETTING_AUTO_ASSIGN:false, SETTING_PUBLIC_VIEW:true, SETTING_WEEKLY_REPORT:true,
+        SETTING_WA_SATPOL:'', SETTING_WA_DAMKAR:'', SETTING_IG:'', SETTING_FB:''
       },
-      methods: {
-        toggleDarkMode() {
-          this.isDark = !this.isDark;
-          localStorage.setItem('darkMode', this.isDark);
-          document.documentElement.classList.toggle('dark', this.isDark);
-        },
-        addToast(message, type = 'success') {
-          const id = Date.now();
-          this.toasts.push({ id, message, type });
-          setTimeout(() => {
-            this.toasts = this.toasts.filter(t => t.id !== id);
-          }, 3000);
-        },
-        async loadSettings() {
-          this.loading = true;
-          try {
-            const { data, error } = await supa.from('settings').select('*');
-            if (error) throw error;
-            if (data) {
-              data.forEach(d => {
-                if (this.s.hasOwnProperty(d.key)) {
-                  const boolKeys = ['SETTING_NOTIFIKASI','SETTING_AUTO_ASSIGN','SETTING_PUBLIC_VIEW','SETTING_WEEKLY_REPORT'];
-                  this.s[d.key] = boolKeys.includes(d.key) ? d.value === 'true' : d.value || '';
-                }
-              });
+      booleanSettings: [
+        { key: 'SETTING_NOTIFIKASI', label: 'Notifikasi Browser' },
+        { key: 'SETTING_AUTO_ASSIGN', label: 'Auto Assign Petugas' },
+        { key: 'SETTING_PUBLIC_VIEW', label: 'Tampilan Publik' },
+        { key: 'SETTING_WEEKLY_REPORT', label: 'Laporan Mingguan' }
+      ],
+      sidebarOpen: true,
+      isMobile: window.innerWidth < 768,
+      isDark: localStorage.getItem('darkMode') === 'true',
+      loading: false,
+      saving: false
+    }
+  },
+  methods: {
+    toggleDarkMode() {
+      this.isDark = !this.isDark;
+      localStorage.setItem('darkMode', this.isDark);
+      document.documentElement.classList.toggle('dark', this.isDark);
+    },
+    addToast(message, type = 'success') {
+      this.$refs.toastContainer?.addToast(message, type);
+    },
+    async loadSettings() {
+      this.loading = true;
+      this.$loading.show('Memuat pengaturan...');
+      try {
+        const { data, error } = await window.supabase.from('settings').select('*');
+        if (error) throw error;
+        if (data) {
+          data.forEach(d => {
+            if (this.s.hasOwnProperty(d.key)) {
+              const boolKeys = ['SETTING_NOTIFIKASI','SETTING_AUTO_ASSIGN','SETTING_PUBLIC_VIEW','SETTING_WEEKLY_REPORT'];
+              this.s[d.key] = boolKeys.includes(d.key) ? d.value === 'true' : d.value || '';
             }
-            this.addToast('Pengaturan dimuat ulang');
-          } catch (e) {
-            this.addToast('Gagal memuat pengaturan: ' + e.message, 'error');
-          } finally {
-            this.loading = false;
-          }
-        },
-        async saveSettings() {
-          this.saving = true;
-          try {
-            const records = Object.entries(this.s).map(([key, val]) => ({
-              key,
-              value: typeof val === 'boolean' ? String(val) : (val || '')
-            }));
-            const { error } = await supa.from('settings').upsert(records, { onConflict: 'key' });
-            if (error) throw error;
-            this.addToast('✅ Pengaturan berhasil disimpan!');
-          } catch (e) {
-            this.addToast('❌ Gagal menyimpan: ' + e.message, 'error');
-          } finally {
-            this.saving = false;
-          }
+          });
         }
-      },
-      mounted() {
-        if (this.isDark) document.documentElement.classList.add('dark');
-        if (this.isMobile) this.sidebarOpen = false;
-        window.addEventListener('resize', () => {
-          this.isMobile = window.innerWidth < 768;
-          if (!this.isMobile) this.sidebarOpen = true;
-        });
-        this.loadSettings();
+        this.addToast('Pengaturan dimuat ulang');
+      } catch (e) {
+        this.addToast('Gagal memuat pengaturan: ' + e.message, 'error');
+      } finally {
+        this.loading = false;
+        this.$loading.hide();
       }
-    }).mount('#app');
-  </script>
+    },
+    async saveSettings() {
+      this.saving = true;
+      this.$loading.show('Menyimpan pengaturan...');
+      try {
+        const records = Object.entries(this.s).map(([key, val]) => ({
+          key,
+          value: typeof val === 'boolean' ? String(val) : (val || '')
+        }));
+        const { error } = await window.supabase.from('settings').upsert(records, { onConflict: 'key' });
+        if (error) throw error;
+        this.addToast('✅ Pengaturan berhasil disimpan!');
+      } catch (e) {
+        this.addToast('❌ Gagal menyimpan: ' + e.message, 'error');
+      } finally {
+        this.saving = false;
+        this.$loading.hide();
+      }
+    }
+  },
+  mounted() {
+    if (this.isDark) document.documentElement.classList.add('dark');
+    if (this.isMobile) this.sidebarOpen = false;
+    window.addEventListener('resize', () => {
+      this.isMobile = window.innerWidth < 768;
+      if (!this.isMobile) this.sidebarOpen = true;
+    });
+    this.loadSettings();
+    console.log('🚀 settings.html ready');
+  }
+}).mount('#app');
+</script>
+
 </body>
 </html>
