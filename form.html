@@ -73,87 +73,229 @@
       <button @click="switchTab('laporan')" class="px-4 py-2 rounded-lg font-bold text-sm" :class="tab==='laporan'?'bg-purple-500 text-white':'bg-gray-200'">📊 Laporan</button>
     </div>
 
-    <!-- ========== TAB PENGADUAN ========== -->
-    <div v-if="tab==='pengaduan'" class="space-y-6">
-      <div class="glass-card rounded-2xl p-5">
-        <h2 class="text-lg font-bold text-blue-800 mb-4">📢 Form Pengaduan Baru</h2>
-        <form @submit.prevent="simpanPengaduan" class="space-y-3">
-          <div class="grid grid-cols-2 gap-3">
-            <input v-model="aduan.nama" placeholder="Nama Pelapor *" required class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="aduan.kontak" placeholder="Kontak (HP/WA)" class="w-full border rounded-lg px-3 py-2 text-sm">
-          </div>
-          <select v-model="aduan.kategori_id" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Pilih Kategori --</option><option v-for="k in kategoriList" :key="k.id" :value="k.id">{{ k.permasalahan }} ({{ k.bidang }})</option></select>
-          <select v-model="aduan.sumber_aduan" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Sumber Aduan --</option><option value="WhatsApp">WhatsApp</option><option value="Website">Website</option><option value="Telepon">Telepon</option><option value="Surat">Surat</option><option value="Lainnya">Lainnya</option></select>
-          <div class="grid grid-cols-2 gap-3">
-            <select v-model="aduan.kecamatan" @change="aduan.desa=''" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Kecamatan --</option><option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option></select>
-            <select v-model="aduan.desa" :disabled="!aduan.kecamatan" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">-- Desa --</option><option v-for="desa in filteredDesaAduan" :key="desa" :value="desa">{{ desa }}</option></select>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <input v-model="aduan.lokasi" placeholder="Lokasi Spesifik" class="w-full border rounded-lg px-3 py-2 text-sm">
-            <input v-model="aduan.tgl_kejadian" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
-          </div>
-          <textarea v-model="aduan.deskripsi" placeholder="Deskripsi Pengaduan *" required class="w-full border rounded-lg px-3 py-2 text-sm" rows="3"></textarea>
-          <!-- Upload Foto (maks 2) -->
-          <div>
-            <label class="text-xs font-bold text-gray-600">Bukti Foto (maks 2)</label>
-            <div class="flex gap-2 mt-1">
-              <label class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-2 rounded-lg cursor-pointer"><i class="bi bi-camera"></i> Pilih Foto<input type="file" @change="onFileChange" accept="image/*" multiple class="hidden"></label>
-              <button type="button" @click="aduan.gambar=[]; previewGambar=[]" v-if="aduan.gambar.length>0" class="bg-red-100 text-red-700 text-xs font-bold px-3 py-2 rounded-lg">Hapus Semua</button>
-              <span v-if="aduan.gambar.length>0" class="text-xs text-gray-400 flex items-center gap-1"><i class="bi bi-image"></i> {{ aduan.gambar.length }}/2</span>
+<!-- ========== TAB PENGADUAN ========== -->
+<div v-if="tab==='pengaduan'" class="space-y-6 fade-in">
+
+  <!-- Header -->
+  <div class="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl p-5 text-white shadow-xl">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-xl font-bold flex items-center gap-2"><i class="bi bi-journal-text"></i> Pengaduan</h2>
+        <p class="text-blue-200 text-xs mt-1">Kirim pengaduan baru dan pantau riwayat</p>
+      </div>
+      <span class="bg-white/20 backdrop-blur px-4 py-1.5 rounded-full text-xs font-semibold">{{ filteredPengaduan.length }} data</span>
+    </div>
+  </div>
+
+  <!-- Sub-tab Pengaduan: Form vs Riwayat -->
+  <div class="bg-white rounded-2xl shadow-sm p-1.5 border border-slate-200 flex gap-1.5">
+    <button @click="pengaduanSubTab = 'form'"
+      :class="pengaduanSubTab==='form' ? 'bg-blue-500 text-white shadow' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'"
+      class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+      <i class="bi bi-pencil-square"></i> Form Baru
+    </button>
+    <button @click="pengaduanSubTab = 'riwayat'"
+      :class="pengaduanSubTab==='riwayat' ? 'bg-blue-500 text-white shadow' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'"
+      class="flex-1 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+      <i class="bi bi-list-ul"></i> Riwayat ({{ filteredPengaduan.length }})
+    </button>
+  </div>
+
+  <!-- ========== SUB-TAB: FORM ========== -->
+  <div v-show="pengaduanSubTab === 'form'">
+    <div class="glass-card rounded-2xl shadow-lg overflow-hidden" style="border:2px solid #dbeafe">
+      <div class="flex justify-between items-center px-5 py-3" style="background:linear-gradient(to right,#eff6ff,#eef2ff);border-bottom:2px solid #bfdbfe">
+        <h3 class="font-bold text-sm" style="color:#1e40af">📝 Kirim Pengaduan Baru</h3>
+        <button @click="resetFormPengaduan()" class="text-xs bg-white border border-blue-200 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+      </div>
+      <div class="p-5">
+        <form @submit.prevent="simpanPengaduan">
+
+          <!-- 1. DATA PELAPOR -->
+          <div class="border border-teal-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-teal-50 to-emerald-50/20">
+            <h4 class="text-sm font-bold mb-3 flex items-center gap-2" style="color:#0f766e"><span class="w-6 h-6 bg-teal-500 text-white rounded-full inline-flex items-center justify-center text-xs">1</span>DATA PELAPOR</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-600 mb-1 block">Nama <span style="color:#ef4444">*</span></label><input v-model="aduan.nama" required placeholder="Nama lengkap pelapor" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-teal-200 focus:border-teal-500 transition"></div>
+              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">No. HP</label><input v-model="aduan.kontak" placeholder="0812-xxxx-xxxx" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-teal-200 focus:border-teal-500 transition"></div>
+              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Alamat</label><input v-model="aduan.alamat_pelapor" placeholder="Alamat lengkap pelapor" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-teal-200 focus:border-teal-500 transition"></div>
             </div>
-            <div v-if="previewGambar.length>0" class="flex gap-2 mt-2 flex-wrap">
-              <div v-for="(img,i) in previewGambar" :key="i" class="relative w-20 h-20 border rounded-lg overflow-hidden">
-                <img :src="img.data" class="w-full h-full object-cover">
-                <button @click="hapusGambar(i)" class="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✕</button>
+          </div>
+
+          <!-- 2. DATA KEJADIAN -->
+          <div class="border border-slate-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-slate-50 to-gray-50/20">
+            <h4 class="text-sm font-bold mb-3 flex items-center gap-2" style="color:#475569"><span class="w-6 h-6 bg-slate-500 text-white rounded-full inline-flex items-center justify-center text-xs">2</span>DATA KEJADIAN</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <!-- Bidang (dropdown dari kategoriList) -->
+              <div>
+                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Bidang</label>
+                <select v-model="selectedBidang" @change="onBidangChange()" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition">
+                  <option value="">-- Pilih Bidang --</option>
+                  <option v-for="b in bidangList" :key="b" :value="b">{{ b }}</option>
+                </select>
+              </div>
+              <!-- Kategori (terfilter berdasarkan bidang) -->
+              <div>
+                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Kategori</label>
+                <select v-model="aduan.kategori_id" :disabled="!selectedBidang" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition">
+                  <option value="">-- Pilih Kategori --</option>
+                  <option v-for="k in filteredKategoriByBidang" :key="k.id" :value="k.id">{{ k.permasalahan || k.nama }}</option>
+                </select>
+              </div>
+              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Tgl Kejadian</label><input type="date" v-model="aduan.tgl_kejadian" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition"></div>
+              <div><label class="text-[10px] font-bold text-slate-600 mb-1 block">Waktu</label><input type="time" v-model="aduan.waktu_kejadian" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition"></div>
+              <div>
+                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Kecamatan</label>
+                <select v-model="aduan.kecamatan" @change="aduan.desa=''" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition">
+                  <option value="">-- Pilih Kecamatan --</option>
+                  <option v-for="kec in listKecamatan" :key="kec" :value="kec">{{ kec }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Desa</label>
+                <select v-model="aduan.desa" :disabled="!aduan.kecamatan" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition">
+                  <option value="">-- Pilih Desa --</option>
+                  <option v-for="desa in filteredDesaAduan" :key="desa" :value="desa">{{ desa }}</option>
+                </select>
+              </div>
+              <div class="md:col-span-2"><label class="text-[10px] font-bold text-slate-600 mb-1 block">Lokasi Spesifik</label><input v-model="aduan.lokasi" placeholder="Alamat lengkap / tempat kejadian" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition"></div>
+              <div>
+                <label class="text-[10px] font-bold text-slate-600 mb-1 block">Sumber Aduan</label>
+                <select v-model="aduan.sumber_aduan" class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs focus:ring-2 focus:ring-slate-200 focus:border-slate-500 transition">
+                  <option value="">-- Pilih Sumber --</option>
+                  <option>WhatsApp</option><option>Website</option><option>Telepon</option><option>Surat</option><option>Lainnya</option>
+                </select>
               </div>
             </div>
           </div>
-          <button type="submit" class="btn-primary w-full">Kirim Pengaduan</button>
-          <p v-if="pesan.teks" class="text-sm text-center" :class="pesan.warna">{{ pesan.teks }}</p>
+
+          <!-- 3. DESKRIPSI & DOKUMENTASI -->
+          <div class="border border-amber-300 rounded-xl p-4 mb-4 bg-gradient-to-r from-amber-50 to-orange-50/20">
+            <h4 class="text-sm font-bold mb-3 flex items-center gap-2" style="color:#b45309"><span class="w-6 h-6 bg-amber-500 text-white rounded-full inline-flex items-center justify-center text-xs">3</span>DESKRIPSI & DOKUMENTASI</h4>
+            <div class="mb-4"><label class="text-[10px] font-bold text-slate-600 mb-1 block">Deskripsi <span style="color:#ef4444">*</span></label><textarea v-model="aduan.deskripsi" rows="5" required placeholder="Ceritakan kronologi kejadian secara jelas dan lengkap..." class="w-full border border-slate-300 rounded-lg p-3 text-xs focus:ring-2 focus:ring-amber-200 focus:border-amber-500 transition"></textarea></div>
+            <div>
+              <label class="text-[10px] font-bold text-slate-600 mb-1 block">Bukti Foto (maks 2)</label>
+              <div class="flex gap-2 mt-1 mb-2">
+                <label class="bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-bold px-3 py-2.5 rounded-lg cursor-pointer transition"><i class="bi bi-camera"></i> Pilih Foto<input type="file" @change="onFileChange" accept="image/*" multiple class="hidden"></label>
+                <button type="button" @click="aduan.gambar=[]; previewGambar=[]" v-if="aduan.gambar.length>0" class="bg-red-100 text-red-700 text-[11px] font-bold px-3 py-2.5 rounded-lg hover:bg-red-200 transition"><i class="bi bi-trash"></i> Hapus Semua</button>
+                <span v-if="aduan.gambar.length>0" class="text-[10px] text-slate-400 flex items-center gap-1"><i class="bi bi-image"></i> {{ aduan.gambar.length }}/2</span>
+              </div>
+              <div v-if="previewGambar.length>0" class="flex gap-2 flex-wrap mt-2">
+                <div v-for="(img,i) in previewGambar" :key="i" class="relative w-[100px] h-[75px] border-2 border-slate-300 rounded-lg overflow-hidden bg-slate-50 shadow-sm">
+                  <img :src="img.data" class="w-full h-full object-cover">
+                  <button @click="hapusGambar(i)" class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] transition">✕</button>
+                  <div class="absolute bottom-0 left-0 right-0 bg-white/90 px-1.5 py-0.5 text-[8px] text-slate-500">{{ (img.size/1024).toFixed(1) }}KB</div>
+                </div>
+              </div>
+              <p class="text-[9px] text-slate-400 mt-2"><i class="bi bi-info-circle"></i> Format JPG/PNG, maks 5MB (dikompresi otomatis)</p>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2" style="border-top:2px solid #e2e8f0;padding-top:12px">
+            <button type="button" @click="resetFormPengaduan()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-lg transition" style="border:2px solid #cbd5e1">Reset</button>
+            <button type="submit" :disabled="loading" class="bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm transition" style="border:2px solid #2563eb">{{ loading?'Mengirim...':'Kirim Pengaduan' }}</button>
+          </div>
         </form>
       </div>
+    </div>
+  </div>
 
-      <!-- RIWAYAT PENGADUAN -->
-      <div class="glass-card rounded-2xl p-5">
-        <h2 class="text-lg font-bold text-blue-800 mb-4">📋 Riwayat Pengaduan ({{ filteredPengaduan.length }})</h2>
-        <div class="grid grid-cols-5 gap-3 mb-4">
-          <select v-model="fAduTahun" class="border rounded-lg px-3 py-2 text-xs"><option value="">Semua Tahun</option><option v-for="t in listTahunAdu" :key="t" :value="t">{{ t }}</option></select>
-          <select v-model="fAduBulan" class="border rounded-lg px-3 py-2 text-xs"><option value="">Semua Bulan</option><option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">Mei</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Agt</option><option value="09">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select>
-          <select v-model="fAduStatus" class="border rounded-lg px-3 py-2 text-xs"><option value="">Semua Status</option><option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option></select>
-          <input v-model="fAduSearch" placeholder="Cari..." class="border rounded-lg px-3 py-2 text-xs">
-          <button @click="resetFilterAdu" class="bg-amber-500 text-white rounded-lg text-xs font-bold">Reset</button>
+  <!-- ========== SUB-TAB: RIWAYAT ========== -->
+  <div v-show="pengaduanSubTab === 'riwayat'">
+    <div class="glass-card rounded-2xl shadow-lg overflow-hidden border-2 border-blue-100">
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200 px-5 py-3 flex justify-between items-center">
+        <h3 class="font-bold text-sm text-blue-800">📋 Riwayat Pengaduan ({{ filteredPengaduan.length }})</h3>
+        <div class="flex gap-2">
+          <button @click="exportExcel" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition"><i class="bi bi-file-earmark-excel"></i> Excel</button>
+          <button @click="exportCSV" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition"><i class="bi bi-filetype-csv"></i> CSV</button>
         </div>
-        <div class="overflow-x-auto">
-          <table>
-            <thead><tr><th>No</th><th>Tanggal</th><th>Pelapor</th><th>Kategori</th><th>Status</th><th>Aksi</th></tr></thead>
-            <tbody>
-              <tr v-for="(p,i) in paginatedAdu" :key="p.id">
-                <td>{{ (pageAdu-1)*perPageAdu + i + 1 }}</td>
-                <td>{{ formatDate(p.tanggal_lapor) }}</td>
-                <td>{{ p.nama_pelapor }}</td>
-                <td>{{ p.kategori_pengaduan?.permasalahan || '-' }}</td>
-                <td><select @change="updateStatus(p.id, $event.target.value)" class="text-xs border rounded px-2 py-1" :class="statusBadge(p.status)"><option v-for="s in statusOptions" :key="s" :value="s" :selected="p.status===s">{{ s }}</option></select></td>
-                <td><button @click="hapusPengaduan(p.id)" class="text-red-500"><i class="bi bi-trash"></i></button></td>
-              </tr>
-              <tr v-if="!paginatedAdu.length"><td colspan="6" class="text-center py-4 text-gray-400">Belum ada data</td></tr>
-            </tbody>
-          </table>
+      </div>
+
+      <!-- Filter -->
+      <div class="bg-white p-4 border-b">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
+          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Tahun</label><select v-model="fAduTahun" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"><option value="">Semua</option><option v-for="t in listTahunAdu" :key="t" :value="t">{{ t }}</option></select></div>
+          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Bulan</label><select v-model="fAduBulan" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"><option value="">Semua</option><option value="01">Jan</option><option value="02">Feb</option><option value="03">Mar</option><option value="04">Apr</option><option value="05">Mei</option><option value="06">Jun</option><option value="07">Jul</option><option value="08">Agt</option><option value="09">Sep</option><option value="10">Okt</option><option value="11">Nov</option><option value="12">Des</option></select></div>
+          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Bidang</label><select v-model="fAduBidang" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"><option value="">Semua</option><option v-for="b in bidangList" :key="b" :value="b">{{ b }}</option></select></div>
+          <div><label class="text-[10px] font-bold text-slate-500 mb-1 block">Status</label><select v-model="fAduStatus" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"><option value="">Semua</option><option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option></select></div>
+          <div><button @click="resetFilterAdu" class="w-full bg-amber-400 hover:bg-amber-500 text-white font-bold text-xs rounded-lg px-4 py-2 transition"><i class="bi bi-arrow-counterclockwise mr-1"></i>Reset</button></div>
         </div>
-        <div class="flex justify-between mt-3 text-xs">
-          <span>Hal {{ pageAdu }}/{{ totalPageAdu }}</span>
-          <div class="flex gap-1">
-            <button @click="pageAdu=1" :disabled="pageAdu===1" class="px-2 py-1 rounded bg-gray-200">«</button>
-            <button @click="pageAdu--" :disabled="pageAdu===1" class="px-2 py-1 rounded bg-gray-200">‹</button>
-            <template v-for="h in totalPageAdu">
-              <button v-if="h===1||h===totalPageAdu||(h>=pageAdu-1&&h<=pageAdu+1)" @click="pageAdu=h" class="px-2 py-1 rounded" :class="pageAdu===h?'bg-blue-500 text-white':'bg-gray-200'">{{ h }}</button>
-              <span v-else-if="h===pageAdu-2||h===pageAdu+2">...</span>
-            </template>
-            <button @click="pageAdu++" :disabled="pageAdu===totalPageAdu" class="px-2 py-1 rounded bg-gray-200">›</button>
-            <button @click="pageAdu=totalPageAdu" :disabled="pageAdu===totalPageAdu" class="px-2 py-1 rounded bg-gray-200">»</button>
-          </div>
+      </div>
+
+      <!-- Info Pagination -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-2 bg-slate-50 border-b text-xs text-slate-400">
+        <p>Menampilkan <strong class="text-slate-600">{{ paginatedAdu.length>0 ? (pageAdu-1)*perPageAdu+1 : 0 }}</strong>-<strong class="text-slate-600">{{ Math.min(pageAdu*perPageAdu, filteredPengaduan.length) }}</strong> dari <strong class="text-slate-600">{{ filteredPengaduan.length }}</strong></p>
+        <div class="flex items-center gap-2"><span>Tampil</span><select v-model="perPageAdu" @change="pageAdu=1" class="text-xs border border-slate-300 rounded-lg px-2 py-1"><option :value="15">15</option><option :value="25">25</option><option :value="50">50</option></select></div>
+      </div>
+
+      <!-- Tabel -->
+      <div class="responsive-table overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[10px] tracking-wider">
+              <th class="p-2.5 text-center w-10">#</th>
+              <th class="p-2.5 text-left w-20">Tanggal</th>
+              <th class="p-2.5 text-left w-28">Pelapor</th>
+              <th class="p-2.5 text-left w-36">Bidang / Kategori</th>
+              <th class="p-2.5 text-left w-44">Lokasi</th>
+              <th class="p-2.5 text-center w-12">Prio</th>
+              <th class="p-2.5 text-center w-24">Status</th>
+              <th class="p-2.5 text-center w-10">Foto</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr v-if="filteredPengaduan.length===0">
+              <td colspan="8" class="p-8 text-center text-slate-400">Tidak ada pengaduan</td>
+            </tr>
+            <tr v-for="(item, idx) in paginatedAdu" :key="item.id" class="hover:bg-blue-50/30 transition">
+              <td class="p-2.5 text-center text-slate-400 text-[10px]">{{ (pageAdu-1)*perPageAdu + idx + 1 }}</td>
+              <td class="p-2.5 text-left whitespace-nowrap text-[10px]">{{ item.tanggal_lapor || item.Tanggal || '-' }}</td>
+              <td class="p-2.5 text-left font-medium text-[11px] truncate max-w-[100px]">{{ item.nama_pelapor || item.Nama || '-' }}</td>
+              <td class="p-2.5 text-left text-[10px]">
+                <div class="font-semibold text-slate-700">{{ item.kategori_pengaduan?.bidang || item.Bidang || '-' }}</div>
+                <div class="text-slate-500 text-[9px]">{{ item.kategori_pengaduan?.permasalahan || item.Kategori || '-' }}</div>
+              </td>
+              <td class="p-2.5 text-left text-[10px]">
+                <div class="truncate max-w-[150px]">{{ item.lokasi || item.Lokasi || '-' }}</div>
+                <div v-if="item.desa || item.kecamatan || item.Desa || item.Kecamatan" class="text-[9px] text-slate-400 truncate max-w-[150px]">{{ [item.desa||item.Desa, item.kecamatan||item.Kecamatan].filter(Boolean).join(', ') }}</div>
+              </td>
+              <td class="p-2.5 text-center">
+                <span v-if="getPrioritas(item) === 'Tinggi'" class="text-red-500" title="Prioritas Tinggi">🔴</span>
+                <span v-else-if="getPrioritas(item) === 'Sedang'" class="text-amber-500" title="Prioritas Sedang">🟡</span>
+                <span v-else class="text-emerald-500" title="Prioritas Rendah">🟢</span>
+              </td>
+              <td class="p-2.5 text-center">
+                <select @change="updateStatus(item.id, $event.target.value)" class="text-xs border rounded-lg px-2 py-1 font-bold" :class="statusBadge(item.status || item.Status)">
+                  <option v-for="s in statusOptions" :key="s" :value="s" :selected="(item.status||item.Status)===s">{{ s }}</option>
+                </select>
+              </td>
+              <td class="p-2.5 text-center">
+                <div v-if="getGambarArray(item).length>0" class="flex items-center justify-center">
+                  <img :src="getGambarArray(item)[0]" class="w-8 h-8 object-cover rounded-lg border-2 border-slate-100 shadow-sm" :title="getGambarCount(item)+' foto'">
+                </div>
+                <span v-else class="text-slate-300 text-xs">-</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="filteredPengaduan.length>0" class="flex items-center justify-between gap-3 p-4 border-t">
+        <span class="text-[10px] text-slate-400">Hal <strong class="text-slate-600">{{ pageAdu }}</strong>/<strong class="text-slate-600">{{ totalPageAdu }}</strong></span>
+        <div class="flex items-center gap-1">
+          <button @click="pageAdu=1" :disabled="pageAdu===1" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition" :class="pageAdu===1?'text-slate-300':'text-slate-600 hover:bg-blue-50'">«</button>
+          <button @click="pageAdu--" :disabled="pageAdu===1" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition" :class="pageAdu===1?'text-slate-300':'text-slate-600 hover:bg-blue-50'">‹</button>
+          <template v-for="hal in totalPageAdu" :key="hal">
+            <button v-if="hal===1||hal===totalPageAdu||(hal>=pageAdu-1&&hal<=pageAdu+1)" @click="pageAdu=hal" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition" :class="pageAdu===hal?'bg-blue-500 text-white':'text-slate-600 hover:bg-blue-50'">{{ hal }}</button>
+            <span v-else-if="hal===pageAdu-2||hal===pageAdu+2" class="text-slate-300 text-xs">...</span>
+          </template>
+          <button @click="pageAdu++" :disabled="pageAdu===totalPageAdu" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition" :class="pageAdu===totalPageAdu?'text-slate-300':'text-slate-600 hover:bg-blue-50'">›</button>
+          <button @click="pageAdu=totalPageAdu" :disabled="pageAdu===totalPageAdu" class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold transition" :class="pageAdu===totalPageAdu?'text-slate-300':'text-slate-600 hover:bg-blue-50'">»</button>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
     <!-- ========== TAB SURAT TUGAS ========== -->
     <div v-if="tab==='st'" class="space-y-6">
