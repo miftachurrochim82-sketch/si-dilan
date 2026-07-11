@@ -20,7 +20,6 @@
     .main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
     .main-content.expanded { margin-left: 0; }
     .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    .btn-danger { background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
     table { width: 100%; border-collapse: collapse; }
     th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 12px; color: #1e40af; }
     td { padding: 8px 10px; border-top: 1px solid #e2e8f0; font-size: 13px; }
@@ -77,14 +76,17 @@
 
         <!-- FORM -->
         <div v-if="showForm" class="bg-blue-50 rounded-xl p-4 mb-4 grid grid-cols-2 gap-3">
-          <div v-for="col in currentColumns.filter(c => c.key !== 'id' && c.key !== 'created_at')" :key="col.key">
-            <label class="text-xs font-bold text-gray-600">{{ col.label }}</label>
-            <input v-if="col.type==='text'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
-            <select v-else-if="col.type==='select'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
-              <option value="">-- Pilih --</option>
-              <option v-for="opt in col.options" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <template v-for="col in currentColumns.filter(c => c.key !== 'id' && c.key !== 'created_at')" :key="col.key">
+            <div :class="col.span === 2 ? 'col-span-2' : ''">
+              <label class="text-xs font-bold text-gray-600">{{ col.label }}</label>
+              <input v-if="col.type==='text'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+              <select v-else-if="col.type==='select'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
+                <option value="">-- Pilih --</option>
+                <option v-for="opt in col.options" :key="opt" :value="opt">{{ opt }}</option>
+              </select>
+              <textarea v-else-if="col.type==='textarea'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1" rows="2"></textarea>
+            </div>
+          </template>
           <div class="col-span-2 flex gap-2 justify-end">
             <button @click="cancelForm" class="bg-gray-300 px-4 py-2 rounded-lg text-sm font-bold">Batal</button>
             <button @click="saveItem" class="btn-primary">{{ editingId ? 'Update' : 'Simpan' }}</button>
@@ -119,70 +121,80 @@
 
   const TABS = [
     { key: 'kategori_pengaduan', label: 'Kategori', columns: [
-      { key: 'id', label: 'ID', type: 'text' },
       { key: 'bidang', label: 'Bidang', type: 'text' },
       { key: 'permasalahan', label: 'Permasalahan', type: 'text' },
+      { key: 'deskripsi', label: 'Deskripsi', type: 'textarea', span: 2 },
+      { key: 'ikon', label: 'Ikon', type: 'text' },
       { key: 'prioritas', label: 'Prioritas', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
-      { key: 'sla_jam', label: 'SLA (Jam)', type: 'text' }
+      { key: 'sla_jam', label: 'SLA (Jam)', type: 'text' },
+      { key: 'sub_kegiatan', label: 'Sub Kegiatan', type: 'text' },
+      { key: 'layanan', label: 'Layanan', type: 'text' },
+      { key: 'nama_sop', label: 'Nama SOP', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
     ]},
     { key: 'personil', label: 'Personil', columns: [
-      { key: 'id', label: 'ID', type: 'text' },
       { key: 'nip', label: 'NIP', type: 'text' },
       { key: 'nama', label: 'Nama', type: 'text' },
-      { key: 'pangkat', label: 'Pangkat', type: 'text' },
+      { key: 'pangkat', label: 'Pangkat', type: 'select', options: ['Pembina Utama Muda (IV/c)','Pembina (IV/a)','Penata Tk.I (III/d)','Penata (III/c)','Penata Muda Tk.I (III/b)','Penata Muda (III/a)','Pengatur Tk.I (II/d)','Pengatur (II/c)','Pengatur Muda Tk.I (II/b)','Pengatur Muda (II/a)'] },
       { key: 'jabatan', label: 'Jabatan', type: 'text' },
       { key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },
+      { key: 'regu', label: 'Regu', type: 'text' },
+      { key: 'kontak', label: 'Kontak', type: 'text' },
+      { key: 'email', label: 'Email', type: 'text' },
       { key: 'jenis', label: 'Jenis', type: 'select', options: ['Manajerial','Non-Manajerial'] },
+      { key: 'url_ttd', label: 'URL TTD', type: 'text', span: 2 },
       { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
     ]},
     { key: 'unit_kerja', label: 'Unit Kerja', columns: [
-      { key: 'id', label: 'ID', type: 'text' },
       { key: 'nama_unit', label: 'Nama Unit', type: 'text' },
       { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
     ]},
     { key: 'layanan', label: 'Layanan', columns: [
-      { key: 'id', label: 'ID', type: 'text' },
       { key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },
-      { key: 'nama_layanan', label: 'Nama Layanan', type: 'text' },
       { key: 'kategori', label: 'Kategori', type: 'text' },
+      { key: 'nama_layanan', label: 'Nama Layanan', type: 'text' },
+      { key: 'deskripsi', label: 'Deskripsi', type: 'textarea', span: 2 },
       { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
     ]},
     { key: 'lokasi', label: 'Lokasi', columns: [
-      { key: 'id', label: 'ID', type: 'text' },
       { key: 'nama_lokasi', label: 'Nama Lokasi', type: 'text' },
       { key: 'kecamatan', label: 'Kecamatan', type: 'text' },
       { key: 'desa_kelurahan', label: 'Desa/Kel', type: 'text' },
-      { key: 'kerawanan', label: 'Kerawanan', type: 'select', options: ['Rendah','Sedang','Tinggi'] }
+      { key: 'alamat', label: 'Alamat', type: 'textarea', span: 2 },
+      { key: 'kerawanan', label: 'Kerawanan', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
+      { key: 'koordinat', label: 'Koordinat', type: 'text' }
     ]},
     { key: 'sop', label: 'SOP', columns: [
-      { key: 'id', label: 'ID', type: 'text' },
       { key: 'kode_sop', label: 'Kode SOP', type: 'text' },
       { key: 'layanan', label: 'Layanan', type: 'text' },
       { key: 'nama_sop', label: 'Nama SOP', type: 'text' },
-      { key: 'isi_instruksi', label: 'Instruksi', type: 'text' },
-      { key: 'tingkat_risiko', label: 'Risiko', type: 'select', options: ['Rendah','Sedang','Tinggi'] }
+      { key: 'isi_instruksi', label: 'Instruksi', type: 'textarea', span: 2 },
+      { key: 'tingkat_risiko', label: 'Risiko', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
+      { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
     ]},
     { key: 'kendaraan', label: 'Kendaraan', columns: [
-      { key: 'id', label: 'ID', type: 'text' },
       { key: 'nama', label: 'Nama', type: 'text' },
       { key: 'plat', label: 'Plat', type: 'text' },
       { key: 'tipe', label: 'Tipe', type: 'text' },
-      { key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Prima','Servis','Rusak'] }
+      { key: 'jenis', label: 'Jenis', type: 'select', options: ['MPV','SUV','Pickup','Truk','Bus','Motor','Lainnya'] },
+      { key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Prima','Servis','Rusak'] },
+      { key: 'penanggung_jawab', label: 'PJ', type: 'text' }
     ]},
     { key: 'peralatan', label: 'Peralatan', columns: [
-      { key: 'id', label: 'ID', type: 'text' },
       { key: 'nama', label: 'Nama', type: 'text' },
       { key: 'merk', label: 'Merk', type: 'text' },
       { key: 'kategori', label: 'Kategori', type: 'select', options: ['Komunikasi','Pelindung Diri','Penerangan','Pertahanan','Pemadaman','Penyelamatan','Kesehatan','Lainnya'] },
+      { key: 'alokasi', label: 'Alokasi', type: 'select', options: ['Individu','Regu','Kendaraan','Markas'] },
       { key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Baik','Rusak Ringan','Rusak Berat'] }
     ]},
     { key: 'standar_biaya', label: 'Standar Biaya', columns: [
-      { key: 'id', label: 'ID', type: 'text' },
       { key: 'golongan', label: 'Golongan', type: 'text' },
       { key: 'jenis_perjalanan', label: 'Jenis Perjalanan', type: 'select', options: ['Dalam Daerah','Luar Daerah (Prov)','Luar Provinsi'] },
       { key: 'uang_harian', label: 'Uang Harian', type: 'text' },
+      { key: 'uang_representasi', label: 'Uang Representasi', type: 'text' },
       { key: 'transport', label: 'Transport', type: 'text' },
-      { key: 'penginapan', label: 'Penginapan', type: 'text' }
+      { key: 'penginapan', label: 'Penginapan', type: 'text' },
+      { key: 'keterangan', label: 'Keterangan', type: 'textarea', span: 2 }
     ]}
   ];
 
