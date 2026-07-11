@@ -2,225 +2,566 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>Master Data - SI DILAN</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <style>
-    body { background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
-    .glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.05); }
-    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white; z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); overflow-y: auto; }
+    :root {
+      --bg: #f0f4ff; --bg2: #e8f0fe; --card-bg: rgba(255,255,255,0.75);
+      --text: #1e293b; --text2: #3b82f6; --border: rgba(255,255,255,0.3);
+      --table-hover: #f0f7ff;
+    }
+    .dark {
+      --bg: #0f172a; --bg2: #1e293b; --card-bg: rgba(30,41,59,0.85);
+      --text: #e2e8f0; --text2: #93c5fd; --border: rgba(255,255,255,0.08);
+      --table-hover: #1e3a5f;
+    }
+    body {
+      background: linear-gradient(135deg, var(--bg), var(--bg2));
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin: 0; min-height: 100vh; color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+    .glass-card {
+      background: var(--card-bg); backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+      transition: background 0.3s, border 0.3s;
+    }
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+      background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white;
+      z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+      overflow-y: auto;
+    }
+    .dark .sidebar { background: linear-gradient(180deg, #0f172a, #1e293b); }
     .sidebar.collapsed { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
     .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; text-decoration: none; color: white; }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+      border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: background 0.2s; text-decoration: none; color: white;
+    }
     .sidebar-item:hover { background: rgba(255,255,255,0.1); }
     .sidebar-item.active { background: rgba(255,255,255,0.2); font-weight: 600; }
-    .sidebar-group-title { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); cursor: pointer; user-select: none; }
+    .sidebar-group-title {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: rgba(255,255,255,0.5); cursor: pointer; user-select: none;
+    }
     .sidebar-group-title:hover { color: rgba(255,255,255,0.8); }
     .sidebar-sub { padding-left: 12px; }
     .sidebar-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 12px; }
-    .main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
+    .main-content {
+      margin-left: 260px; padding: 24px; min-height: 100vh;
+      transition: margin-left 0.3s;
+    }
     .main-content.expanded { margin-left: 0; }
-    .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .mobile-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 35; display: none;
+    }
+    .mobile-overlay.show { display: block; }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white;
+      border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+    .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
     table { width: 100%; border-collapse: collapse; }
-    th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 12px; color: #1e40af; }
-    td { padding: 8px 10px; border-top: 1px solid #e2e8f0; font-size: 13px; }
-    .tab-container { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-    .tab-btn { padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; white-space: nowrap; }
-    @media (max-width: 768px) { .sidebar { width: 280px; transform: translateX(-100%); } .sidebar.open { transform: translateX(0); } .main-content { margin-left: 0; } .main-content.shifted { margin-left: 280px; } }
+    th {
+      background: var(--bg2); padding: 10px 12px; text-align: left;
+      font-size: 12px; color: var(--text2); font-weight: 600;
+    }
+    td {
+      padding: 8px 12px; border-top: 1px solid var(--border);
+      font-size: 13px; color: var(--text);
+    }
+    tbody tr:hover { background: var(--table-hover); }
+    .tab-btn {
+      padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      border: none; cursor: pointer; white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { background: #2563eb; color: white; }
+    .tab-btn:not(.active) { background: #e2e8f0; color: #475569; }
+    .dark .tab-btn:not(.active) { background: #334155; color: #94a3b8; }
+    [v-cloak] { display: none !important; }
+    @media (max-width: 768px) {
+      .sidebar { width: 280px; transform: translateX(-100%); }
+      .main-content { margin-left: 0; }
+      .main-content.shifted { margin-left: 280px; }
+    }
   </style>
 </head>
 <body>
+  <div id="app" v-cloak>
+    <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
 
-<div id="app">
-  <!-- SIDEBAR -->
-  <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
-    <div class="sidebar-header">
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
-        <button @click="sidebarOpen=!sidebarOpen" class="text-white/70 hover:text-white"><i :class="sidebarOpen?'bi bi-chevron-left':'bi bi-chevron-right'" class="text-xl"></i></button>
-      </div>
-      <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
-    </div>
-    <nav class="p-3 space-y-1">
-      <a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='ops'?'':'ops'"><span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span><i :class="expandedGroup==='ops'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
-      <div v-show="expandedGroup==='ops'" class="sidebar-sub space-y-1">
-        <a href="form.html?tab=pengaduan" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
-        <a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
-        <a href="form.html?tab=laporan" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
-      </div>
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-group-title" @click="expandedGroup = expandedGroup==='adm'?'':'adm'"><span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span><i :class="expandedGroup==='adm'?'bi bi-chevron-down':'bi bi-chevron-right'" class="text-xs"></i></div>
-      <div v-show="expandedGroup==='adm'" class="sidebar-sub space-y-1">
-        <a href="master.html" class="sidebar-item active"><i class="bi bi-server"></i> Master Data</a>
-        <a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i> Pengaturan</a>
-      </div>
-      <div class="sidebar-divider"></div>
-      <a href="about.html" class="sidebar-item"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
-      <button @click="toggleDarkMode" class="sidebar-item w-full"><i :class="isDark?'bi bi-sun-fill':'bi bi-moon-fill'"></i> {{ isDark?'Mode Terang':'Mode Gelap' }}</button>
-    </nav>
-  </aside>
+    <app-sidebar 
+      :sidebar-open="sidebarOpen" 
+      :is-mobile="isMobile" 
+      current-page="master"
+      :dark-mode="isDark"
+      @toggle-sidebar="sidebarOpen = !sidebarOpen"
+      @toggle-dark="toggleDarkMode"
+    ></app-sidebar>
 
-  <!-- MAIN -->
-  <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
-    <div class="max-w-6xl mx-auto">
-      <div class="flex justify-between items-center mb-6">
-        <div><h1 class="text-2xl font-bold text-blue-800">Master Data</h1><p class="text-sm text-blue-500">Kelola data referensi aplikasi</p></div>
-        <button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
-      </div>
-
-      <!-- TABS -->
-      <div class="tab-container">
-        <button v-for="t in tabs" :key="t.key" @click="activeTab = t.key" class="tab-btn" :class="activeTab===t.key?'bg-blue-500 text-white':'bg-gray-200'">{{ t.label }}</button>
-      </div>
-
-      <!-- TABLE + FORM -->
-      <div class="glass-card rounded-2xl p-5">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold text-blue-800">{{ currentTabLabel }}</h2>
-          <button @click="showForm = !showForm" class="btn-primary"><i :class="showForm?'bi bi-x-lg':'bi bi-plus-lg'"></i> {{ showForm ? 'Tutup' : 'Tambah' }}</button>
+    <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h1 class="text-2xl font-bold" style="color: var(--text)">Master Data</h1>
+            <p class="text-sm" style="color: var(--text2)">Kelola data referensi aplikasi</p>
+          </div>
+          <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
         </div>
 
-        <!-- FORM -->
-        <div v-if="showForm" class="bg-blue-50 rounded-xl p-4 mb-4 grid grid-cols-2 gap-3">
-          <template v-for="col in currentColumns.filter(c => c.key !== 'id' && c.key !== 'created_at')" :key="col.key">
-            <div :class="col.span === 2 ? 'col-span-2' : ''">
-              <label class="text-xs font-bold text-gray-600">{{ col.label }}</label>
-              <input v-if="col.type==='text'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
-              <select v-else-if="col.type==='select'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1">
-                <option value="">-- Pilih --</option>
-                <option v-for="opt in col.options" :key="opt" :value="opt">{{ opt }}</option>
-              </select>
-              <textarea v-else-if="col.type==='textarea'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1" rows="2"></textarea>
-            </div>
-          </template>
-          <div class="col-span-2 flex gap-2 justify-end">
-            <button @click="cancelForm" class="bg-gray-300 px-4 py-2 rounded-lg text-sm font-bold">Batal</button>
-            <button @click="saveItem" class="btn-primary">{{ editingId ? 'Update' : 'Simpan' }}</button>
+        <!-- Toast -->
+        <div style="position:fixed;bottom:24px;right:24px;z-index:200;display:flex;flex-direction:column-reverse;gap:8px;align-items:flex-end;">
+          <div v-for="t in toasts" :key="t.id" style="padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;color:white;box-shadow:0 10px 30px rgba(0,0,0,0.2);max-width:360px;" :style="{ background: t.type === 'success' ? '#10b981' : '#ef4444' }">
+            <i :class="t.type === 'success' ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i> {{ t.message }}
           </div>
         </div>
 
-        <!-- TABLE -->
-        <div class="overflow-x-auto">
-          <table>
-            <thead><tr><th v-for="col in currentColumns" :key="col.key">{{ col.label }}</th><th>Aksi</th></tr></thead>
-            <tbody>
-              <tr v-for="item in currentData" :key="item.id">
-                <td v-for="col in currentColumns" :key="col.key">{{ item[col.key] || '-' }}</td>
-                <td>
-                  <div class="flex gap-1">
-                    <button @click="editItem(item)" class="text-blue-500 hover:bg-blue-50 p-1 rounded"><i class="bi bi-pencil-square"></i></button>
-                    <button @click="deleteItem(item.id)" class="text-red-500 hover:bg-red-50 p-1 rounded"><i class="bi bi-trash"></i></button>
-                  </div>
-                </td>
-              </tr>
-              <tr v-if="!currentData.length"><td :colspan="currentColumns.length+1" class="text-center text-gray-400 py-6">Belum ada data</td></tr>
-            </tbody>
-          </table>
+        <!-- Modal Konfirmasi Hapus -->
+        <div v-if="deleteModal.show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="deleteModal.show = false">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl" style="border: 1px solid var(--border);">
+            <h3 class="text-lg font-bold" style="color: var(--text)">Konfirmasi Hapus</h3>
+            <p class="text-sm mt-2" style="color: var(--text2)">Yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
+            <div class="flex justify-end gap-3 mt-6">
+              <button @click="deleteModal.show = false" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 dark:text-white text-sm font-bold">Batal</button>
+              <button @click="confirmDelete" class="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-bold">Hapus</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button v-for="t in tabs" :key="t.key" @click="switchTab(t.key)" class="tab-btn" :class="{ active: activeTab === t.key }">
+            {{ t.label }}
+          </button>
+        </div>
+
+        <!-- TABLE + FORM -->
+        <div class="glass-card rounded-2xl p-5">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 class="text-lg font-bold" style="color: var(--text2)">{{ currentTabLabel }} <span class="text-sm font-normal opacity-60">({{ filteredData.length }})</span></h2>
+            <div class="flex gap-2">
+              <input v-model="searchQuery" placeholder="Cari..." class="border rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 w-40">
+              <button @click="showForm = !showForm" class="btn-primary">
+                <i :class="showForm ? 'bi bi-x-lg' : 'bi bi-plus-lg'"></i> {{ showForm ? 'Tutup' : 'Tambah' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- FORM -->
+          <div v-if="showForm" class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <template v-for="col in currentColumns.filter(c => c.key !== 'id' && c.key !== 'created_at')" :key="col.key">
+              <div :class="col.span === 2 ? 'sm:col-span-2' : ''">
+                <label class="text-xs font-bold" style="color: var(--text2)">
+                  {{ col.label }}
+                  <span v-if="col.required" class="text-red-500">*</span>
+                </label>
+                <input 
+                  v-if="col.type === 'text'"
+                  v-model="formData[col.key]"
+                  :required="col.required"
+                  class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                >
+                <input 
+                  v-else-if="col.type === 'number'"
+                  type="number"
+                  v-model.number="formData[col.key]"
+                  :required="col.required"
+                  class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                >
+                <input 
+                  v-else-if="col.type === 'email'"
+                  type="email"
+                  v-model="formData[col.key]"
+                  class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                >
+                <select 
+                  v-else-if="col.type === 'select'"
+                  v-model="formData[col.key]"
+                  class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                >
+                  <option value="">-- Pilih --</option>
+                  <option v-for="opt in col.options" :key="opt" :value="opt">{{ opt }}</option>
+                </select>
+                <textarea 
+                  v-else-if="col.type === 'textarea'"
+                  v-model="formData[col.key]"
+                  rows="3"
+                  class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                ></textarea>
+              </div>
+            </template>
+            <div class="sm:col-span-2 flex gap-2 justify-end">
+              <button @click="cancelForm" class="bg-gray-300 dark:bg-gray-600 dark:text-white px-4 py-2 rounded-lg text-sm font-bold">Batal</button>
+              <button @click="saveItem" :disabled="saving" class="btn-primary">
+                <span v-if="saving"><i class="bi bi-hourglass-split animate-spin"></i> Menyimpan...</span>
+                <span v-else>{{ editingId ? 'Update' : 'Simpan' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TABLE -->
+          <div class="overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th v-for="col in currentColumns" :key="col.key">{{ col.label }}</th>
+                  <th class="text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in filteredData" :key="item.id">
+                  <td v-for="col in currentColumns" :key="col.key">
+                    <span v-if="col.key === 'status'" 
+                      :class="item[col.key] === 'Aktif' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 rounded-full text-xs font-bold' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 px-2 py-0.5 rounded-full text-xs font-bold'">
+                      {{ item[col.key] || '-' }}
+                    </span>
+                    <span v-else>{{ item[col.key] || '-' }}</span>
+                  </td>
+                  <td class="text-center">
+                    <div class="flex gap-1 justify-center">
+                      <button @click="editItem(item)" class="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900 p-1.5 rounded" title="Edit"><i class="bi bi-pencil-square"></i></button>
+                      <button @click="requestDelete(item.id)" class="text-red-500 hover:bg-red-50 dark:hover:bg-red-900 p-1.5 rounded" title="Hapus"><i class="bi bi-trash"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr v-if="!filteredData.length">
+                  <td :colspan="currentColumns.length + 1" class="text-center py-6" style="color: var(--text2)">Belum ada data</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
-  </main>
-</div>
+    </main>
+  </div>
 
-<script>
-  const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
+  <script>
+    const supa = window.supabase.createClient('https://msdacugqzxprxajdudsx.supabase.co', 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf');
 
-  const TABS = [
-    { key: 'kategori_pengaduan', label: 'Kategori', columns: [
-      { key: 'bidang', label: 'Bidang', type: 'text' }, { key: 'permasalahan', label: 'Permasalahan', type: 'text' },
-      { key: 'deskripsi', label: 'Deskripsi', type: 'textarea', span: 2 }, { key: 'ikon', label: 'Ikon', type: 'text' },
-      { key: 'prioritas', label: 'Prioritas', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
-      { key: 'sla_jam', label: 'SLA (Jam)', type: 'text' }, { key: 'sub_kegiatan', label: 'Sub Kegiatan', type: 'text' },
-      { key: 'layanan', label: 'Layanan', type: 'text' }, { key: 'nama_sop', label: 'Nama SOP', type: 'text' },
-      { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
-    ]},
-    { key: 'personil', label: 'Personil', columns: [
-      { key: 'nip', label: 'NIP', type: 'text' }, { key: 'nama', label: 'Nama', type: 'text' },
-      { key: 'pangkat', label: 'Pangkat', type: 'select', options: ['Pembina Utama Muda (IV/c)','Pembina (IV/a)','Penata Tk.I (III/d)','Penata (III/c)','Penata Muda Tk.I (III/b)','Penata Muda (III/a)','Pengatur Tk.I (II/d)','Pengatur (II/c)','Pengatur Muda Tk.I (II/b)','Pengatur Muda (II/a)'] },
-      { key: 'jabatan', label: 'Jabatan', type: 'text' }, { key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },
-      { key: 'regu', label: 'Regu', type: 'text' }, { key: 'kontak', label: 'Kontak', type: 'text' },
-      { key: 'email', label: 'Email', type: 'text' }, { key: 'jenis', label: 'Jenis', type: 'select', options: ['Manajerial','Non-Manajerial'] },
-      { key: 'url_ttd', label: 'URL TTD', type: 'text', span: 2 }, { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
-    ]},
-    { key: 'unit_kerja', label: 'Unit Kerja', columns: [
-      { key: 'nama_unit', label: 'Nama Unit', type: 'text' }, { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
-    ]},
-    { key: 'layanan', label: 'Layanan', columns: [
-      { key: 'unit_kerja', label: 'Unit Kerja', type: 'text' }, { key: 'kategori', label: 'Kategori', type: 'text' },
-      { key: 'nama_layanan', label: 'Nama Layanan', type: 'text' }, { key: 'deskripsi', label: 'Deskripsi', type: 'textarea', span: 2 },
-      { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
-    ]},
-    { key: 'lokasi', label: 'Lokasi', columns: [
-      { key: 'nama_lokasi', label: 'Nama Lokasi', type: 'text' }, { key: 'kecamatan', label: 'Kecamatan', type: 'text' },
-      { key: 'desa_kelurahan', label: 'Desa/Kel', type: 'text' }, { key: 'alamat', label: 'Alamat', type: 'textarea', span: 2 },
-      { key: 'kerawanan', label: 'Kerawanan', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
-      { key: 'koordinat', label: 'Koordinat', type: 'text' }
-    ]},
-    { key: 'sop', label: 'SOP', columns: [
-      { key: 'kode_sop', label: 'Kode SOP', type: 'text' }, { key: 'layanan', label: 'Layanan', type: 'text' },
-      { key: 'nama_sop', label: 'Nama SOP', type: 'text' }, { key: 'isi_instruksi', label: 'Instruksi', type: 'textarea', span: 2 },
-      { key: 'tingkat_risiko', label: 'Risiko', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
-      { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
-    ]},
-    { key: 'kendaraan', label: 'Kendaraan', columns: [
-      { key: 'nama', label: 'Nama', type: 'text' }, { key: 'plat', label: 'Plat', type: 'text' },
-      { key: 'tipe', label: 'Tipe', type: 'text' }, { key: 'jenis', label: 'Jenis', type: 'select', options: ['MPV','SUV','Pickup','Truk','Bus','Motor','Lainnya'] },
-      { key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Prima','Servis','Rusak'] },
-      { key: 'penanggung_jawab', label: 'PJ', type: 'text' }
-    ]},
-    { key: 'peralatan', label: 'Peralatan', columns: [
-      { key: 'nama', label: 'Nama', type: 'text' }, { key: 'merk', label: 'Merk', type: 'text' },
-      { key: 'kategori', label: 'Kategori', type: 'select', options: ['Komunikasi','Pelindung Diri','Penerangan','Pertahanan','Pemadaman','Penyelamatan','Kesehatan','Lainnya'] },
-      { key: 'alokasi', label: 'Alokasi', type: 'select', options: ['Individu','Regu','Kendaraan','Markas'] },
-      { key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Baik','Rusak Ringan','Rusak Berat'] }
-    ]},
-    { key: 'standar_biaya', label: 'Standar Biaya', columns: [
-      { key: 'golongan', label: 'Golongan', type: 'text' }, { key: 'jenis_perjalanan', label: 'Jenis Perjalanan', type: 'select', options: ['Dalam Daerah','Luar Daerah (Prov)','Luar Provinsi'] },
-      { key: 'uang_harian', label: 'Uang Harian', type: 'text' }, { key: 'uang_representasi', label: 'Uang Representasi', type: 'text' },
-      { key: 'transport', label: 'Transport', type: 'text' }, { key: 'penginapan', label: 'Penginapan', type: 'text' },
-      { key: 'keterangan', label: 'Keterangan', type: 'textarea', span: 2 }
-    ]}
-  ];
-
-  Vue.createApp({
-    data() {
-      return {
-        tabs: TABS, activeTab: 'kategori_pengaduan', showForm: false, formData: {}, editingId: null,
-        sidebarOpen: true, isMobile: window.innerWidth < 768, isDark: localStorage.getItem('darkMode')==='true',
-        expandedGroup: 'adm', dataCache: {}
+    // Sidebar Component
+    const AppSidebar = {
+      template: `
+        <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+          <div class="sidebar-header">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-2">
+                <i class="bi bi-shield-shaded text-2xl"></i>
+                <span class="font-bold text-lg">SI DILAN</span>
+              </div>
+              <button @click="$emit('toggle-sidebar')" class="text-white/70 hover:text-white p-1">
+                <i :class="sidebarOpen ? 'bi bi-chevron-left' : 'bi bi-chevron-right'" class="text-xl"></i>
+              </button>
+            </div>
+            <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+          </div>
+          <nav class="p-3 space-y-1">
+            <a href="index.html" class="sidebar-item"><i class="bi bi-speedometer2"></i> Dashboard</a>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-group-title" @click="toggleGroup('operasional')">
+              <span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span>
+              <i :class="expandedGroup === 'operasional' ? 'bi bi-chevron-down' : 'bi bi-chevron-right'" class="text-xs"></i>
+            </div>
+            <div v-show="expandedGroup === 'operasional'" class="sidebar-sub space-y-1">
+              <a href="form.html?tab=pengaduan" class="sidebar-item"><i class="bi bi-megaphone"></i> Pengaduan</a>
+              <a href="form.html?tab=st" class="sidebar-item"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+              <a href="form.html?tab=laporan" class="sidebar-item"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+              <a href="peta.html" class="sidebar-item"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
+              <a href="sppd.html" class="sidebar-item"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
+            </div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-group-title" @click="toggleGroup('admin')">
+              <span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span>
+              <i :class="expandedGroup === 'admin' ? 'bi bi-chevron-down' : 'bi bi-chevron-right'" class="text-xs"></i>
+            </div>
+            <div v-show="expandedGroup === 'admin'" class="sidebar-sub space-y-1">
+              <a href="master.html" class="sidebar-item active"><i class="bi bi-server"></i> Master Data</a>
+              <a href="settings.html" class="sidebar-item"><i class="bi bi-gear"></i> Pengaturan</a>
+            </div>
+            <div class="sidebar-divider"></div>
+            <a href="about.html" class="sidebar-item"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
+            <button @click="$emit('toggle-dark')" class="sidebar-item w-full">
+              <i :class="darkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
+              {{ darkMode ? 'Mode Terang' : 'Mode Gelap' }}
+            </button>
+          </nav>
+        </aside>
+      `,
+      props: { sidebarOpen: Boolean, isMobile: Boolean, currentPage: String, darkMode: Boolean },
+      emits: ['toggle-sidebar', 'toggle-dark'],
+      data() { return { expandedGroup: 'admin' }; },
+      methods: {
+        toggleGroup(name) { this.expandedGroup = this.expandedGroup === name ? '' : name; }
       }
-    },
-    computed: {
-      currentTab() { return this.tabs.find(t => t.key === this.activeTab); },
-      currentColumns() { return this.currentTab?.columns || []; },
-      currentTabLabel() { return this.currentTab?.label || ''; },
-      currentData() { return this.dataCache[this.activeTab] || []; }
-    },
-    methods: {
-      toggleDarkMode() { this.isDark=!this.isDark; localStorage.setItem('darkMode', this.isDark); document.documentElement.classList.toggle('dark', this.isDark); },
-      async loadData() { const { data } = await supa.from(this.activeTab).select('*'); this.dataCache[this.activeTab] = data || []; },
-      editItem(item) { this.editingId = item.id; this.formData = { ...item }; this.showForm = true; },
-      cancelForm() { this.showForm = false; this.formData = {}; this.editingId = null; },
-      async saveItem() {
-        if (this.editingId) { await supa.from(this.activeTab).update(this.formData).eq('id', this.editingId); }
-        else { await supa.from(this.activeTab).insert(this.formData); }
-        this.cancelForm(); await this.loadData();
+    };
+
+    // Tab Definitions
+    const TABS = [
+      {
+        key: 'kategori_pengaduan', label: 'Kategori',
+        columns: [
+          { key: 'bidang', label: 'Bidang', type: 'text', required: true },
+          { key: 'permasalahan', label: 'Permasalahan', type: 'text', required: true },
+          { key: 'deskripsi', label: 'Deskripsi', type: 'textarea', span: 2 },
+          { key: 'prioritas', label: 'Prioritas', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
+          { key: 'sla_jam', label: 'SLA (Jam)', type: 'number' },
+          { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
+        ]
       },
-      async deleteItem(id) { if (!confirm('Hapus data ini?')) return; await supa.from(this.activeTab).delete().eq('id', id); await this.loadData(); }
-    },
-    watch: { activeTab() { this.loadData(); this.cancelForm(); } },
-    mounted() {
-      if (this.isDark) document.documentElement.classList.add('dark');
-      if (this.isMobile) this.sidebarOpen = false;
-      window.addEventListener('resize', () => { this.isMobile = window.innerWidth < 768; if (!this.isMobile) this.sidebarOpen = true; });
-      this.loadData();
-    }
-  }).mount('#app');
-</script>
+      {
+        key: 'personil', label: 'Personil',
+        columns: [
+          { key: 'nip', label: 'NIP', type: 'text', required: true },
+          { key: 'nama', label: 'Nama', type: 'text', required: true },
+          { key: 'pangkat', label: 'Pangkat', type: 'select', options: ['Pembina Utama Muda (IV/c)','Pembina (IV/a)','Penata Tk.I (III/d)','Penata (III/c)','Penata Muda Tk.I (III/b)','Penata Muda (III/a)','Pengatur Tk.I (II/d)','Pengatur (II/c)','Pengatur Muda Tk.I (II/b)','Pengatur Muda (II/a)'] },
+          { key: 'jabatan', label: 'Jabatan', type: 'text' },
+          { key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },
+          { key: 'regu', label: 'Regu', type: 'text' },
+          { key: 'kontak', label: 'Kontak', type: 'text' },
+          { key: 'email', label: 'Email', type: 'email' },
+          { key: 'jenis', label: 'Jenis', type: 'select', options: ['Manajerial','Non-Manajerial'] },
+          { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
+        ]
+      },
+      {
+        key: 'unit_kerja', label: 'Unit Kerja',
+        columns: [
+          { key: 'nama_unit', label: 'Nama Unit', type: 'text', required: true },
+          { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
+        ]
+      },
+      {
+        key: 'layanan', label: 'Layanan',
+        columns: [
+          { key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },
+          { key: 'kategori', label: 'Kategori', type: 'text' },
+          { key: 'nama_layanan', label: 'Nama Layanan', type: 'text', required: true },
+          { key: 'deskripsi', label: 'Deskripsi', type: 'textarea', span: 2 },
+          { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
+        ]
+      },
+      {
+        key: 'lokasi', label: 'Lokasi',
+        columns: [
+          { key: 'nama_lokasi', label: 'Nama Lokasi', type: 'text', required: true },
+          { key: 'kecamatan', label: 'Kecamatan', type: 'text' },
+          { key: 'desa_kelurahan', label: 'Desa/Kel', type: 'text' },
+          { key: 'alamat', label: 'Alamat', type: 'textarea', span: 2 },
+          { key: 'kerawanan', label: 'Kerawanan', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
+          { key: 'koordinat', label: 'Koordinat', type: 'text' }
+        ]
+      },
+      {
+        key: 'sop', label: 'SOP',
+        columns: [
+          { key: 'kode_sop', label: 'Kode SOP', type: 'text', required: true },
+          { key: 'layanan', label: 'Layanan', type: 'text' },
+          { key: 'nama_sop', label: 'Nama SOP', type: 'text', required: true },
+          { key: 'isi_instruksi', label: 'Instruksi', type: 'textarea', span: 2 },
+          { key: 'tingkat_risiko', label: 'Risiko', type: 'select', options: ['Rendah','Sedang','Tinggi'] },
+          { key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }
+        ]
+      },
+      {
+        key: 'kendaraan', label: 'Kendaraan',
+        columns: [
+          { key: 'nama', label: 'Nama', type: 'text', required: true },
+          { key: 'plat', label: 'Plat', type: 'text' },
+          { key: 'tipe', label: 'Tipe', type: 'text' },
+          { key: 'jenis', label: 'Jenis', type: 'select', options: ['MPV','SUV','Pickup','Truk','Bus','Motor','Lainnya'] },
+          { key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Prima','Servis','Rusak'] },
+          { key: 'penanggung_jawab', label: 'PJ', type: 'text' }
+        ]
+      },
+      {
+        key: 'peralatan', label: 'Peralatan',
+        columns: [
+          { key: 'nama', label: 'Nama', type: 'text', required: true },
+          { key: 'merk', label: 'Merk', type: 'text' },
+          { key: 'kategori', label: 'Kategori', type: 'select', options: ['Komunikasi','Pelindung Diri','Penerangan','Pertahanan','Pemadaman','Penyelamatan','Kesehatan','Lainnya'] },
+          { key: 'alokasi', label: 'Alokasi', type: 'select', options: ['Individu','Regu','Kendaraan','Markas'] },
+          { key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Baik','Rusak Ringan','Rusak Berat'] }
+        ]
+      },
+      {
+        key: 'standar_biaya', label: 'Standar Biaya',
+        columns: [
+          { key: 'golongan', label: 'Golongan', type: 'text', required: true },
+          { key: 'jenis_perjalanan', label: 'Jenis Perjalanan', type: 'select', options: ['Dalam Daerah','Luar Daerah (Prov)','Luar Provinsi'] },
+          { key: 'uang_harian', label: 'Uang Harian', type: 'number' },
+          { key: 'uang_representasi', label: 'Uang Representasi', type: 'number' },
+          { key: 'transport', label: 'Transport', type: 'number' },
+          { key: 'penginapan', label: 'Penginapan', type: 'number' },
+          { key: 'keterangan', label: 'Keterangan', type: 'textarea', span: 2 }
+        ]
+      }
+    ];
+
+    Vue.createApp({
+      components: { AppSidebar },
+      data() {
+        return {
+          tabs: TABS,
+          activeTab: 'kategori_pengaduan',
+          showForm: false,
+          formData: {},
+          editingId: null,
+          searchQuery: '',
+          sidebarOpen: true,
+          isMobile: window.innerWidth < 768,
+          isDark: localStorage.getItem('darkMode') === 'true',
+          dataCache: {},
+          loading: false,
+          saving: false,
+          toasts: [],
+          deleteModal: { show: false, id: null }
+        }
+      },
+      computed: {
+        currentTab() { return this.tabs.find(t => t.key === this.activeTab); },
+        currentColumns() { return this.currentTab?.columns || []; },
+        currentTabLabel() { return this.currentTab?.label || ''; },
+        currentData() { return this.dataCache[this.activeTab] || []; },
+        filteredData() {
+          if (!this.searchQuery) return this.currentData;
+          const kw = this.searchQuery.toLowerCase();
+          return this.currentData.filter(item => {
+            return this.currentColumns.some(col => {
+              const val = item[col.key];
+              return val !== null && val !== undefined && String(val).toLowerCase().includes(kw);
+            });
+          });
+        }
+      },
+      methods: {
+        toggleDarkMode() {
+          this.isDark = !this.isDark;
+          localStorage.setItem('darkMode', this.isDark);
+          document.documentElement.classList.toggle('dark', this.isDark);
+        },
+        addToast(message, type = 'success') {
+          const id = Date.now();
+          this.toasts.push({ id, message, type });
+          setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000);
+        },
+        switchTab(key) {
+          this.activeTab = key;
+          this.cancelForm();
+          this.searchQuery = '';
+          if (!this.dataCache[key]) this.loadData();
+        },
+        async loadData() {
+          this.loading = true;
+          try {
+            const { data, error } = await supa.from(this.activeTab).select('*');
+            if (error) throw error;
+            this.dataCache[this.activeTab] = data || [];
+          } catch (e) {
+            this.addToast('Gagal memuat data: ' + e.message, 'error');
+          } finally {
+            this.loading = false;
+          }
+        },
+        editItem(item) {
+          this.editingId = item.id;
+          // Copy hanya kolom yang ada di definisi
+          const allowedKeys = this.currentColumns.map(c => c.key);
+          this.formData = {};
+          for (const key of allowedKeys) {
+            this.formData[key] = item[key] !== undefined ? item[key] : '';
+          }
+          this.showForm = true;
+        },
+        cancelForm() {
+          this.showForm = false;
+          this.formData = {};
+          this.editingId = null;
+        },
+        async saveItem() {
+          // Validasi field required
+          const missing = this.currentColumns.filter(c => c.required && !this.formData[c.key]);
+          if (missing.length) {
+            this.addToast('Field wajib belum diisi: ' + missing.map(c => c.label).join(', '), 'error');
+            return;
+          }
+          this.saving = true;
+          try {
+            const payload = { ...this.formData };
+            // Konversi number
+            this.currentColumns.forEach(c => {
+              if (c.type === 'number' && payload[c.key] !== '') {
+                payload[c.key] = Number(payload[c.key]);
+              }
+            });
+            delete payload.id;
+            delete payload.created_at;
+
+            let result;
+            if (this.editingId) {
+              result = await supa.from(this.activeTab).update(payload).eq('id', this.editingId);
+            } else {
+              result = await supa.from(this.activeTab).insert(payload);
+            }
+            if (result.error) throw result.error;
+            this.addToast(this.editingId ? 'Data berhasil diupdate!' : 'Data berhasil disimpan!');
+            this.cancelForm();
+            await this.loadData();
+          } catch (e) {
+            this.addToast('Gagal menyimpan: ' + e.message, 'error');
+          } finally {
+            this.saving = false;
+          }
+        },
+        requestDelete(id) {
+          this.deleteModal = { show: true, id };
+        },
+        async confirmDelete() {
+          if (!this.deleteModal.id) return;
+          try {
+            const { error } = await supa.from(this.activeTab).delete().eq('id', this.deleteModal.id);
+            if (error) throw error;
+            const arr = this.dataCache[this.activeTab];
+            if (arr) {
+              this.dataCache[this.activeTab] = arr.filter(item => item.id !== this.deleteModal.id);
+            }
+            this.addToast('Data berhasil dihapus!');
+          } catch (e) {
+            this.addToast('Gagal menghapus: ' + e.message, 'error');
+          } finally {
+            this.deleteModal = { show: false, id: null };
+          }
+        }
+      },
+      watch: {
+        activeTab() {
+          if (!this.dataCache[this.activeTab]) {
+            this.loadData();
+          }
+        }
+      },
+      mounted() {
+        if (this.isDark) document.documentElement.classList.add('dark');
+        if (this.isMobile) this.sidebarOpen = false;
+        window.addEventListener('resize', () => {
+          this.isMobile = window.innerWidth < 768;
+          if (!this.isMobile) this.sidebarOpen = true;
+        });
+        this.loadData();
+      }
+    }).mount('#app');
+  </script>
 </body>
 </html>
