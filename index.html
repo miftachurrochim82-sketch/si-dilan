@@ -36,8 +36,13 @@
     .sidebar {
       position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
       background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white;
-      z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); overflow-y: auto;
+      z-index: 40; transition: transform 0.3s, width 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); overflow-y: auto;
     }
+    .sidebar.minimized { width: 70px; }
+    .sidebar.minimized .sidebar-item span, .sidebar.minimized .sidebar-group-title span, .sidebar.minimized .sidebar-header p, .sidebar.minimized .sidebar-header .font-bold, .sidebar.minimized .sidebar-sub { display: none; }
+    .sidebar.minimized .sidebar-item { justify-content: center; padding: 10px 0; }
+    .sidebar.minimized .sidebar-group-title { justify-content: center; }
+    .sidebar.minimized .sidebar-header > div { flex-direction: column; align-items: center; }
     .dark .sidebar { background: linear-gradient(180deg, #0f172a, #1e293b); }
     .sidebar.collapsed { transform: translateX(-100%); }
     .sidebar.open { transform: translateX(0); }
@@ -59,6 +64,7 @@
     .sidebar-sub { padding-left: 12px; }
     .sidebar-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 12px; }
     .main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
+    .main-content.sidebar-minimized { margin-left: 70px; }
     .main-content.expanded { margin-left: 0; }
     .mobile-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 35; display: none;
@@ -131,6 +137,7 @@
     #app-loading.hide { opacity: 0; pointer-events: none; }
     @media (max-width: 768px) {
       .sidebar { width: 280px; transform: translateX(-100%); }
+      .sidebar.minimized { width: 70px; }
       .main-content { margin-left: 0; }
       .main-content.shifted { margin-left: 280px; }
     }
@@ -174,34 +181,34 @@
     <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
 
     <!-- SIDEBAR -->
-    <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+    <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile, minimized: sidebarMinimized && !isMobile }">
       <div class="sidebar-header">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
-          <button @click="sidebarOpen = !sidebarOpen" class="text-white/70 hover:text-white p-1"><i :class="sidebarOpen ? 'bi bi-chevron-left' : 'bi bi-chevron-right'" class="text-xl"></i></button>
+          <button @click="sidebarOpen = !sidebarOpen" class="text-white/70 hover:text-white p-1 lg:hidden"><i :class="sidebarOpen ? 'bi bi-chevron-left' : 'bi bi-chevron-right'" class="text-xl"></i></button>
         </div>
         <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
       </div>
       <nav class="p-3 space-y-1">
-        <a href="#" @click.prevent="currentPage = 'dashboard'" class="sidebar-item" :class="{ active: currentPage === 'dashboard' }"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="#" @click.prevent="currentPage = 'dashboard'" class="sidebar-item" :class="{ active: currentPage === 'dashboard' }"><i class="bi bi-speedometer2"></i> <span>Dashboard</span></a>
         <div class="sidebar-divider"></div>
         <div class="sidebar-group-title" @click="expandedGroup = expandedGroup === 'ops' ? '' : 'ops'"><span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span><i :class="expandedGroup === 'ops' ? 'bi bi-chevron-down' : 'bi bi-chevron-right'" class="text-xs"></i></div>
         <div v-show="expandedGroup === 'ops'" class="sidebar-sub space-y-1">
-          <a href="#" @click.prevent="currentPage = 'pengaduan'" class="sidebar-item" :class="{ active: currentPage === 'pengaduan' }"><i class="bi bi-megaphone"></i> Pengaduan</a>
-          <a href="#" @click.prevent="currentPage = 'st'" class="sidebar-item" :class="{ active: currentPage === 'st' }"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
-          <a href="#" @click.prevent="currentPage = 'laporan'" class="sidebar-item" :class="{ active: currentPage === 'laporan' }"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
-          <a href="#" @click.prevent="currentPage = 'peta'" class="sidebar-item" :class="{ active: currentPage === 'peta' }"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
-          <a href="#" @click.prevent="currentPage = 'sppd'" class="sidebar-item" :class="{ active: currentPage === 'sppd' }"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
+          <a href="#" @click.prevent="currentPage = 'pengaduan'" class="sidebar-item" :class="{ active: currentPage === 'pengaduan' }"><i class="bi bi-megaphone"></i> <span>Pengaduan</span></a>
+          <a href="#" @click.prevent="currentPage = 'st'" class="sidebar-item" :class="{ active: currentPage === 'st' }"><i class="bi bi-envelope-paper"></i> <span>Surat Tugas</span></a>
+          <a href="#" @click.prevent="currentPage = 'laporan'" class="sidebar-item" :class="{ active: currentPage === 'laporan' }"><i class="bi bi-file-earmark-bar-graph"></i> <span>Laporan</span></a>
+          <a href="#" @click.prevent="currentPage = 'peta'" class="sidebar-item" :class="{ active: currentPage === 'peta' }"><i class="bi bi-geo-alt"></i> <span>Peta & Crosstab</span></a>
+          <a href="#" @click.prevent="currentPage = 'sppd'" class="sidebar-item" :class="{ active: currentPage === 'sppd' }"><i class="bi bi-file-earmark-pdf"></i> <span>Cetak SPPD</span></a>
         </div>
         <div class="sidebar-divider"></div>
         <div class="sidebar-group-title" @click="expandedGroup = expandedGroup === 'adm' ? '' : 'adm'"><span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span><i :class="expandedGroup === 'adm' ? 'bi bi-chevron-down' : 'bi bi-chevron-right'" class="text-xs"></i></div>
         <div v-show="expandedGroup === 'adm'" class="sidebar-sub space-y-1">
-          <a href="#" @click.prevent="currentPage = 'master'" class="sidebar-item" :class="{ active: currentPage === 'master' }"><i class="bi bi-server"></i> Master Data</a>
-          <a href="#" @click.prevent="currentPage = 'settings'" class="sidebar-item" :class="{ active: currentPage === 'settings' }"><i class="bi bi-gear"></i> Pengaturan</a>
+          <a href="#" @click.prevent="currentPage = 'master'" class="sidebar-item" :class="{ active: currentPage === 'master' }"><i class="bi bi-server"></i> <span>Master Data</span></a>
+          <a href="#" @click.prevent="currentPage = 'settings'" class="sidebar-item" :class="{ active: currentPage === 'settings' }"><i class="bi bi-gear"></i> <span>Pengaturan</span></a>
         </div>
         <div class="sidebar-divider"></div>
-        <a href="#" @click.prevent="currentPage = 'about'" class="sidebar-item" :class="{ active: currentPage === 'about' }"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
-        <button @click="toggleDarkMode" class="sidebar-item w-full"><i :class="isDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i> {{ isDark ? 'Mode Terang' : 'Mode Gelap' }}</button>
+        <a href="#" @click.prevent="currentPage = 'about'" class="sidebar-item" :class="{ active: currentPage === 'about' }"><i class="bi bi-info-circle"></i> <span>Tentang Aplikasi</span></a>
+        <button @click="toggleDarkMode" class="sidebar-item w-full"><i :class="isDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i> <span>{{ isDark ? 'Mode Terang' : 'Mode Gelap' }}</span></button>
       </nav>
     </aside>
 
@@ -222,11 +229,16 @@
     </div>
 
     <!-- MAIN CONTENT -->
-    <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
+    <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile, 'sidebar-minimized': sidebarMinimized && !isMobile }">
       <div class="flex items-center justify-between mb-6">
-        <div>
-          <h1 class="text-2xl font-extrabold" style="color: var(--text)">{{ pageTitle }}</h1>
-          <p class="text-sm" style="color: var(--text2)">{{ pageSubtitle }}</p>
+        <div class="flex items-center gap-3">
+          <button @click="sidebarMinimized = !sidebarMinimized" class="hidden lg:flex text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white p-1" title="Toggle sidebar">
+            <i :class="sidebarMinimized ? 'bi bi-layout-sidebar-inset' : 'bi bi-layout-sidebar-inset-reverse'" class="text-xl"></i>
+          </button>
+          <div>
+            <h1 class="text-2xl font-extrabold" style="color: var(--text)">{{ pageTitle }}</h1>
+            <p class="text-sm" style="color: var(--text2)">{{ pageSubtitle }}</p>
+          </div>
         </div>
         <div class="flex items-center gap-2">
           <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
@@ -234,8 +246,11 @@
         </div>
       </div>
 
-      <!-- Dynamic Component -->
-      <component :is="currentComponent" :key="currentPage"></component>
+      <!-- Konten Halaman -->
+      <about-page v-if="currentPage === 'about'"></about-page>
+      <settings-page v-else-if="currentPage === 'settings'" :form="settingsForm" :loading="settingsLoading" :saving="settingsSaving" @load="loadSettings" @save="saveSettings"></settings-page>
+      <master-page v-else-if="currentPage === 'master'" :kategori-list="kategoriList" :personil-list="personilList" :unit-kerja-list="unitKerjaList" :layanan-list="layananList" :lokasi-list="lokasiList" :sop-list="sopList" :kendaraan-list="kendaraanList" :peralatan-list="peralatanList" :standar-biaya-list="standarBiayaList" @data-updated="loadAllData"></master-page>
+      <div v-else class="glass-card rounded-2xl p-8 text-center"><p style="color: var(--text2)">Halaman {{ pageTitle }} sedang dalam pengembangan.</p></div>
     </main>
   </div>
 </div>
@@ -256,251 +271,231 @@ const APP_CONFIG = {
   supabaseKey: 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf',
   kecamatan: ['Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan','Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'],
   desa: {
-    Bendungan:['Botoputih','Depok','Masaran','Sengon','Surenlor'],
-    Dongko:['Dongko','Pandean','Petung','Pringapus','Salam'],
-    Durenan:['Durenan','Gador','Kamulan','Pakis','Pandean'],
-    Gandusari:['Gandusari','Jajar','Krandegan','Sukorame','Widoro'],
-    Kampak:['Bogoran','Karangrejo','Ngadimulyo','Senden','Timahan'],
-    Karangan:['Buluagung','Jati','Karangan','Kayen','Sumber'],
-    Munjungan:['Besuki','Munjungan','Sobo','Tawing','Bangun'],
-    Panggul:['Banjar','Depok','Manggis','Panggul','Wonocoyo'],
-    Pogalan:['Bendorejo','Kedunglurah','Ngadirejo','Pogalan','Wonocoyo'],
-    Pule:['Joho','Kembangan','Pule','Puyung','Sidomulyo'],
-    Suruh:['Gamping','Mlinjon','Ngrandu','Suruh','Wonokerto'],
-    Trenggalek:['Kelutan','Ngantru','Sumbergedong','Surondakan','Tamanan'],
-    Tugu:['Duren','Gading','Prambon','Tumpuk','Winong'],
-    Watulimo:['Dukuh','Gemaharjo','Prigi','Slawe','Watulimo']
+    Bendungan:['Botoputih','Depok','Masaran','Sengon','Surenlor'],Dongko:['Dongko','Pandean','Petung','Pringapus','Salam'],Durenan:['Durenan','Gador','Kamulan','Pakis','Pandean'],Gandusari:['Gandusari','Jajar','Krandegan','Sukorame','Widoro'],Kampak:['Bogoran','Karangrejo','Ngadimulyo','Senden','Timahan'],Karangan:['Buluagung','Jati','Karangan','Kayen','Sumber'],Munjungan:['Besuki','Munjungan','Sobo','Tawing','Bangun'],Panggul:['Banjar','Depok','Manggis','Panggul','Wonocoyo'],Pogalan:['Bendorejo','Kedunglurah','Ngadirejo','Pogalan','Wonocoyo'],Pule:['Joho','Kembangan','Pule','Puyung','Sidomulyo'],Suruh:['Gamping','Mlinjon','Ngrandu','Suruh','Wonokerto'],Trenggalek:['Kelutan','Ngantru','Sumbergedong','Surondakan','Tamanan'],Tugu:['Duren','Gading','Prambon','Tumpuk','Winong'],Watulimo:['Dukuh','Gemaharjo','Prigi','Slawe','Watulimo']
   }
 };
-
 const supabaseClient = supabase.createClient(APP_CONFIG.supabaseUrl, APP_CONFIG.supabaseKey);
 
-// Utils
 function formatDate(d) {
-  if (!d) return '-';
-  const dt = new Date(d);
+  if (!d) return '-'; const dt = new Date(d);
   return isNaN(dt) ? '-' : dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 function statusBadge(s) {
-  const map = {
-    Baru: 'bg-amber-100 text-amber-700',
-    Diverifikasi: 'bg-sky-100 text-sky-700',
-    Diproses: 'bg-violet-100 text-violet-700',
-    Selesai: 'bg-emerald-100 text-emerald-700',
-    Ditolak: 'bg-rose-100 text-rose-700'
-  };
+  const map = { Baru: 'bg-amber-100 text-amber-700', Diverifikasi: 'bg-sky-100 text-sky-700', Diproses: 'bg-violet-100 text-violet-700', Selesai: 'bg-emerald-100 text-emerald-700', Ditolak: 'bg-rose-100 text-rose-700' };
   return map[s] || 'bg-gray-100';
 }
 function getGambarArray(item) {
-  if (!item || !item.gambar) return [];
-  if (Array.isArray(item.gambar)) return item.gambar;
+  if (!item || !item.gambar) return []; if (Array.isArray(item.gambar)) return item.gambar;
   try { return JSON.parse(item.gambar); } catch (e) { return []; }
 }
 
-// Komponen About
+// ========== KOMPONEN ==========
 const AboutPage = {
-  template: `
-    <div class="max-w-2xl mx-auto">
-      <div class="glass-card rounded-3xl p-8 text-center shadow-xl">
-        <i class="bi bi-shield-shaded text-6xl text-blue-600 dark:text-blue-300 mb-4 block"></i>
-        <h1 class="text-3xl font-extrabold" style="color: var(--text)">SI DILAN</h1>
-        <p class="text-lg" style="color: var(--text2)">Sistem Informasi Digital Melayani</p>
-        <p class="text-sm mt-2" style="color: var(--text2); opacity: 0.8">Versi 2.5 Terpadu</p>
-        <hr class="my-6 border-slate-300 dark:border-slate-600">
-        <div class="text-left space-y-3 text-sm" style="color: var(--text)">
-          <p><strong>🎯 Tujuan:</strong> Aplikasi terpadu untuk mendukung operasional <strong>Satuan Polisi Pamong Praja dan Kebakaran (Satpol PPK) Kabupaten Trenggalek</strong>.</p>
-          <p><strong>🛠 Teknologi:</strong> Vue.js, Tailwind CSS, Supabase (PostgreSQL), GitHub Pages</p>
-          <p><strong>📅 Mulai Dikembangkan:</strong> Juli 2026</p>
-          <p><strong>👨‍💻 Pengembang:</strong> Tim Satpol PPK Kab. Trenggalek</p>
-          <p><strong>📧 Kontak:</strong> miftachurrochim82@gmail.com</p>
-        </div>
-        <hr class="my-6 border-slate-300 dark:border-slate-600">
-        <div class="grid grid-cols-2 gap-4 text-sm">
-          <div class="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
-            <i class="bi bi-whatsapp text-green-500 text-2xl"></i>
-            <p class="font-bold mt-2" style="color: var(--text)">Satpol PP</p>
-            <p class="text-blue-700 dark:text-blue-300">08113505113</p>
-          </div>
-          <div class="bg-red-50 dark:bg-red-900/30 rounded-xl p-4 border border-red-200 dark:border-red-700">
-            <i class="bi bi-whatsapp text-red-500 text-2xl"></i>
-            <p class="font-bold mt-2" style="color: var(--text)">Damkar</p>
-            <p class="text-red-700 dark:text-red-300">081230755881</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
+  template: `<div class="max-w-2xl mx-auto"><div class="glass-card rounded-3xl p-8 text-center shadow-xl"><i class="bi bi-shield-shaded text-6xl text-blue-600 dark:text-blue-300 mb-4 block"></i><h1 class="text-3xl font-extrabold" style="color: var(--text)">SI DILAN</h1><p class="text-lg" style="color: var(--text2)">Sistem Informasi Digital Melayani</p><p class="text-sm mt-2" style="color: var(--text2); opacity: 0.8">Versi 2.5 Terpadu</p><hr class="my-6 border-slate-300 dark:border-slate-600"><div class="text-left space-y-3 text-sm" style="color: var(--text)"><p><strong>🎯 Tujuan:</strong> Aplikasi terpadu untuk mendukung operasional <strong>Satuan Polisi Pamong Praja dan Kebakaran (Satpol PPK) Kabupaten Trenggalek</strong>.</p><p><strong>🛠 Teknologi:</strong> Vue.js, Tailwind CSS, Supabase (PostgreSQL), GitHub Pages</p><p><strong>📅 Mulai Dikembangkan:</strong> Juli 2026</p><p><strong>👨‍💻 Pengembang:</strong> Tim Satpol PPK Kab. Trenggalek</p><p><strong>📧 Kontak:</strong> miftachurrochim82@gmail.com</p></div><hr class="my-6 border-slate-300 dark:border-slate-600"><div class="grid grid-cols-2 gap-4 text-sm"><div class="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700"><i class="bi bi-whatsapp text-green-500 text-2xl"></i><p class="font-bold mt-2" style="color: var(--text)">Satpol PP</p><p class="text-blue-700 dark:text-blue-300">08113505113</p></div><div class="bg-red-50 dark:bg-red-900/30 rounded-xl p-4 border border-red-200 dark:border-red-700"><i class="bi bi-whatsapp text-red-500 text-2xl"></i><p class="font-bold mt-2" style="color: var(--text)">Damkar</p><p class="text-red-700 dark:text-red-300">081230755881</p></div></div></div></div>`
 };
 
-// Komponen Settings
 const SettingsPage = {
-  template: `
-    <div class="max-w-2xl mx-auto space-y-6">
-      <div class="glass-card rounded-2xl p-6">
-        <h3 class="text-lg font-bold mb-4" style="color: var(--text2)"><i class="bi bi-building"></i> Identitas Instansi</h3>
-        <div class="space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Instansi</label><input v-model="form.SETTING_NAMA_INSTANSI" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-            <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Kabupaten</label><input v-model="form.SETTING_NAMA_KABUPATEN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-          </div>
-          <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Satuan</label><input v-model="form.SETTING_NAMA_SATUAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-          <div><label class="text-xs font-bold" style="color: var(--text2)">Alamat</label><textarea v-model="form.SETTING_ALAMAT" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></textarea></div>
-        </div>
-      </div>
-
-      <div class="glass-card rounded-2xl p-6">
-        <h3 class="text-lg font-bold mb-4" style="color: var(--text2)"><i class="bi bi-person-badge"></i> Data Pejabat</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Kepala</label><input v-model="form.SETTING_NAMA_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-          <div><label class="text-xs font-bold" style="color: var(--text2)">NIP Kepala</label><input v-model="form.SETTING_NIP_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-          <div><label class="text-xs font-bold" style="color: var(--text2)">Pangkat Kepala</label><input v-model="form.SETTING_PANGKAT_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-          <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Admin</label><input v-model="form.SETTING_NAMA_ADMIN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-          <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Bendahara</label><input v-model="form.SETTING_NAMA_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-          <div><label class="text-xs font-bold" style="color: var(--text2)">NIP Bendahara</label><input v-model="form.SETTING_NIP_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
-        </div>
-      </div>
-
-      <div class="flex justify-end gap-3">
-        <button @click="$emit('load')" :disabled="loading" class="bg-gray-200 dark:bg-gray-600 dark:text-white px-5 py-2.5 rounded-lg text-sm font-bold">Muat Ulang</button>
-        <button @click="$emit('save')" :disabled="loading || saving" class="btn-primary">
-          <span v-if="saving"><i class="bi bi-hourglass-split animate-spin"></i> Menyimpan...</span>
-          <span v-else>Simpan Pengaturan</span>
-        </button>
-      </div>
-    </div>
-  `,
+  template: `<div class="max-w-2xl mx-auto space-y-6"><div class="glass-card rounded-2xl p-6"><h3 class="text-lg font-bold mb-4" style="color: var(--text2)"><i class="bi bi-building"></i> Identitas Instansi</h3><div class="space-y-3"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label class="text-xs font-bold" style="color: var(--text2)">Nama Instansi</label><input v-model="form.SETTING_NAMA_INSTANSI" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div><div><label class="text-xs font-bold" style="color: var(--text2)">Nama Kabupaten</label><input v-model="form.SETTING_NAMA_KABUPATEN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div></div><div><label class="text-xs font-bold" style="color: var(--text2)">Nama Satuan</label><input v-model="form.SETTING_NAMA_SATUAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div><div><label class="text-xs font-bold" style="color: var(--text2)">Alamat</label><textarea v-model="form.SETTING_ALAMAT" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></textarea></div></div></div><div class="glass-card rounded-2xl p-6"><h3 class="text-lg font-bold mb-4" style="color: var(--text2)"><i class="bi bi-person-badge"></i> Data Pejabat</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label class="text-xs font-bold" style="color: var(--text2)">Nama Kepala</label><input v-model="form.SETTING_NAMA_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div><div><label class="text-xs font-bold" style="color: var(--text2)">NIP Kepala</label><input v-model="form.SETTING_NIP_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div><div><label class="text-xs font-bold" style="color: var(--text2)">Pangkat Kepala</label><input v-model="form.SETTING_PANGKAT_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div><div><label class="text-xs font-bold" style="color: var(--text2)">Nama Admin</label><input v-model="form.SETTING_NAMA_ADMIN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div><div><label class="text-xs font-bold" style="color: var(--text2)">Nama Bendahara</label><input v-model="form.SETTING_NAMA_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div><div><label class="text-xs font-bold" style="color: var(--text2)">NIP Bendahara</label><input v-model="form.SETTING_NIP_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div></div></div><div class="flex justify-end gap-3"><button @click="$emit('load')" :disabled="loading" class="bg-gray-200 dark:bg-gray-600 dark:text-white px-5 py-2.5 rounded-lg text-sm font-bold">Muat Ulang</button><button @click="$emit('save')" :disabled="loading || saving" class="btn-primary"><span v-if="saving"><i class="bi bi-hourglass-split animate-spin"></i> Menyimpan...</span><span v-else>Simpan Pengaturan</span></button></div></div>`,
   props: ['form', 'loading', 'saving'],
   emits: ['load', 'save']
 };
 
-// Vue App
-const { createApp } = Vue;
-
-createApp({
-  components: { AboutPage, SettingsPage },
+// ========== KOMPONEN MASTER DATA ==========
+const MasterPage = {
+  template: `
+    <div>
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button v-for="t in tabs" :key="t.key" @click="activeTab = t.key" class="tab-btn" :class="{ active: activeTab === t.key }">{{ t.label }}</button>
+      </div>
+      <div class="glass-card rounded-2xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 class="text-lg font-bold" style="color: var(--text2)">{{ currentTabLabel }} <span class="text-sm font-normal opacity-60">({{ filteredData.length }})</span></h2>
+          <div class="flex gap-2">
+            <input v-model="searchQuery" placeholder="Cari..." class="border rounded-lg px-3 py-1.5 text-xs bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 w-40">
+            <button @click="showForm = !showForm" class="btn-primary"><i :class="showForm ? 'bi bi-x-lg' : 'bi bi-plus-lg'"></i> {{ showForm ? 'Tutup' : 'Tambah' }}</button>
+          </div>
+        </div>
+        <div v-if="showForm" class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <template v-for="col in currentColumns.filter(c => c.key !== 'id' && c.key !== 'created_at')" :key="col.key">
+            <div :class="col.span === 2 ? 'sm:col-span-2' : ''">
+              <label class="text-xs font-bold" style="color: var(--text2)">{{ col.label }} <span v-if="col.required" class="text-red-500">*</span></label>
+              <input v-if="col.type === 'text'" v-model="formData[col.key]" :required="col.required" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+              <input v-else-if="col.type === 'number'" type="number" v-model.number="formData[col.key]" :required="col.required" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+              <input v-else-if="col.type === 'email'" type="email" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600">
+              <select v-else-if="col.type === 'select'" v-model="formData[col.key]" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"><option value="">-- Pilih --</option><option v-for="opt in col.options" :key="opt" :value="opt">{{ opt }}</option></select>
+              <textarea v-else-if="col.type === 'textarea'" v-model="formData[col.key]" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></textarea>
+            </div>
+          </template>
+          <div class="sm:col-span-2 flex gap-2 justify-end">
+            <button @click="cancelForm" class="bg-gray-300 dark:bg-gray-600 dark:text-white px-4 py-2 rounded-lg text-sm font-bold">Batal</button>
+            <button @click="saveItem" :disabled="saving" class="btn-primary"><span v-if="saving"><i class="bi bi-hourglass-split animate-spin"></i> Menyimpan...</span><span v-else>{{ editingId ? 'Update' : 'Simpan' }}</span></button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table>
+            <thead><tr><th v-for="col in currentColumns" :key="col.key">{{ col.label }}</th><th class="text-center">Aksi</th></tr></thead>
+            <tbody>
+              <tr v-for="item in filteredData" :key="item.id">
+                <td v-for="col in currentColumns" :key="col.key">
+                  <span v-if="col.key === 'status'" :class="item[col.key] === 'Aktif' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 px-2 py-0.5 rounded-full text-xs font-bold' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 px-2 py-0.5 rounded-full text-xs font-bold'">{{ item[col.key] || '-' }}</span>
+                  <span v-else>{{ item[col.key] || '-' }}</span>
+                </td>
+                <td class="text-center"><div class="flex gap-1 justify-center"><button @click="editItem(item)" class="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900 p-1.5 rounded" title="Edit"><i class="bi bi-pencil-square"></i></button><button @click="requestDelete(item.id)" class="text-red-500 hover:bg-red-50 dark:hover:bg-red-900 p-1.5 rounded" title="Hapus"><i class="bi bi-trash"></i></button></div></td>
+              </tr>
+              <tr v-if="!filteredData.length"><td :colspan="currentColumns.length + 1" class="text-center py-6" style="color: var(--text2)">Belum ada data</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Modal Hapus -->
+      <div v-if="deleteModal.show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="deleteModal.show = false">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl"><h3 class="text-lg font-bold" style="color: var(--text)">Konfirmasi Hapus</h3><p class="text-sm mt-2" style="color: var(--text2)">Yakin ingin menghapus data ini?</p><div class="flex justify-end gap-3 mt-6"><button @click="deleteModal.show = false" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 dark:text-white text-sm font-bold">Batal</button><button @click="confirmDelete" class="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-bold">Hapus</button></div></div>
+      </div>
+    </div>
+  `,
+  props: {
+    kategoriList: Array, personilList: Array, unitKerjaList: Array, layananList: Array,
+    lokasiList: Array, sopList: Array, kendaraanList: Array, peralatanList: Array, standarBiayaList: Array
+  },
+  emits: ['data-updated'],
   data() {
     return {
-      session: null,
-      loginEmail: '',
-      loginPassword: '',
-      loginLoading: false,
-      loginError: '',
-      currentPage: 'dashboard',
-      expandedGroup: 'ops',
-      sidebarOpen: true,
+      tabs: [
+        { key: 'kategori_pengaduan', label: 'Kategori', columns: [{ key: 'bidang', label: 'Bidang', type: 'text', required: true },{ key: 'permasalahan', label: 'Permasalahan', type: 'text', required: true },{ key: 'deskripsi', label: 'Deskripsi', type: 'textarea', span: 2 },{ key: 'prioritas', label: 'Prioritas', type: 'select', options: ['Rendah','Sedang','Tinggi'] },{ key: 'sla_jam', label: 'SLA (Jam)', type: 'number' },{ key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }] },
+        { key: 'personil', label: 'Personil', columns: [{ key: 'nip', label: 'NIP', type: 'text', required: true },{ key: 'nama', label: 'Nama', type: 'text', required: true },{ key: 'pangkat', label: 'Pangkat', type: 'select', options: ['Pembina Utama Muda (IV/c)','Pembina (IV/a)','Penata Tk.I (III/d)','Penata (III/c)','Penata Muda Tk.I (III/b)','Penata Muda (III/a)','Pengatur Tk.I (II/d)','Pengatur (II/c)','Pengatur Muda Tk.I (II/b)','Pengatur Muda (II/a)'] },{ key: 'jabatan', label: 'Jabatan', type: 'text' },{ key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },{ key: 'regu', label: 'Regu', type: 'text' },{ key: 'kontak', label: 'Kontak', type: 'text' },{ key: 'email', label: 'Email', type: 'email' },{ key: 'jenis', label: 'Jenis', type: 'select', options: ['Manajerial','Non-Manajerial'] },{ key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }] },
+        { key: 'unit_kerja', label: 'Unit Kerja', columns: [{ key: 'nama_unit', label: 'Nama Unit', type: 'text', required: true },{ key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }] },
+        { key: 'layanan', label: 'Layanan', columns: [{ key: 'unit_kerja', label: 'Unit Kerja', type: 'text' },{ key: 'kategori', label: 'Kategori', type: 'text' },{ key: 'nama_layanan', label: 'Nama Layanan', type: 'text', required: true },{ key: 'deskripsi', label: 'Deskripsi', type: 'textarea', span: 2 },{ key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }] },
+        { key: 'lokasi', label: 'Lokasi', columns: [{ key: 'nama_lokasi', label: 'Nama Lokasi', type: 'text', required: true },{ key: 'kecamatan', label: 'Kecamatan', type: 'text' },{ key: 'desa_kelurahan', label: 'Desa/Kel', type: 'text' },{ key: 'alamat', label: 'Alamat', type: 'textarea', span: 2 },{ key: 'kerawanan', label: 'Kerawanan', type: 'select', options: ['Rendah','Sedang','Tinggi'] },{ key: 'koordinat', label: 'Koordinat', type: 'text' }] },
+        { key: 'sop', label: 'SOP', columns: [{ key: 'kode_sop', label: 'Kode SOP', type: 'text', required: true },{ key: 'layanan', label: 'Layanan', type: 'text' },{ key: 'nama_sop', label: 'Nama SOP', type: 'text', required: true },{ key: 'isi_instruksi', label: 'Instruksi', type: 'textarea', span: 2 },{ key: 'tingkat_risiko', label: 'Risiko', type: 'select', options: ['Rendah','Sedang','Tinggi'] },{ key: 'status', label: 'Status', type: 'select', options: ['Aktif','Nonaktif'] }] },
+        { key: 'kendaraan', label: 'Kendaraan', columns: [{ key: 'nama', label: 'Nama', type: 'text', required: true },{ key: 'plat', label: 'Plat', type: 'text' },{ key: 'tipe', label: 'Tipe', type: 'text' },{ key: 'jenis', label: 'Jenis', type: 'select', options: ['MPV','SUV','Pickup','Truk','Bus','Motor','Lainnya'] },{ key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Prima','Servis','Rusak'] },{ key: 'penanggung_jawab', label: 'PJ', type: 'text' }] },
+        { key: 'peralatan', label: 'Peralatan', columns: [{ key: 'nama', label: 'Nama', type: 'text', required: true },{ key: 'merk', label: 'Merk', type: 'text' },{ key: 'kategori', label: 'Kategori', type: 'select', options: ['Komunikasi','Pelindung Diri','Penerangan','Pertahanan','Pemadaman','Penyelamatan','Kesehatan','Lainnya'] },{ key: 'alokasi', label: 'Alokasi', type: 'select', options: ['Individu','Regu','Kendaraan','Markas'] },{ key: 'kondisi', label: 'Kondisi', type: 'select', options: ['Baik','Rusak Ringan','Rusak Berat'] }] },
+        { key: 'standar_biaya', label: 'Standar Biaya', columns: [{ key: 'golongan', label: 'Golongan', type: 'text', required: true },{ key: 'jenis_perjalanan', label: 'Jenis Perjalanan', type: 'select', options: ['Dalam Daerah','Luar Daerah (Prov)','Luar Provinsi'] },{ key: 'uang_harian', label: 'Uang Harian', type: 'number' },{ key: 'uang_representasi', label: 'Uang Representasi', type: 'number' },{ key: 'transport', label: 'Transport', type: 'number' },{ key: 'penginapan', label: 'Penginapan', type: 'number' },{ key: 'keterangan', label: 'Keterangan', type: 'textarea', span: 2 }] }
+      ],
+      activeTab: 'kategori_pengaduan',
+      showForm: false, formData: {}, editingId: null, searchQuery: '',
+      saving: false, deleteModal: { show: false, id: null }
+    }
+  },
+  computed: {
+    currentTab() { return this.tabs.find(t => t.key === this.activeTab); },
+    currentColumns() { return this.currentTab?.columns || []; },
+    currentTabLabel() { return this.currentTab?.label || ''; },
+    currentData() { return this[this.dataMap[this.activeTab]] || []; },
+    dataMap() { return { kategori_pengaduan: 'kategoriList', personil: 'personilList', unit_kerja: 'unitKerjaList', layanan: 'layananList', lokasi: 'lokasiList', sop: 'sopList', kendaraan: 'kendaraanList', peralatan: 'peralatanList', standar_biaya: 'standarBiayaList' }; },
+    filteredData() {
+      let d = this.currentData;
+      if (!this.searchQuery) return d;
+      const kw = this.searchQuery.toLowerCase();
+      return d.filter(item => this.currentColumns.some(col => { const val = item[col.key]; return val !== null && val !== undefined && String(val).toLowerCase().includes(kw); }));
+    }
+  },
+  methods: {
+    addToast(m, t) { this.$root.addToast(m, t); },
+    showLoading(msg) { this.$root.showLoading(msg); },
+    hideLoading() { this.$root.hideLoading(); },
+    cancelForm() { this.showForm = false; this.formData = {}; this.editingId = null; },
+    editItem(item) {
+      this.editingId = item.id;
+      const allowedKeys = this.currentColumns.map(c => c.key);
+      this.formData = {}; allowedKeys.forEach(k => { this.formData[k] = item[k] !== undefined ? item[k] : ''; });
+      this.showForm = true;
+    },
+    requestDelete(id) { this.deleteModal = { show: true, id }; },
+    async confirmDelete() {
+      if (!this.deleteModal.id) return;
+      this.showLoading('Menghapus...');
+      try {
+        const { error } = await supabaseClient.from(this.activeTab).delete().eq('id', this.deleteModal.id);
+        if (error) throw error;
+        this.addToast('Data berhasil dihapus!');
+        this.$emit('data-updated');
+      } catch (e) { this.addToast('Gagal menghapus: ' + e.message, 'error'); }
+      finally { this.deleteModal = { show: false, id: null }; this.hideLoading(); }
+    },
+    async saveItem() {
+      const missing = this.currentColumns.filter(c => c.required && !this.formData[c.key]);
+      if (missing.length) { this.addToast('Field wajib belum diisi: ' + missing.map(c => c.label).join(', '), 'error'); return; }
+      this.saving = true; this.showLoading('Menyimpan...');
+      try {
+        const payload = { ...this.formData };
+        this.currentColumns.forEach(c => { if (c.type === 'number' && payload[c.key] !== '') payload[c.key] = Number(payload[c.key]); });
+        delete payload.id; delete payload.created_at;
+        let result;
+        if (this.editingId) result = await supabaseClient.from(this.activeTab).update(payload).eq('id', this.editingId);
+        else result = await supabaseClient.from(this.activeTab).insert(payload);
+        if (result.error) throw result.error;
+        this.addToast(this.editingId ? 'Data berhasil diupdate!' : 'Data berhasil disimpan!');
+        this.cancelForm();
+        this.$emit('data-updated');
+      } catch (e) { this.addToast('Gagal menyimpan: ' + e.message, 'error'); }
+      finally { this.saving = false; this.hideLoading(); }
+    }
+  }
+};
+
+// ========== APLIKASI UTAMA ==========
+const { createApp } = Vue;
+createApp({
+  components: { AboutPage, SettingsPage, MasterPage },
+  data() {
+    return {
+      session: null, loginEmail: '', loginPassword: '', loginLoading: false, loginError: '',
+      currentPage: 'dashboard', expandedGroup: 'ops',
+      sidebarOpen: true, sidebarMinimized: false,
       isMobile: window.innerWidth < 768,
       isDark: localStorage.getItem('darkMode') === 'true',
-      toasts: [],
-      loadingVisible: false,
-      loadingMessage: 'Memuat data...',
-      pengaduanList: [],
-      suratTugasList: [],
-      kategoriList: [],
-      personilList: [],
-      unitKerjaList: [],
-      layananList: [],
-      sopList: [],
-      kendaraanList: [],
-      peralatanList: [],
-      lokasiList: [],
-      standarBiayaList: [],
-      laporanList: [],
-      settingsLoading: false,
-      settingsSaving: false,
+      toasts: [], loadingVisible: false, loadingMessage: 'Memuat data...',
+      kategoriList:[], personilList:[], unitKerjaList:[], layananList:[], sopList:[], kendaraanList:[], peralatanList:[], lokasiList:[], standarBiayaList:[], pengaduanList:[], suratTugasList:[], laporanList:[],
+      settingsLoading: false, settingsSaving: false,
       settingsForm: {
         SETTING_NAMA_INSTANSI:'', SETTING_NAMA_KABUPATEN:'', SETTING_NAMA_SATUAN:'', SETTING_ALAMAT:'',
-        SETTING_LOGO_KIRI:'', SETTING_LOGO_KANAN:'',
-        SETTING_NAMA_KEPALA:'', SETTING_NIP_KEPALA:'', SETTING_PANGKAT_KEPALA:'',
-        SETTING_NAMA_ADMIN:'', SETTING_NAMA_BENDAHARA:'', SETTING_NIP_BENDAHARA:'',
-        SETTING_JENIS_PERJALANAN:'Dalam Daerah',
-        SETTING_NOTIFIKASI:false, SETTING_AUTO_ASSIGN:false, SETTING_PUBLIC_VIEW:true, SETTING_WEEKLY_REPORT:true,
-        SETTING_WA_SATPOL:'', SETTING_WA_DAMKAR:'', SETTING_IG:'', SETTING_FB:''
+        SETTING_LOGO_KIRI:'', SETTING_LOGO_KANAN:'', SETTING_NAMA_KEPALA:'', SETTING_NIP_KEPALA:'',
+        SETTING_PANGKAT_KEPALA:'', SETTING_NAMA_ADMIN:'', SETTING_NAMA_BENDAHARA:'', SETTING_NIP_BENDAHARA:'',
+        SETTING_JENIS_PERJALANAN:'Dalam Daerah', SETTING_NOTIFIKASI:false, SETTING_AUTO_ASSIGN:false,
+        SETTING_PUBLIC_VIEW:true, SETTING_WEEKLY_REPORT:true, SETTING_WA_SATPOL:'', SETTING_WA_DAMKAR:'', SETTING_IG:'', SETTING_FB:''
       }
     }
   },
   computed: {
     pageTitle() {
-      return {
-        dashboard: 'Dashboard', pengaduan: 'Pengaduan', st: 'Surat Tugas',
-        laporan: 'Laporan', peta: 'Peta & Crosstab', sppd: 'Cetak SPPD',
-        master: 'Master Data', settings: 'Pengaturan', about: 'Tentang Aplikasi'
-      }[this.currentPage] || 'Dashboard';
+      const t = { dashboard:'Dashboard', pengaduan:'Pengaduan', st:'Surat Tugas', laporan:'Laporan', peta:'Peta & Crosstab', sppd:'Cetak SPPD', master:'Master Data', settings:'Pengaturan', about:'Tentang Aplikasi' };
+      return t[this.currentPage] || 'Dashboard';
     },
     pageSubtitle() {
-      return {
-        dashboard: 'Ringkasan operasional', pengaduan: 'Form & riwayat',
-        st: 'Buat & pantau ST', laporan: 'Laporan kegiatan',
-        peta: 'Analisis sebaran', sppd: 'SPPD & Kwitansi',
-        master: 'Kelola data referensi', settings: 'Konfigurasi aplikasi',
-        about: 'Informasi aplikasi'
-      }[this.currentPage] || '';
-    },
-    currentComponent() {
-      if (this.currentPage === 'about') return 'AboutPage';
-      if (this.currentPage === 'settings') return 'SettingsPage';
-      return 'div'; // placeholder untuk halaman lain
+      const s = { dashboard:'Ringkasan operasional', pengaduan:'Form & riwayat', st:'Buat & pantau ST', laporan:'Laporan kegiatan', peta:'Analisis sebaran', sppd:'SPPD & Kwitansi', master:'Kelola data referensi', settings:'Konfigurasi aplikasi', about:'Informasi aplikasi' };
+      return s[this.currentPage] || '';
     }
   },
   methods: {
-    addToast(message, type = 'success') {
-      const id = Date.now();
-      this.toasts.push({ id, message, type });
-      setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000);
-    },
-    showLoading(msg) {
-      this.loadingVisible = true;
-      this.loadingMessage = msg || 'Memuat data...';
-    },
+    addToast(m, t) { const id = Date.now(); this.toasts.push({ id, message: m, type: t || 'success' }); setTimeout(() => { this.toasts = this.toasts.filter(x => x.id !== id); }, 3000); },
+    showLoading(msg) { this.loadingVisible = true; this.loadingMessage = msg || 'Memuat data...'; },
     hideLoading() { this.loadingVisible = false; },
-    toggleDarkMode() {
-      this.isDark = !this.isDark;
-      localStorage.setItem('darkMode', this.isDark);
-      document.documentElement.classList.toggle('dark', this.isDark);
-    },
+    toggleDarkMode() { this.isDark = !this.isDark; localStorage.setItem('darkMode', this.isDark); document.documentElement.classList.toggle('dark', this.isDark); },
     async handleLogin() {
-      this.loginLoading = true;
-      this.loginError = '';
+      this.loginLoading = true; this.loginError = '';
       try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email: this.loginEmail,
-          password: this.loginPassword
-        });
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email: this.loginEmail, password: this.loginPassword });
         if (error) throw error;
-        this.session = data.session;
-        this.addToast('Login berhasil');
-        await this.loadAllData();
+        this.session = data.session; this.addToast('Login berhasil'); await this.loadAllData();
       } catch (e) { this.loginError = e.message; }
       finally { this.loginLoading = false; }
     },
-    async handleLogout() {
-      await supabaseClient.auth.signOut();
-      this.session = null;
-      this.addToast('Anda telah logout', 'info');
-    },
+    async handleLogout() { await supabaseClient.auth.signOut(); this.session = null; this.addToast('Anda telah logout', 'info'); },
     async loadAllData() {
       this.showLoading('Memuat data...');
       try {
         const [kat, pet, unit, lay, sop, ken, alt, lok, std, adu, st, lap] = await Promise.all([
-          supabaseClient.from('kategori_pengaduan').select('*').eq('status','Aktif'),
-          supabaseClient.from('personil').select('*').eq('status','Aktif'),
-          supabaseClient.from('unit_kerja').select('*').eq('status','Aktif'),
-          supabaseClient.from('layanan').select('*').eq('status','Aktif'),
-          supabaseClient.from('sop').select('*').eq('status','Aktif'),
-          supabaseClient.from('kendaraan').select('*'),
-          supabaseClient.from('peralatan').select('*'),
-          supabaseClient.from('lokasi').select('*'),
-          supabaseClient.from('standar_biaya').select('*'),
-          supabaseClient.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang, prioritas)').order('tanggal_lapor',{ascending:false}),
-          supabaseClient.from('surat_tugas').select('*').order('created_at',{ascending:false}),
-          supabaseClient.from('laporan').select('*').order('tanggal_laporan',{ascending:false})
+          supabaseClient.from('kategori_pengaduan').select('*').eq('status','Aktif'), supabaseClient.from('personil').select('*').eq('status','Aktif'),
+          supabaseClient.from('unit_kerja').select('*').eq('status','Aktif'), supabaseClient.from('layanan').select('*').eq('status','Aktif'),
+          supabaseClient.from('sop').select('*').eq('status','Aktif'), supabaseClient.from('kendaraan').select('*'),
+          supabaseClient.from('peralatan').select('*'), supabaseClient.from('lokasi').select('*'),
+          supabaseClient.from('standar_biaya').select('*'), supabaseClient.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang, prioritas)').order('tanggal_lapor',{ascending:false}),
+          supabaseClient.from('surat_tugas').select('*').order('created_at',{ascending:false}), supabaseClient.from('laporan').select('*').order('tanggal_laporan',{ascending:false})
         ]);
-        this.kategoriList = kat.data||[]; this.personilList = pet.data||[];
-        this.unitKerjaList = unit.data||[]; this.layananList = lay.data||[];
-        this.sopList = sop.data||[]; this.kendaraanList = ken.data||[];
-        this.peralatanList = alt.data||[]; this.lokasiList = lok.data||[];
-        this.standarBiayaList = std.data||[]; this.pengaduanList = adu.data||[];
-        this.suratTugasList = st.data||[]; this.laporanList = lap.data||[];
-      } catch (e) { this.addToast('Gagal memuat data: '+e.message, 'error'); }
+        this.kategoriList=kat.data||[]; this.personilList=pet.data||[]; this.unitKerjaList=unit.data||[]; this.layananList=lay.data||[];
+        this.sopList=sop.data||[]; this.kendaraanList=ken.data||[]; this.peralatanList=alt.data||[]; this.lokasiList=lok.data||[];
+        this.standarBiayaList=std.data||[]; this.pengaduanList=adu.data||[]; this.suratTugasList=st.data||[]; this.laporanList=lap.data||[];
+      } catch(e) { this.addToast('Gagal memuat data: '+e.message, 'error'); }
       finally { this.hideLoading(); }
     },
     // Settings methods
@@ -541,23 +536,14 @@ createApp({
   async mounted() {
     if (this.isDark) document.documentElement.classList.add('dark');
     if (this.isMobile) this.sidebarOpen = false;
-    window.addEventListener('resize', () => {
-      this.isMobile = window.innerWidth < 768;
-      if (!this.isMobile) this.sidebarOpen = true;
-    });
-
+    window.addEventListener('resize', () => { this.isMobile = window.innerWidth < 768; if (!this.isMobile) this.sidebarOpen = true; });
     const { data: { session } } = await supabaseClient.auth.getSession();
     this.session = session;
-    if (session) {
-      await this.loadAllData();
-      this.loadSettings(); // muat pengaturan di background
-    }
-
+    if (session) { await this.loadAllData(); this.loadSettings(); }
     document.getElementById('app-loading')?.classList.add('hide');
     console.log('🚀 SI DILAN ready');
   }
 }).mount('#app');
 </script>
-
 </body>
 </html>
