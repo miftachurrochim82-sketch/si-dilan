@@ -166,19 +166,37 @@ createApp({
       }[this.currentPage];
     },
     currentComponent() {
-      // Untuk sementara tampilkan div kosong; nanti kita ganti dengan komponen sesungguhnya
-      return { dashboard: 'div', pengaduan: 'div', st: 'div', laporan: 'div', peta: 'div', sppd: 'div', master: 'div', settings: 'div', about: 'div' }[this.currentPage];
+      return {
+        dashboard: 'div', pengaduan: 'div', st: 'div', laporan: 'div',
+        peta: 'div', sppd: 'div', master: 'div', settings: 'div', about: 'div'
+      }[this.currentPage];
     }
   },
   methods: {
-    addToast(m, t) { this.$refs.toastContainer.addToast(m, t); },
-    showLoading(msg) { this.$refs.loadingOverlay.open(msg); },
-    hideLoading() { this.$refs.loadingOverlay.close(); },
+    // Toast
+    addToast(m, t) {
+      this.$refs.toastContainer?.addToast(m, t);
+    },
+    // Loading (dengan pengaman)
+    showLoading(msg) {
+      if (this.$refs.loadingOverlay) {
+        this.$refs.loadingOverlay.open(msg);
+      } else {
+        console.warn('LoadingOverlay belum siap, pesan:', msg);
+      }
+    },
+    hideLoading() {
+      if (this.$refs.loadingOverlay) {
+        this.$refs.loadingOverlay.close();
+      }
+    },
+    // Dark Mode
     toggleDarkMode() {
       this.isDark = !this.isDark;
       localStorage.setItem('darkMode', this.isDark);
       document.documentElement.classList.toggle('dark', this.isDark);
     },
+    // Auth
     async handleLogin() {
       this.loginLoading = true;
       this.loginError = '';
@@ -202,6 +220,7 @@ createApp({
       this.session = null;
       this.addToast('Anda telah logout', 'info');
     },
+    // Data
     async loadAllData() {
       this.showLoading('Memuat data...');
       try {
@@ -233,6 +252,7 @@ createApp({
         this.hideLoading();
       }
     },
+    // Helpers
     formatDate: window.formatDate,
     statusBadge: window.statusBadge,
     getGambarArray: window.getGambarArray
@@ -244,6 +264,9 @@ createApp({
       this.isMobile = window.innerWidth < 768;
       if (!this.isMobile) this.sidebarOpen = true;
     });
+
+    // Tunggu render selesai sebelum memuat data
+    await this.$nextTick();
 
     const { data: { session } } = await supabase.auth.getSession();
     this.session = session;
