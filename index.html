@@ -231,6 +231,16 @@
 <script src="components/loading.js"></script>
 
 <!-- Dashboard Logic -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/supabase.js"></script>
+<script src="assets/js/utils.js"></script>
+<script src="components/sidebar.js"></script>
+<script src="components/toast.js"></script>
+<script src="components/loading.js"></script>
 <script>
 const { createApp, ref, reactive, computed, watch, nextTick, onMounted } = Vue;
 
@@ -244,19 +254,17 @@ function hideAppLoader() {
 }
 
 createApp({
+  components: { AppSidebar, ToastContainer, LoadingOverlay },
   data() {
     return {
-      // Auth
       session: null,
       loginEmail: '',
       loginPassword: '',
       loginLoading: false,
       loginError: '',
-      // Data
       pengaduan: [],
       suratTugas: [],
       loadError: '',
-      // UI
       sidebarOpen: true,
       isMobile: window.innerWidth < 768,
       dashFilterTahun: String(new Date().getFullYear()),
@@ -301,7 +309,6 @@ createApp({
     }
   },
   methods: {
-    // Auth
     async handleLogin() {
       this.loginLoading = true;
       this.loginError = '';
@@ -324,15 +331,13 @@ createApp({
       this.session = null;
       this.$refs.toastContainer.addToast('Anda telah logout', 'info');
     },
-    // Dark Mode
     toggleDarkMode() {
       this.isDark = !this.isDark;
       localStorage.setItem('darkMode', this.isDark);
       document.documentElement.classList.toggle('dark', this.isDark);
     },
-    // Data
     async loadData() {
-      this.$loading.show('Memuat data dashboard...');
+      this.$refs.loadingOverlay.open('Memuat data dashboard...');
       try {
         const [adu, st] = await Promise.all([
           window.supabase.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang, prioritas)').order('tanggal_lapor', { ascending: false }),
@@ -346,7 +351,7 @@ createApp({
         this.loadError = 'Gagal memuat data: ' + e.message;
         this.$refs.toastContainer.addToast(this.loadError, 'error');
       } finally {
-        this.$loading.hide();
+        this.$refs.loadingOverlay.close();
       }
     },
     async updateStatus(id, newStatus) {
@@ -402,77 +407,51 @@ createApp({
         this.$refs.toastContainer.addToast('❌ Gagal export: ' + e.message, 'error');
       }
     },
-    // Charts
     renderCharts() {
       this.$nextTick(() => {
-        // Chart Bulanan
         const c1 = document.getElementById('chartBulanan');
         if (c1) {
           this._chartBulanan?.destroy();
           this._chartBulanan = new Chart(c1, {
             type: 'bar',
             data: this.chartBulananData,
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
           });
         }
-        // Chart Status
         const c2 = document.getElementById('chartStatus');
         if (c2 && this.chartStatusData.labels.length > 0) {
           this._chartStatus?.destroy();
           this._chartStatus = new Chart(c2, {
             type: 'doughnut',
             data: this.chartStatusData,
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
           });
         }
       });
     }
   },
   watch: {
-    filteredPengaduan: {
-      handler() { this.renderCharts(); },
-      deep: true
-    },
+    filteredPengaduan: { handler() { this.renderCharts(); }, deep: true },
     dashFilterTahun() { this.renderCharts(); }
   },
   async mounted() {
-    // Dark mode init
     if (this.isDark) document.documentElement.classList.add('dark');
-
-    // Sidebar mobile
     if (this.isMobile) this.sidebarOpen = false;
     window.addEventListener('resize', () => {
       this.isMobile = window.innerWidth < 768;
       if (!this.isMobile) this.sidebarOpen = true;
     });
-
-    // Auth check
     try {
       const { data: { session: currentSession } } = await window.supabase.auth.getSession();
       this.session = currentSession;
     } catch (e) {
       console.error('Auth check error:', e);
     }
-
-    // SELALU sembunyikan loading screen
     hideAppLoader();
-
-    // Load data jika sudah login
     if (this.session) {
       await this.loadData();
       this.renderCharts();
     }
-
-    // Watch login session
     this._unwatchSession = this.$watch('session', (newSession, oldSession) => {
       if (newSession && !oldSession) {
         this.loadData().then(() => this.renderCharts());
@@ -482,7 +461,6 @@ createApp({
         this.suratTugas = [];
       }
     });
-
     console.log('🚀 Dashboard ready');
   },
   beforeUnmount() {
@@ -492,6 +470,3 @@ createApp({
   }
 }).mount('#app');
 </script>
-
-</body>
-</html>
