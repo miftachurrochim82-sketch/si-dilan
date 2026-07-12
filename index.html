@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>SI DILAN Terpadu - Dashboard</title>
+  <title>SI DILAN Terpadu</title>
 
   <!-- Styles -->
   <link rel="stylesheet" href="assets/css/styles.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14' font-size='14'>📋</text></svg>">
 
   <style>
@@ -22,11 +23,41 @@
       color: white; transition: opacity 0.7s ease;
     }
     #app-loading.hide { opacity: 0; pointer-events: none; }
+    .toggle-switch {
+      width: 48px; height: 28px; border-radius: 14px; display: flex; align-items: center;
+      padding: 2px; cursor: pointer; transition: background 0.25s; border: none;
+    }
+    .toggle-switch.on { background: #2563eb; }
+    .toggle-switch.off { background: #cbd5e1; }
+    .toggle-switch .toggle-knob {
+      width: 24px; height: 24px; border-radius: 50%; background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.25s;
+    }
+    .toggle-switch.on .toggle-knob { transform: translateX(20px); }
+    .toggle-switch.off .toggle-knob { transform: translateX(0); }
+    .tab-btn {
+      padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      border: none; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    }
+    .tab-btn.active { background: #2563eb; color: white; }
+    .tab-btn:not(.active) { background: #e2e8f0; color: #475569; }
+    .dark .tab-btn:not(.active) { background: #334155; color: #94a3b8; }
+    .section-title {
+      font-size: 16px; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px;
+      border-bottom: 2px solid var(--border); color: var(--text2);
+    }
+    .map-container { height: 450px; border-radius: 16px; overflow: hidden; }
+    .legend {
+      background: white; padding: 8px 12px; border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 12px; line-height: 1.6;
+    }
+    .dark .legend { background: #1e293b; color: #e2e8f0; }
+    .legend i { width: 14px; height: 14px; display: inline-block; border-radius: 50%; margin-right: 6px; }
   </style>
 </head>
 <body>
 
-<!-- Loading Screen Awal -->
+<!-- Loading Screen -->
 <div id="app-loading">
   <div style="font-size: 28px; font-weight: 700; letter-spacing: 2px;">SI DILAN TERPADU</div>
   <div style="font-size: 12px; margin-top: 12px; opacity: 0.8;">Menyambungkan...</div>
@@ -70,23 +101,58 @@
   <div v-else>
     <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
 
-    <app-sidebar
-      :sidebar-open="sidebarOpen"
-      :is-mobile="isMobile"
-      current-page="dashboard"
-      :dark-mode="isDark"
-      @toggle-sidebar="sidebarOpen = !sidebarOpen"
-      @toggle-dark="toggleDarkMode"
-    ></app-sidebar>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+      <div class="sidebar-header">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
+          <button @click="sidebarOpen = !sidebarOpen" class="text-white/70 hover:text-white p-1"><i :class="sidebarOpen ? 'bi bi-chevron-left' : 'bi bi-chevron-right'" class="text-xl"></i></button>
+        </div>
+        <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+      </div>
+      <nav class="p-3 space-y-1">
+        <a href="#" @click.prevent="currentPage = 'dashboard'" class="sidebar-item" :class="{ active: currentPage === 'dashboard' }"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-group-title" @click="expandedGroup = expandedGroup === 'ops' ? '' : 'ops'"><span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span><i :class="expandedGroup === 'ops' ? 'bi bi-chevron-down' : 'bi bi-chevron-right'" class="text-xs"></i></div>
+        <div v-show="expandedGroup === 'ops'" class="sidebar-sub space-y-1">
+          <a href="#" @click.prevent="currentPage = 'pengaduan'" class="sidebar-item" :class="{ active: currentPage === 'pengaduan' }"><i class="bi bi-megaphone"></i> Pengaduan</a>
+          <a href="#" @click.prevent="currentPage = 'st'" class="sidebar-item" :class="{ active: currentPage === 'st' }"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+          <a href="#" @click.prevent="currentPage = 'laporan'" class="sidebar-item" :class="{ active: currentPage === 'laporan' }"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+          <a href="#" @click.prevent="currentPage = 'peta'" class="sidebar-item" :class="{ active: currentPage === 'peta' }"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
+          <a href="#" @click.prevent="currentPage = 'sppd'" class="sidebar-item" :class="{ active: currentPage === 'sppd' }"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-group-title" @click="expandedGroup = expandedGroup === 'adm' ? '' : 'adm'"><span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span><i :class="expandedGroup === 'adm' ? 'bi bi-chevron-down' : 'bi bi-chevron-right'" class="text-xs"></i></div>
+        <div v-show="expandedGroup === 'adm'" class="sidebar-sub space-y-1">
+          <a href="#" @click.prevent="currentPage = 'master'" class="sidebar-item" :class="{ active: currentPage === 'master' }"><i class="bi bi-server"></i> Master Data</a>
+          <a href="#" @click.prevent="currentPage = 'settings'" class="sidebar-item" :class="{ active: currentPage === 'settings' }"><i class="bi bi-gear"></i> Pengaturan</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <a href="#" @click.prevent="currentPage = 'about'" class="sidebar-item" :class="{ active: currentPage === 'about' }"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
+        <button @click="toggleDarkMode" class="sidebar-item w-full"><i :class="isDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i> {{ isDark ? 'Mode Terang' : 'Mode Gelap' }}</button>
+      </nav>
+    </aside>
 
-    <toast-container ref="toastContainer"></toast-container>
-    <loading-overlay ref="loadingOverlay"></loading-overlay>
+    <!-- TOAST & LOADING -->
+    <div class="toast-container">
+      <div v-for="t in toasts" :key="t.id" class="toast" :style="{ background: t.type === 'success' ? '#10b981' : t.type === 'error' ? '#ef4444' : '#3b82f6' }">
+        <i :class="t.type === 'success' ? 'bi bi-check-circle' : t.type === 'error' ? 'bi bi-x-circle' : 'bi bi-info-circle'"></i>
+        <span class="ml-2">{{ t.message }}</span>
+      </div>
+    </div>
+    <div v-if="loadingOverlay.show" class="loading-overlay">
+      <div class="loading-box">
+        <div class="spinner"></div>
+        <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ loadingOverlay.message }}</p>
+      </div>
+    </div>
 
+    <!-- MAIN CONTENT -->
     <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h1 class="text-2xl font-extrabold" style="color: var(--text)">Dashboard</h1>
-          <p class="text-sm" style="color: var(--text2)">Ringkasan operasional Satpol PPK Trenggalek</p>
+          <h1 class="text-2xl font-extrabold" style="color: var(--text)">{{ pageTitle }}</h1>
+          <p class="text-sm" style="color: var(--text2)">{{ pageSubtitle }}</p>
         </div>
         <div class="flex items-center gap-2">
           <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
@@ -94,122 +160,8 @@
         </div>
       </div>
 
-      <div v-if="loadError" class="bg-red-50 border border-red-300 text-red-700 px-5 py-4 rounded-xl mb-6">{{ loadError }}</div>
-
-      <!-- Filter Tahun -->
-      <div class="glass-card rounded-xl p-3 mb-6 flex flex-wrap items-center gap-3">
-        <span class="text-xs font-bold" style="color: var(--text2)"><i class="bi bi-funnel"></i> Filter:</span>
-        <select v-model="dashFilterTahun" class="text-xs border rounded-lg px-3 py-2 bg-white dark:bg-gray-800 dark:text-white" style="width:120px">
-          <option v-for="t in listTahun" :key="t" :value="t">{{ t }}</option>
-        </select>
-        <button @click="dashFilterTahun = String(new Date().getFullYear())" class="text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-2 py-1 rounded">Reset</button>
-        <span class="text-xs ml-auto bg-white dark:bg-gray-700 dark:text-white px-3 py-1 rounded-full font-semibold" style="color: var(--text2)">{{ filteredPengaduan.length }} pengaduan</span>
-      </div>
-
-      <!-- Stat Cards -->
-      <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-        <div class="glass-card stat-card rounded-2xl p-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="bi bi-inbox text-xl"></i></div><div><div class="text-2xl font-black">{{ filteredPengaduan.length }}</div><div class="text-[11px] opacity-90">Total</div></div></div></div>
-        <div class="glass-card stat-card rounded-2xl p-4 bg-gradient-to-br from-amber-400 to-orange-500 text-white"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="bi bi-exclamation-circle text-xl"></i></div><div><div class="text-2xl font-black">{{ pengaduanBaru }}</div><div class="text-[11px] opacity-90">Baru</div></div></div></div>
-        <div class="glass-card stat-card rounded-2xl p-4 bg-gradient-to-br from-violet-400 to-purple-500 text-white"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="bi bi-hourglass-split text-xl"></i></div><div><div class="text-2xl font-black">{{ pengaduanProses }}</div><div class="text-[11px] opacity-90">Diproses</div></div></div></div>
-        <div class="glass-card stat-card rounded-2xl p-4 bg-gradient-to-br from-emerald-400 to-teal-500 text-white"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="bi bi-check-circle text-xl"></i></div><div><div class="text-2xl font-black">{{ pengaduanSelesai }}</div><div class="text-[11px] opacity-90">Selesai</div></div></div></div>
-        <div class="glass-card stat-card rounded-2xl p-4 bg-gradient-to-br from-red-400 to-rose-500 text-white"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center"><i class="bi bi-exclamation-triangle text-xl"></i></div><div><div class="text-2xl font-black">{{ pengaduanMendesak }}</div><div class="text-[11px] opacity-90">Mendesak</div></div></div></div>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-        <a href="form_pengaduan.html" class="glass-card rounded-xl p-4 flex items-center gap-3 hover:shadow-lg transition cursor-pointer no-underline">
-          <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow"><i class="bi bi-journal-plus text-white text-lg"></i></div>
-          <div><h3 class="font-bold text-xs" style="color: var(--text)">Buat Pengaduan</h3><p class="text-[10px]" style="color: var(--text2)">Form input baru</p></div>
-        </a>
-        <a href="form_st.html" class="glass-card rounded-xl p-4 flex items-center gap-3 hover:shadow-lg transition cursor-pointer no-underline">
-          <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow"><i class="bi bi-envelope-paper text-white text-lg"></i></div>
-          <div><h3 class="font-bold text-xs" style="color: var(--text)">Buat Surat Tugas</h3><p class="text-[10px]" style="color: var(--text2)">Form input baru</p></div>
-        </a>
-        <a href="sppd.html" class="glass-card rounded-xl p-4 flex items-center gap-3 hover:shadow-lg transition cursor-pointer no-underline">
-          <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center shadow"><i class="bi bi-file-earmark-pdf text-white text-lg"></i></div>
-          <div><h3 class="font-bold text-xs" style="color: var(--text)">Cetak SPPD</h3><p class="text-[10px]" style="color: var(--text2)">SPPD & Kwitansi</p></div>
-        </a>
-      </div>
-
-      <!-- Charts -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <div class="glass-card rounded-2xl p-5">
-          <h3 class="font-bold text-sm mb-4" style="color: var(--text)"><i class="bi bi-bar-chart"></i> Pengaduan per Bulan ({{ dashFilterTahun }})</h3>
-          <div style="height: 250px; position: relative;">
-            <canvas id="chartBulanan"></canvas>
-            <div v-if="chartBulananData.datasets[0].data.every(v=>v===0)" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:#94a3b8;">Belum ada data</div>
-          </div>
-        </div>
-        <div class="glass-card rounded-2xl p-5">
-          <h3 class="font-bold text-sm mb-4" style="color: var(--text)"><i class="bi bi-pie-chart-fill"></i> Status Pengaduan</h3>
-          <div style="height: 250px; position: relative;">
-            <canvas id="chartStatus"></canvas>
-            <div v-if="chartStatusData.labels.length===0" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:#94a3b8;">Belum ada data</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tabel Pengaduan -->
-      <div class="glass-card rounded-2xl p-5 mb-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold" style="color: var(--text)"><i class="bi bi-megaphone"></i> Pengaduan Terbaru</h2>
-          <button @click="exportExcel('pengaduan')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"><i class="bi bi-download"></i> Excel</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead><tr><th class="p-3 text-left">Tanggal</th><th class="p-3 text-left">Pelapor</th><th class="p-3 text-left">Kategori</th><th class="p-3 text-left">Status</th><th class="p-3 text-center">Aksi</th></tr></thead>
-            <tbody>
-              <tr v-for="p in filteredPengaduan" :key="p.id" class="border-t" style="border-color: var(--border)">
-                <td class="p-3">{{ formatDate(p.tanggal_lapor) }}</td>
-                <td class="p-3 font-medium">{{ p.nama_pelapor }}</td>
-                <td class="p-3">{{ p.kategori_pengaduan?.permasalahan || '-' }}</td>
-                <td class="p-3">
-                  <select @change="updateStatus(p.id, $event.target.value)" class="text-xs border rounded-lg px-2 py-1 font-bold" :class="statusBadge(p.status)">
-                    <option value="Baru" :selected="p.status==='Baru'">Baru</option>
-                    <option value="Diverifikasi" :selected="p.status==='Diverifikasi'">Diverifikasi</option>
-                    <option value="Diproses" :selected="p.status==='Diproses'">Diproses</option>
-                    <option value="Selesai" :selected="p.status==='Selesai'">Selesai</option>
-                    <option value="Ditolak" :selected="p.status==='Ditolak'">Ditolak</option>
-                  </select>
-                </td>
-                <td class="p-3 text-center">
-                  <button @click="hapusPengaduan(p.id)" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="bi bi-trash"></i></button>
-                </td>
-              </tr>
-              <tr v-if="!filteredPengaduan.length"><td colspan="5" class="p-6 text-center" style="color: var(--text2)">Belum ada pengaduan.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Tabel Surat Tugas -->
-      <div class="glass-card rounded-2xl p-5">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold" style="color: var(--text)"><i class="bi bi-envelope-paper"></i> Surat Tugas Terbaru</h2>
-          <button @click="exportExcel('st')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg"><i class="bi bi-download"></i> Excel</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead><tr><th class="p-3 text-left">Tanggal</th><th class="p-3 text-left">Kegiatan</th><th class="p-3 text-left">Lokasi</th><th class="p-3 text-left">Status</th><th class="p-3 text-center">Aksi</th></tr></thead>
-            <tbody>
-              <tr v-for="st in filteredST" :key="st.id" class="border-t" style="border-color: var(--border)">
-                <td class="p-3">{{ formatDate(st.tanggal_st) }}</td>
-                <td class="p-3 font-medium">{{ st.kegiatan }}</td>
-                <td class="p-3">{{ st.lokasi }}</td>
-                <td class="p-3">
-                  <span :class="st.status==='Aktif'?'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300':'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300'" class="px-3 py-1 rounded-full text-xs font-bold">{{ st.status }}</span>
-                </td>
-                <td class="p-3 text-center">
-                  <button @click="hapusST(st.id)" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="bi bi-trash"></i></button>
-                </td>
-              </tr>
-              <tr v-if="!filteredST.length"><td colspan="5" class="p-6 text-center" style="color: var(--text2)">Belum ada surat tugas.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="text-center text-xs mt-8 py-4" style="color: var(--text2)">© 2026 SI DILAN Terpadu — Satpol PP & Kebakaran Kab. Trenggalek</div>
+      <!-- Dynamic Component -->
+      <component :is="currentComponent" :key="currentPage"></component>
     </main>
   </div>
 </div>
@@ -219,254 +171,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<!-- JS Global -->
-<script src="assets/js/config.js"></script>
-<script src="assets/js/supabase.js"></script>
-<script src="assets/js/utils.js"></script>
+<!-- App JS -->
+<script src="assets/js/app.js"></script>
 
-<!-- Components -->
-<script src="components/sidebar.js"></script>
-<script src="components/toast.js"></script>
-<script src="components/loading.js"></script>
-
-<!-- Dashboard Logic -->
-<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-<script src="assets/js/config.js"></script>
-<script src="assets/js/supabase.js"></script>
-<script src="assets/js/utils.js"></script>
-<script src="components/sidebar.js"></script>
-<script src="components/toast.js"></script>
-<script src="components/loading.js"></script>
-<script>
-const { createApp, ref, reactive, computed, watch, nextTick, onMounted } = Vue;
-
-function hideAppLoader() {
-  const loader = document.getElementById('app-loading');
-  if (loader) {
-    loader.style.transition = 'opacity 0.5s ease';
-    loader.style.opacity = '0';
-    setTimeout(() => { if (loader) loader.style.display = 'none'; }, 500);
-  }
-}
-
-createApp({
-  components: { AppSidebar, ToastContainer, LoadingOverlay },
-  data() {
-    return {
-      session: null,
-      loginEmail: '',
-      loginPassword: '',
-      loginLoading: false,
-      loginError: '',
-      pengaduan: [],
-      suratTugas: [],
-      loadError: '',
-      sidebarOpen: true,
-      isMobile: window.innerWidth < 768,
-      dashFilterTahun: String(new Date().getFullYear()),
-      isDark: localStorage.getItem('darkMode') === 'true'
-    }
-  },
-  computed: {
-    filteredPengaduan() {
-      let d = this.pengaduan;
-      if (this.dashFilterTahun) d = d.filter(p => new Date(p.tanggal_lapor).getFullYear().toString() === this.dashFilterTahun);
-      return d;
-    },
-    filteredST() {
-      let d = this.suratTugas;
-      if (this.dashFilterTahun) d = d.filter(st => new Date(st.tanggal_st).getFullYear().toString() === this.dashFilterTahun);
-      return d;
-    },
-    listTahun() {
-      const y = new Set();
-      this.pengaduan.forEach(p => { const d = new Date(p.tanggal_lapor); if (!isNaN(d)) y.add(d.getFullYear()); });
-      this.suratTugas.forEach(st => { const d = new Date(st.tanggal_st); if (!isNaN(d)) y.add(d.getFullYear()); });
-      if (y.size === 0) y.add(new Date().getFullYear());
-      return [...y].sort((a, b) => b - a);
-    },
-    pengaduanBaru() { return this.filteredPengaduan.filter(p => p.status === 'Baru').length; },
-    pengaduanProses() { return this.filteredPengaduan.filter(p => p.status === 'Diproses').length; },
-    pengaduanSelesai() { return this.filteredPengaduan.filter(p => p.status === 'Selesai').length; },
-    pengaduanMendesak() {
-      return this.filteredPengaduan.filter(p => p.kategori_pengaduan?.prioritas === 'Tinggi' && (p.status === 'Baru' || p.status === 'Diproses')).length;
-    },
-    chartBulananData() {
-      const cnt = Array(12).fill(0);
-      this.filteredPengaduan.forEach(p => { const d = new Date(p.tanggal_lapor); if (!isNaN(d)) cnt[d.getMonth()]++; });
-      return { labels: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'], datasets: [{ data: cnt, backgroundColor: '#2563eb', borderRadius: 6 }] };
-    },
-    chartStatusData() {
-      const sc = { Baru: 0, Diverifikasi: 0, Diproses: 0, Selesai: 0, Ditolak: 0 };
-      this.filteredPengaduan.forEach(p => { if (sc[p.status] !== undefined) sc[p.status]++; });
-      const colors = { Baru: '#f59e0b', Diverifikasi: '#0ea5e9', Diproses: '#8b5cf6', Selesai: '#10b981', Ditolak: '#ef4444' };
-      const labels = Object.keys(sc).filter(k => sc[k] > 0);
-      return { labels, datasets: [{ data: labels.map(k => sc[k]), backgroundColor: labels.map(k => colors[k]) }] };
-    }
-  },
-  methods: {
-    async handleLogin() {
-      this.loginLoading = true;
-      this.loginError = '';
-      try {
-        const { data, error } = await window.supabase.auth.signInWithPassword({
-          email: this.loginEmail,
-          password: this.loginPassword
-        });
-        if (error) throw error;
-        this.session = data.session;
-        this.$refs.toastContainer.addToast('Login berhasil', 'success');
-      } catch (e) {
-        this.loginError = e.message;
-      } finally {
-        this.loginLoading = false;
-      }
-    },
-    async handleLogout() {
-      await window.supabase.auth.signOut();
-      this.session = null;
-      this.$refs.toastContainer.addToast('Anda telah logout', 'info');
-    },
-    toggleDarkMode() {
-      this.isDark = !this.isDark;
-      localStorage.setItem('darkMode', this.isDark);
-      document.documentElement.classList.toggle('dark', this.isDark);
-    },
-    async loadData() {
-      this.$refs.loadingOverlay.open('Memuat data dashboard...');
-      try {
-        const [adu, st] = await Promise.all([
-          window.supabase.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang, prioritas)').order('tanggal_lapor', { ascending: false }),
-          window.supabase.from('surat_tugas').select('*').order('created_at', { ascending: false })
-        ]);
-        if (adu.error) throw adu.error;
-        if (st.error) throw st.error;
-        this.pengaduan = adu.data || [];
-        this.suratTugas = st.data || [];
-      } catch (e) {
-        this.loadError = 'Gagal memuat data: ' + e.message;
-        this.$refs.toastContainer.addToast(this.loadError, 'error');
-      } finally {
-        this.$refs.loadingOverlay.close();
-      }
-    },
-    async updateStatus(id, newStatus) {
-      try {
-        const { error } = await window.supabase.from('pengaduan').update({ status: newStatus }).eq('id', id);
-        if (error) throw error;
-        const idx = this.pengaduan.findIndex(p => p.id === id);
-        if (idx !== -1) this.pengaduan[idx] = { ...this.pengaduan[idx], status: newStatus };
-        this.$refs.toastContainer.addToast('Status diubah menjadi ' + newStatus);
-      } catch (e) {
-        this.$refs.toastContainer.addToast('Gagal: ' + e.message, 'error');
-      }
-    },
-    async hapusPengaduan(id) {
-      if (!confirm('Hapus pengaduan ini?')) return;
-      try {
-        const { error } = await window.supabase.from('pengaduan').delete().eq('id', id);
-        if (error) throw error;
-        this.pengaduan = this.pengaduan.filter(p => p.id !== id);
-        this.$refs.toastContainer.addToast('Pengaduan dihapus');
-      } catch (e) {
-        this.$refs.toastContainer.addToast('Gagal: ' + e.message, 'error');
-      }
-    },
-    async hapusST(id) {
-      if (!confirm('Hapus surat tugas ini?')) return;
-      try {
-        const { error } = await window.supabase.from('surat_tugas').delete().eq('id', id);
-        if (error) throw error;
-        this.suratTugas = this.suratTugas.filter(s => s.id !== id);
-        this.$refs.toastContainer.addToast('Surat Tugas dihapus');
-      } catch (e) {
-        this.$refs.toastContainer.addToast('Gagal: ' + e.message, 'error');
-      }
-    },
-    exportExcel(type) {
-      try {
-        const data = type === 'pengaduan' ? this.filteredPengaduan : this.filteredST;
-        if (!data.length) { this.$refs.toastContainer.addToast('Tidak ada data untuk diexport', 'error'); return; }
-        const rows = data.map((item, i) => {
-          if (type === 'pengaduan') {
-            return { No: i+1, Tanggal: window.formatDate(item.tanggal_lapor), Pelapor: item.nama_pelapor, Kategori: item.kategori_pengaduan?.permasalahan || '-', Status: item.status };
-          } else {
-            return { No: i+1, Tanggal: window.formatDate(item.tanggal_st), Kegiatan: item.kegiatan, Lokasi: item.lokasi, Status: item.status };
-          }
-        });
-        const ws = XLSX.utils.json_to_sheet(rows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, type === 'pengaduan' ? 'Pengaduan' : 'Surat Tugas');
-        XLSX.writeFile(wb, `${type}_${new Date().toISOString().slice(0,10)}.xlsx`);
-        this.$refs.toastContainer.addToast('✅ File Excel berhasil didownload!');
-      } catch (e) {
-        this.$refs.toastContainer.addToast('❌ Gagal export: ' + e.message, 'error');
-      }
-    },
-    renderCharts() {
-      this.$nextTick(() => {
-        const c1 = document.getElementById('chartBulanan');
-        if (c1) {
-          this._chartBulanan?.destroy();
-          this._chartBulanan = new Chart(c1, {
-            type: 'bar',
-            data: this.chartBulananData,
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-          });
-        }
-        const c2 = document.getElementById('chartStatus');
-        if (c2 && this.chartStatusData.labels.length > 0) {
-          this._chartStatus?.destroy();
-          this._chartStatus = new Chart(c2, {
-            type: 'doughnut',
-            data: this.chartStatusData,
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
-          });
-        }
-      });
-    }
-  },
-  watch: {
-    filteredPengaduan: { handler() { this.renderCharts(); }, deep: true },
-    dashFilterTahun() { this.renderCharts(); }
-  },
-  async mounted() {
-    if (this.isDark) document.documentElement.classList.add('dark');
-    if (this.isMobile) this.sidebarOpen = false;
-    window.addEventListener('resize', () => {
-      this.isMobile = window.innerWidth < 768;
-      if (!this.isMobile) this.sidebarOpen = true;
-    });
-    try {
-      const { data: { session: currentSession } } = await window.supabase.auth.getSession();
-      this.session = currentSession;
-    } catch (e) {
-      console.error('Auth check error:', e);
-    }
-    hideAppLoader();
-    if (this.session) {
-      await this.loadData();
-      this.renderCharts();
-    }
-    this._unwatchSession = this.$watch('session', (newSession, oldSession) => {
-      if (newSession && !oldSession) {
-        this.loadData().then(() => this.renderCharts());
-        if (this.isMobile) this.sidebarOpen = false;
-      } else if (!newSession) {
-        this.pengaduan = [];
-        this.suratTugas = [];
-      }
-    });
-    console.log('🚀 Dashboard ready');
-  },
-  beforeUnmount() {
-    this._unwatchSession?.();
-    this._chartBulanan?.destroy();
-    this._chartStatus?.destroy();
-  }
-}).mount('#app');
-</script>
+</body>
+</html>
