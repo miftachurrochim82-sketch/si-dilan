@@ -146,6 +146,8 @@
 <script src="assets/js/config.js"></script>
 <script src="assets/js/supabase.js"></script>
 <script src="assets/js/utils.js"></script>
+
+<!-- Components -->
 <script src="components/sidebar.js"></script>
 <script src="components/toast.js"></script>
 <script src="components/loading.js"></script>
@@ -256,7 +258,7 @@ const TABS = [
 const { createApp } = Vue;
 
 createApp({
-  components: { AppSidebar, ToastContainer, LoadingOverlay },
+  components: { AppSidebar, ToastContainer, LoadingOverlay },   // ← WAJIB
   data() {
     return {
       tabs: TABS,
@@ -307,7 +309,7 @@ createApp({
     },
     async loadData() {
       this.loading = true;
-      this.$refs.loadingOverlay.open('Memuat data...');
+      this.$refs.loadingOverlay.open('Memuat data...');   // ← GANTI
       try {
         const { data, error } = await window.supabase.from(this.activeTab).select('*');
         if (error) throw error;
@@ -316,7 +318,7 @@ createApp({
         this.addToast('Gagal memuat data: ' + e.message, 'error');
       } finally {
         this.loading = false;
-        this.$refs.loadingOverlay.close();
+        this.$refs.loadingOverlay.close();                // ← GANTI
       }
     },
     editItem(item) {
@@ -340,7 +342,7 @@ createApp({
         return;
       }
       this.saving = true;
-      this.$refs.loadingOverlay.open('Menyimpan...');
+      this.$refs.loadingOverlay.open('Menyimpan...');     // ← GANTI
       try {
         const payload = { ...this.formData };
         this.currentColumns.forEach(c => {
@@ -365,7 +367,7 @@ createApp({
         this.addToast('Gagal menyimpan: ' + e.message, 'error');
       } finally {
         this.saving = false;
-        this.$refs.loadingOverlay.close();
+        this.$refs.loadingOverlay.close();                // ← GANTI
       }
     },
     requestDelete(id) {
@@ -373,7 +375,7 @@ createApp({
     },
     async confirmDelete() {
       if (!this.deleteModal.id) return;
-      this.$refs.loadingOverlay.open('Menghapus...');
+      this.$refs.loadingOverlay.open('Menghapus...');     // ← GANTI
       try {
         const { error } = await window.supabase.from(this.activeTab).delete().eq('id', this.deleteModal.id);
         if (error) throw error;
@@ -386,7 +388,7 @@ createApp({
         this.addToast('Gagal menghapus: ' + e.message, 'error');
       } finally {
         this.deleteModal = { show: false, id: null };
-        this.$refs.loadingOverlay.close();
+        this.$refs.loadingOverlay.close();                // ← GANTI
       }
     }
   },
