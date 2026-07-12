@@ -58,7 +58,7 @@
     <app-sidebar :current-page="currentPage" :sidebar-open="sidebarOpen" :is-mobile="isMobile" :dark-mode="isDark"
       @toggle-sidebar="sidebarOpen=!sidebarOpen" @toggle-dark="toggleDarkMode" @navigate="currentPage=$event"></app-sidebar>
     <toast-container ref="toastContainer"></toast-container>
-    <loading-overlay ref="loadingOverlay"></loading-overlay>
+    <loading-overlay :visible="loadingVisible" :message="loadingMessage"></loading-overlay>
 
     <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
       <div class="flex items-center justify-between mb-6">
