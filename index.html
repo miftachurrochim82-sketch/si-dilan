@@ -4,37 +4,153 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>SI DILAN Terpadu</title>
-  <link rel="stylesheet" href="assets/css/styles.css">
+  
+  <!-- Tailwind & Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text x='0' y='14' font-size='14'>📋</text></svg>">
+
   <style>
+    /* ========== CSS GLOBAL ========== */
+    :root {
+      --bg: #f0f4ff; --bg2: #e8f0fe; --card-bg: rgba(255,255,255,0.75);
+      --text: #1e293b; --text2: #3b82f6; --border: rgba(255,255,255,0.3);
+      --table-hover: #f0f7ff;
+    }
+    .dark {
+      --bg: #0f172a; --bg2: #1e293b; --card-bg: rgba(30,41,59,0.85);
+      --text: #e2e8f0; --text2: #93c5fd; --border: rgba(255,255,255,0.08);
+      --table-hover: #1e3a5f;
+    }
+    body {
+      background: linear-gradient(135deg, var(--bg), var(--bg2));
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin: 0; min-height: 100vh; color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+    .glass-card {
+      background: var(--card-bg); backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.05); transition: background 0.3s, border 0.3s;
+    }
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+      background: linear-gradient(180deg, #1e3a8a, #1e40af); color: white;
+      z-index: 40; transition: transform 0.3s; box-shadow: 4px 0 20px rgba(0,0,0,0.2); overflow-y: auto;
+    }
+    .dark .sidebar { background: linear-gradient(180deg, #0f172a, #1e293b); }
+    .sidebar.collapsed { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+      border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer;
+      transition: background 0.2s; text-decoration: none; color: white;
+    }
+    .sidebar-item:hover { background: rgba(255,255,255,0.1); }
+    .sidebar-item.active { background: rgba(255,255,255,0.2); font-weight: 600; }
+    .sidebar-group-title {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: rgba(255,255,255,0.5); cursor: pointer; user-select: none;
+    }
+    .sidebar-group-title:hover { color: rgba(255,255,255,0.8); }
+    .sidebar-sub { padding-left: 12px; }
+    .sidebar-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 4px 12px; }
+    .main-content { margin-left: 260px; padding: 24px; min-height: 100vh; transition: margin-left 0.3s; }
+    .main-content.expanded { margin-left: 0; }
+    .mobile-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 35; display: none;
+    }
+    .mobile-overlay.show { display: block; }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border: none;
+      padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+    .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; }
+    table th {
+      background: var(--bg2); color: var(--text2); font-weight: 600; position: sticky; top: 0;
+      padding: 10px 12px; text-align: left; font-size: 12px;
+    }
+    table td { padding: 8px 12px; border-top: 1px solid var(--border); font-size: 13px; }
+    tbody tr:hover { background: var(--table-hover); }
+    .toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
+      display: flex; flex-direction: column-reverse; gap: 8px; align-items: flex-end;
+    }
+    .toast {
+      padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600;
+      color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.2); max-width: 360px;
+      animation: toastSlideUp 0.3s ease;
+    }
+    @keyframes toastSlideUp {
+      from { transform: translateY(100px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .loading-overlay {
+      position: fixed; inset: 0; z-index: 150; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+    }
+    .loading-box {
+      background: white; border-radius: 1rem; padding: 2rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center;
+    }
+    .dark .loading-box { background: #1e293b; color: white; }
+    .spinner {
+      width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid #2563eb;
+      border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .stat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
-    #app-loading { position: fixed; inset: 0; z-index: 9999; background: linear-gradient(135deg, #0f172a, #1e3a8a); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; transition: opacity 0.7s ease; }
-    #app-loading.hide { opacity: 0; pointer-events: none; }
-    .tab-btn { padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: none; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .tab-btn {
+      padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      border: none; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+    }
     .tab-btn.active { background: #2563eb; color: white; }
     .tab-btn:not(.active) { background: #e2e8f0; color: #475569; }
     .dark .tab-btn:not(.active) { background: #334155; color: #94a3b8; }
     .map-container { height: 450px; border-radius: 16px; overflow: hidden; }
-    .legend { background: white; padding: 8px 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 12px; line-height: 1.6; }
+    .legend {
+      background: white; padding: 8px 12px; border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 12px; line-height: 1.6;
+    }
     .dark .legend { background: #1e293b; color: #e2e8f0; }
     .legend i { width: 14px; height: 14px; display: inline-block; border-radius: 50%; margin-right: 6px; }
+    [v-cloak] { display: none !important; }
+    #app-loading {
+      position: fixed; inset: 0; z-index: 9999;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: white; transition: opacity 0.7s ease;
+    }
+    #app-loading.hide { opacity: 0; pointer-events: none; }
+    @media (max-width: 768px) {
+      .sidebar { width: 280px; transform: translateX(-100%); }
+      .main-content { margin-left: 0; }
+      .main-content.shifted { margin-left: 280px; }
+    }
   </style>
 </head>
 <body>
+
+<!-- Loading Screen -->
 <div id="app-loading">
-  <div style="font-size: 28px; font-weight: 700; letter-spacing: 2px;">SI DILAN TERPADU</div>
-  <div style="font-size: 12px; margin-top: 12px; opacity: 0.8;">Menyambungkan...</div>
-  <div style="margin-top: 20px; width: 180px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;">
-    <div style="width: 60%; height: 100%; background: #fbbf24; border-radius: 2px; animation: loading 1.5s infinite;"></div>
+  <div style="font-size:28px;font-weight:700;letter-spacing:2px;">SI DILAN TERPADU</div>
+  <div style="font-size:12px;margin-top:12px;opacity:0.8;">Menyambungkan...</div>
+  <div style="margin-top:20px;width:180px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;overflow:hidden;">
+    <div style="width:60%;height:100%;background:#fbbf24;border-radius:2px;animation:loading 1.5s infinite;"></div>
   </div>
 </div>
 
 <div id="app" v-cloak>
-  <!-- Login -->
+
+  <!-- ========== LOGIN SCREEN ========== -->
   <div v-if="!session" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-blue-900">
     <div class="glass-card rounded-3xl p-8 w-full max-w-md shadow-2xl">
       <div class="text-center mb-8">
@@ -46,20 +162,68 @@
         <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">Email</label><input type="email" v-model="loginEmail" required placeholder="admin@trenggalek.go.id" class="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-4 py-2.5 text-sm"></div>
         <div><label class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1">Password</label><input type="password" v-model="loginPassword" required placeholder="••••••••" class="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-4 py-2.5 text-sm"></div>
         <div v-if="loginError" class="text-red-500 text-xs bg-red-50 dark:bg-red-900/20 p-2 rounded">{{ loginError }}</div>
-        <button type="submit" class="btn-primary w-full py-3" :disabled="loginLoading"><span v-if="loginLoading"><i class="bi bi-hourglass-split animate-spin"></i> Masuk...</span><span v-else><i class="bi bi-box-arrow-in-right"></i> Masuk</span></button>
+        <button type="submit" class="btn-primary w-full py-3" :disabled="loginLoading">
+          <span v-if="loginLoading"><i class="bi bi-hourglass-split animate-spin"></i> Masuk...</span>
+          <span v-else><i class="bi bi-box-arrow-in-right"></i> Masuk</span>
+        </button>
       </form>
       <p class="text-center text-[10px] text-slate-400 mt-6">Satpol PP & Kebakaran Kab. Trenggalek</p>
     </div>
   </div>
 
-  <!-- Main App -->
+  <!-- ========== MAIN APP ========== -->
   <div v-else>
     <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
-    <app-sidebar :current-page="currentPage" :sidebar-open="sidebarOpen" :is-mobile="isMobile" :dark-mode="isDark"
-      @toggle-sidebar="sidebarOpen=!sidebarOpen" @toggle-dark="toggleDarkMode" @navigate="currentPage=$event"></app-sidebar>
-    <toast-container ref="toastContainer"></toast-container>
-    <loading-overlay :visible="loadingVisible" :message="loadingMessage"></loading-overlay>
 
+    <!-- SIDEBAR -->
+    <aside class="sidebar" :class="{ collapsed: !sidebarOpen && !isMobile, open: sidebarOpen && isMobile }">
+      <div class="sidebar-header">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2"><i class="bi bi-shield-shaded text-2xl"></i><span class="font-bold text-lg">SI DILAN</span></div>
+          <button @click="sidebarOpen = !sidebarOpen" class="text-white/70 hover:text-white p-1"><i :class="sidebarOpen ? 'bi bi-chevron-left' : 'bi bi-chevron-right'" class="text-xl"></i></button>
+        </div>
+        <p class="text-xs text-blue-200">Satpol PPK Trenggalek</p>
+      </div>
+      <nav class="p-3 space-y-1">
+        <a href="#" @click.prevent="currentPage = 'dashboard'" class="sidebar-item" :class="{ active: currentPage === 'dashboard' }"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-group-title" @click="expandedGroup = expandedGroup === 'ops' ? '' : 'ops'"><span><i class="bi bi-clipboard-data mr-1"></i> Operasional</span><i :class="expandedGroup === 'ops' ? 'bi bi-chevron-down' : 'bi bi-chevron-right'" class="text-xs"></i></div>
+        <div v-show="expandedGroup === 'ops'" class="sidebar-sub space-y-1">
+          <a href="#" @click.prevent="currentPage = 'pengaduan'" class="sidebar-item" :class="{ active: currentPage === 'pengaduan' }"><i class="bi bi-megaphone"></i> Pengaduan</a>
+          <a href="#" @click.prevent="currentPage = 'st'" class="sidebar-item" :class="{ active: currentPage === 'st' }"><i class="bi bi-envelope-paper"></i> Surat Tugas</a>
+          <a href="#" @click.prevent="currentPage = 'laporan'" class="sidebar-item" :class="{ active: currentPage === 'laporan' }"><i class="bi bi-file-earmark-bar-graph"></i> Laporan</a>
+          <a href="#" @click.prevent="currentPage = 'peta'" class="sidebar-item" :class="{ active: currentPage === 'peta' }"><i class="bi bi-geo-alt"></i> Peta & Crosstab</a>
+          <a href="#" @click.prevent="currentPage = 'sppd'" class="sidebar-item" :class="{ active: currentPage === 'sppd' }"><i class="bi bi-file-earmark-pdf"></i> Cetak SPPD</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-group-title" @click="expandedGroup = expandedGroup === 'adm' ? '' : 'adm'"><span><i class="bi bi-gear-wide mr-1"></i> Administrasi</span><i :class="expandedGroup === 'adm' ? 'bi bi-chevron-down' : 'bi bi-chevron-right'" class="text-xs"></i></div>
+        <div v-show="expandedGroup === 'adm'" class="sidebar-sub space-y-1">
+          <a href="#" @click.prevent="currentPage = 'master'" class="sidebar-item" :class="{ active: currentPage === 'master' }"><i class="bi bi-server"></i> Master Data</a>
+          <a href="#" @click.prevent="currentPage = 'settings'" class="sidebar-item" :class="{ active: currentPage === 'settings' }"><i class="bi bi-gear"></i> Pengaturan</a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <a href="#" @click.prevent="currentPage = 'about'" class="sidebar-item" :class="{ active: currentPage === 'about' }"><i class="bi bi-info-circle"></i> Tentang Aplikasi</a>
+        <button @click="toggleDarkMode" class="sidebar-item w-full"><i :class="isDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i> {{ isDark ? 'Mode Terang' : 'Mode Gelap' }}</button>
+      </nav>
+    </aside>
+
+    <!-- TOAST -->
+    <div class="toast-container">
+      <div v-for="t in toasts" :key="t.id" class="toast" :style="{ background: t.type === 'success' ? '#10b981' : t.type === 'error' ? '#ef4444' : '#3b82f6' }">
+        <i :class="t.type === 'success' ? 'bi bi-check-circle' : t.type === 'error' ? 'bi bi-x-circle' : 'bi bi-info-circle'"></i>
+        <span class="ml-2">{{ t.message }}</span>
+      </div>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div v-if="loadingVisible" class="loading-overlay">
+      <div class="loading-box">
+        <div class="spinner"></div>
+        <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ loadingMessage }}</p>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
     <main class="main-content" :class="{ expanded: !sidebarOpen && !isMobile, shifted: sidebarOpen && isMobile }">
       <div class="flex items-center justify-between mb-6">
         <div>
@@ -67,21 +231,238 @@
           <p class="text-sm" style="color: var(--text2)">{{ pageSubtitle }}</p>
         </div>
         <div class="flex items-center gap-2">
-          <button @click="sidebarOpen=!sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
+          <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden btn-primary"><i class="bi bi-list"></i> Menu</button>
           <button @click="handleLogout" class="text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg"><i class="bi bi-box-arrow-right"></i></button>
         </div>
       </div>
+
+      <!-- Konten Halaman -->
       <component :is="currentComponent" :key="currentPage"></component>
     </main>
   </div>
 </div>
 
+<!-- JS Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="assets/js/app.js"></script>
+
+<!-- ========== SEMUA KODE JAVASCRIPT ========== -->
+<script>
+// Konfigurasi
+const APP_CONFIG = {
+  supabaseUrl: 'https://msdacugqzxprxajdudsx.supabase.co',
+  supabaseKey: 'sb_publishable_yt8MhUQzKsaK-c_k4bOtTQ_TMXSOTEf',
+  kecamatan: ['Bendungan','Dongko','Durenan','Gandusari','Kampak','Karangan','Munjungan','Panggul','Pogalan','Pule','Suruh','Trenggalek','Tugu','Watulimo'],
+  desa: {
+    Bendungan:['Botoputih','Depok','Masaran','Sengon','Surenlor'],
+    Dongko:['Dongko','Pandean','Petung','Pringapus','Salam'],
+    Durenan:['Durenan','Gador','Kamulan','Pakis','Pandean'],
+    Gandusari:['Gandusari','Jajar','Krandegan','Sukorame','Widoro'],
+    Kampak:['Bogoran','Karangrejo','Ngadimulyo','Senden','Timahan'],
+    Karangan:['Buluagung','Jati','Karangan','Kayen','Sumber'],
+    Munjungan:['Besuki','Munjungan','Sobo','Tawing','Bangun'],
+    Panggul:['Banjar','Depok','Manggis','Panggul','Wonocoyo'],
+    Pogalan:['Bendorejo','Kedunglurah','Ngadirejo','Pogalan','Wonocoyo'],
+    Pule:['Joho','Kembangan','Pule','Puyung','Sidomulyo'],
+    Suruh:['Gamping','Mlinjon','Ngrandu','Suruh','Wonokerto'],
+    Trenggalek:['Kelutan','Ngantru','Sumbergedong','Surondakan','Tamanan'],
+    Tugu:['Duren','Gading','Prambon','Tumpuk','Winong'],
+    Watulimo:['Dukuh','Gemaharjo','Prigi','Slawe','Watulimo']
+  }
+};
+
+// Supabase client
+const supabaseClient = supabase.createClient(APP_CONFIG.supabaseUrl, APP_CONFIG.supabaseKey);
+
+// Utils
+function formatDate(d) {
+  if (!d) return '-';
+  const dt = new Date(d);
+  return isNaN(dt) ? '-' : dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+function statusBadge(s) {
+  const map = {
+    Baru: 'bg-amber-100 text-amber-700',
+    Diverifikasi: 'bg-sky-100 text-sky-700',
+    Diproses: 'bg-violet-100 text-violet-700',
+    Selesai: 'bg-emerald-100 text-emerald-700',
+    Ditolak: 'bg-rose-100 text-rose-700'
+  };
+  return map[s] || 'bg-gray-100';
+}
+function getGambarArray(item) {
+  if (!item || !item.gambar) return [];
+  if (Array.isArray(item.gambar)) return item.gambar;
+  try { return JSON.parse(item.gambar); } catch (e) { return []; }
+}
+
+// Vue App
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      // Auth
+      session: null,
+      loginEmail: '',
+      loginPassword: '',
+      loginLoading: false,
+      loginError: '',
+      // Navigasi
+      currentPage: 'dashboard',
+      expandedGroup: 'ops',
+      sidebarOpen: true,
+      isMobile: window.innerWidth < 768,
+      isDark: localStorage.getItem('darkMode') === 'true',
+      // Toast & Loading
+      toasts: [],
+      loadingVisible: false,
+      loadingMessage: 'Memuat data...',
+      // Data Master
+      kategoriList: [],
+      personilList: [],
+      unitKerjaList: [],
+      layananList: [],
+      sopList: [],
+      kendaraanList: [],
+      peralatanList: [],
+      lokasiList: [],
+      standarBiayaList: [],
+      // Data Transaksional
+      pengaduanList: [],
+      suratTugasList: [],
+      laporanList: [],
+      // Settings
+      settings: {}
+    }
+  },
+  computed: {
+    pageTitle() {
+      const titles = {
+        dashboard: 'Dashboard', pengaduan: 'Pengaduan', st: 'Surat Tugas',
+        laporan: 'Laporan', peta: 'Peta & Crosstab', sppd: 'Cetak SPPD',
+        master: 'Master Data', settings: 'Pengaturan', about: 'Tentang Aplikasi'
+      };
+      return titles[this.currentPage] || 'Dashboard';
+    },
+    pageSubtitle() {
+      const subs = {
+        dashboard: 'Ringkasan operasional', pengaduan: 'Form & riwayat',
+        st: 'Buat & pantau ST', laporan: 'Laporan kegiatan',
+        peta: 'Analisis sebaran', sppd: 'SPPD & Kwitansi',
+        master: 'Kelola data referensi', settings: 'Konfigurasi aplikasi',
+        about: 'Informasi aplikasi'
+      };
+      return subs[this.currentPage] || '';
+    },
+    currentComponent() {
+      const comps = {
+        dashboard: 'div', pengaduan: 'div', st: 'div', laporan: 'div',
+        peta: 'div', sppd: 'div', master: 'div', settings: 'div', about: 'div'
+      };
+      return comps[this.currentPage] || 'div';
+    }
+  },
+  methods: {
+    // Toast
+    addToast(message, type = 'success') {
+      const id = Date.now();
+      this.toasts.push({ id, message, type });
+      setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000);
+    },
+    // Loading
+    showLoading(msg) {
+      this.loadingVisible = true;
+      this.loadingMessage = msg || 'Memuat data...';
+    },
+    hideLoading() {
+      this.loadingVisible = false;
+    },
+    // Dark Mode
+    toggleDarkMode() {
+      this.isDark = !this.isDark;
+      localStorage.setItem('darkMode', this.isDark);
+      document.documentElement.classList.toggle('dark', this.isDark);
+    },
+    // Auth
+    async handleLogin() {
+      this.loginLoading = true;
+      this.loginError = '';
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: this.loginEmail,
+          password: this.loginPassword
+        });
+        if (error) throw error;
+        this.session = data.session;
+        this.addToast('Login berhasil');
+        await this.loadAllData();
+      } catch (e) {
+        this.loginError = e.message;
+      } finally {
+        this.loginLoading = false;
+      }
+    },
+    async handleLogout() {
+      await supabaseClient.auth.signOut();
+      this.session = null;
+      this.addToast('Anda telah logout', 'info');
+    },
+    // Data
+    async loadAllData() {
+      this.showLoading('Memuat data...');
+      try {
+        const [kat, pet, unit, lay, sop, ken, alt, lok, std, adu, st, lap] = await Promise.all([
+          supabaseClient.from('kategori_pengaduan').select('*').eq('status','Aktif'),
+          supabaseClient.from('personil').select('*').eq('status','Aktif'),
+          supabaseClient.from('unit_kerja').select('*').eq('status','Aktif'),
+          supabaseClient.from('layanan').select('*').eq('status','Aktif'),
+          supabaseClient.from('sop').select('*').eq('status','Aktif'),
+          supabaseClient.from('kendaraan').select('*'),
+          supabaseClient.from('peralatan').select('*'),
+          supabaseClient.from('lokasi').select('*'),
+          supabaseClient.from('standar_biaya').select('*'),
+          supabaseClient.from('pengaduan').select('*, kategori_pengaduan(permasalahan, bidang, prioritas)').order('tanggal_lapor',{ascending:false}),
+          supabaseClient.from('surat_tugas').select('*').order('created_at',{ascending:false}),
+          supabaseClient.from('laporan').select('*').order('tanggal_laporan',{ascending:false})
+        ]);
+        this.kategoriList = kat.data||[]; this.personilList = pet.data||[];
+        this.unitKerjaList = unit.data||[]; this.layananList = lay.data||[];
+        this.sopList = sop.data||[]; this.kendaraanList = ken.data||[];
+        this.peralatanList = alt.data||[]; this.lokasiList = lok.data||[];
+        this.standarBiayaList = std.data||[]; this.pengaduanList = adu.data||[];
+        this.suratTugasList = st.data||[]; this.laporanList = lap.data||[];
+      } catch (e) {
+        this.addToast('Gagal memuat data: '+e.message, 'error');
+      } finally {
+        this.hideLoading();
+      }
+    },
+    formatDate,
+    statusBadge,
+    getGambarArray
+  },
+  async mounted() {
+    if (this.isDark) document.documentElement.classList.add('dark');
+    if (this.isMobile) this.sidebarOpen = false;
+    window.addEventListener('resize', () => {
+      this.isMobile = window.innerWidth < 768;
+      if (!this.isMobile) this.sidebarOpen = true;
+    });
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    this.session = session;
+    if (session) await this.loadAllData();
+
+    document.getElementById('app-loading')?.classList.add('hide');
+    console.log('🚀 SI DILAN ready');
+  }
+}).mount('#app');
+</script>
+
 </body>
 </html>
