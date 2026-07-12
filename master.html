@@ -139,15 +139,13 @@
     </div>
   </main>
 </div>
-
+  
 <!-- JS Global -->
 <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/supabase.js"></script>
 <script src="assets/js/utils.js"></script>
-
-<!-- Components -->
 <script src="components/sidebar.js"></script>
 <script src="components/toast.js"></script>
 <script src="components/loading.js"></script>
@@ -258,6 +256,7 @@ const TABS = [
 const { createApp } = Vue;
 
 createApp({
+  components: { AppSidebar, ToastContainer, LoadingOverlay },
   data() {
     return {
       tabs: TABS,
@@ -308,7 +307,7 @@ createApp({
     },
     async loadData() {
       this.loading = true;
-      this.$loading.show('Memuat data...');
+      this.$refs.loadingOverlay.open('Memuat data...');
       try {
         const { data, error } = await window.supabase.from(this.activeTab).select('*');
         if (error) throw error;
@@ -317,7 +316,7 @@ createApp({
         this.addToast('Gagal memuat data: ' + e.message, 'error');
       } finally {
         this.loading = false;
-        this.$loading.hide();
+        this.$refs.loadingOverlay.close();
       }
     },
     editItem(item) {
@@ -341,7 +340,7 @@ createApp({
         return;
       }
       this.saving = true;
-      this.$loading.show('Menyimpan...');
+      this.$refs.loadingOverlay.open('Menyimpan...');
       try {
         const payload = { ...this.formData };
         this.currentColumns.forEach(c => {
@@ -366,7 +365,7 @@ createApp({
         this.addToast('Gagal menyimpan: ' + e.message, 'error');
       } finally {
         this.saving = false;
-        this.$loading.hide();
+        this.$refs.loadingOverlay.close();
       }
     },
     requestDelete(id) {
@@ -374,7 +373,7 @@ createApp({
     },
     async confirmDelete() {
       if (!this.deleteModal.id) return;
-      this.$loading.show('Menghapus...');
+      this.$refs.loadingOverlay.open('Menghapus...');
       try {
         const { error } = await window.supabase.from(this.activeTab).delete().eq('id', this.deleteModal.id);
         if (error) throw error;
@@ -387,7 +386,7 @@ createApp({
         this.addToast('Gagal menghapus: ' + e.message, 'error');
       } finally {
         this.deleteModal = { show: false, id: null };
-        this.$loading.hide();
+        this.$refs.loadingOverlay.close();
       }
     }
   },
@@ -410,16 +409,3 @@ createApp({
   }
 }).mount('#app');
 </script>
-
-<style>
-.tab-btn {
-  padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
-  border: none; cursor: pointer; white-space: nowrap; transition: all 0.2s;
-}
-.tab-btn.active { background: #2563eb; color: white; }
-.tab-btn:not(.active) { background: #e2e8f0; color: #475569; }
-.dark .tab-btn:not(.active) { background: #334155; color: #94a3b8; }
-</style>
-
-</body>
-</html>
