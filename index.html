@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>SI DILAN Terpadu</title>
   
-  <!-- Tailwind & Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -139,7 +138,6 @@
 </head>
 <body>
 
-<!-- Loading Screen -->
 <div id="app-loading">
   <div style="font-size:28px;font-weight:700;letter-spacing:2px;">SI DILAN TERPADU</div>
   <div style="font-size:12px;margin-top:12px;opacity:0.8;">Menyambungkan...</div>
@@ -150,7 +148,7 @@
 
 <div id="app" v-cloak>
 
-  <!-- ========== LOGIN SCREEN ========== -->
+  <!-- LOGIN SCREEN -->
   <div v-if="!session" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-blue-900">
     <div class="glass-card rounded-3xl p-8 w-full max-w-md shadow-2xl">
       <div class="text-center mb-8">
@@ -171,7 +169,7 @@
     </div>
   </div>
 
-  <!-- ========== MAIN APP ========== -->
+  <!-- MAIN APP -->
   <div v-else>
     <div class="mobile-overlay" :class="{ show: sidebarOpen && isMobile }" @click="sidebarOpen = false"></div>
 
@@ -236,7 +234,7 @@
         </div>
       </div>
 
-      <!-- Konten Halaman -->
+      <!-- Dynamic Component -->
       <component :is="currentComponent" :key="currentPage"></component>
     </main>
   </div>
@@ -275,7 +273,6 @@ const APP_CONFIG = {
   }
 };
 
-// Supabase client
 const supabaseClient = supabase.createClient(APP_CONFIG.supabaseUrl, APP_CONFIG.supabaseKey);
 
 // Utils
@@ -300,29 +297,104 @@ function getGambarArray(item) {
   try { return JSON.parse(item.gambar); } catch (e) { return []; }
 }
 
+// Komponen About
+const AboutPage = {
+  template: `
+    <div class="max-w-2xl mx-auto">
+      <div class="glass-card rounded-3xl p-8 text-center shadow-xl">
+        <i class="bi bi-shield-shaded text-6xl text-blue-600 dark:text-blue-300 mb-4 block"></i>
+        <h1 class="text-3xl font-extrabold" style="color: var(--text)">SI DILAN</h1>
+        <p class="text-lg" style="color: var(--text2)">Sistem Informasi Digital Melayani</p>
+        <p class="text-sm mt-2" style="color: var(--text2); opacity: 0.8">Versi 2.5 Terpadu</p>
+        <hr class="my-6 border-slate-300 dark:border-slate-600">
+        <div class="text-left space-y-3 text-sm" style="color: var(--text)">
+          <p><strong>🎯 Tujuan:</strong> Aplikasi terpadu untuk mendukung operasional <strong>Satuan Polisi Pamong Praja dan Kebakaran (Satpol PPK) Kabupaten Trenggalek</strong>.</p>
+          <p><strong>🛠 Teknologi:</strong> Vue.js, Tailwind CSS, Supabase (PostgreSQL), GitHub Pages</p>
+          <p><strong>📅 Mulai Dikembangkan:</strong> Juli 2026</p>
+          <p><strong>👨‍💻 Pengembang:</strong> Tim Satpol PPK Kab. Trenggalek</p>
+          <p><strong>📧 Kontak:</strong> miftachurrochim82@gmail.com</p>
+        </div>
+        <hr class="my-6 border-slate-300 dark:border-slate-600">
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div class="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
+            <i class="bi bi-whatsapp text-green-500 text-2xl"></i>
+            <p class="font-bold mt-2" style="color: var(--text)">Satpol PP</p>
+            <p class="text-blue-700 dark:text-blue-300">08113505113</p>
+          </div>
+          <div class="bg-red-50 dark:bg-red-900/30 rounded-xl p-4 border border-red-200 dark:border-red-700">
+            <i class="bi bi-whatsapp text-red-500 text-2xl"></i>
+            <p class="font-bold mt-2" style="color: var(--text)">Damkar</p>
+            <p class="text-red-700 dark:text-red-300">081230755881</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+};
+
+// Komponen Settings
+const SettingsPage = {
+  template: `
+    <div class="max-w-2xl mx-auto space-y-6">
+      <div class="glass-card rounded-2xl p-6">
+        <h3 class="text-lg font-bold mb-4" style="color: var(--text2)"><i class="bi bi-building"></i> Identitas Instansi</h3>
+        <div class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Instansi</label><input v-model="form.SETTING_NAMA_INSTANSI" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+            <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Kabupaten</label><input v-model="form.SETTING_NAMA_KABUPATEN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          </div>
+          <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Satuan</label><input v-model="form.SETTING_NAMA_SATUAN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          <div><label class="text-xs font-bold" style="color: var(--text2)">Alamat</label><textarea v-model="form.SETTING_ALAMAT" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></textarea></div>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-6">
+        <h3 class="text-lg font-bold mb-4" style="color: var(--text2)"><i class="bi bi-person-badge"></i> Data Pejabat</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Kepala</label><input v-model="form.SETTING_NAMA_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          <div><label class="text-xs font-bold" style="color: var(--text2)">NIP Kepala</label><input v-model="form.SETTING_NIP_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          <div><label class="text-xs font-bold" style="color: var(--text2)">Pangkat Kepala</label><input v-model="form.SETTING_PANGKAT_KEPALA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Admin</label><input v-model="form.SETTING_NAMA_ADMIN" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          <div><label class="text-xs font-bold" style="color: var(--text2)">Nama Bendahara</label><input v-model="form.SETTING_NAMA_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+          <div><label class="text-xs font-bold" style="color: var(--text2)">NIP Bendahara</label><input v-model="form.SETTING_NIP_BENDAHARA" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"></div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button @click="$emit('load')" :disabled="loading" class="bg-gray-200 dark:bg-gray-600 dark:text-white px-5 py-2.5 rounded-lg text-sm font-bold">Muat Ulang</button>
+        <button @click="$emit('save')" :disabled="loading || saving" class="btn-primary">
+          <span v-if="saving"><i class="bi bi-hourglass-split animate-spin"></i> Menyimpan...</span>
+          <span v-else>Simpan Pengaturan</span>
+        </button>
+      </div>
+    </div>
+  `,
+  props: ['form', 'loading', 'saving'],
+  emits: ['load', 'save']
+};
+
 // Vue App
 const { createApp } = Vue;
 
 createApp({
+  components: { AboutPage, SettingsPage },
   data() {
     return {
-      // Auth
       session: null,
       loginEmail: '',
       loginPassword: '',
       loginLoading: false,
       loginError: '',
-      // Navigasi
       currentPage: 'dashboard',
       expandedGroup: 'ops',
       sidebarOpen: true,
       isMobile: window.innerWidth < 768,
       isDark: localStorage.getItem('darkMode') === 'true',
-      // Toast & Loading
       toasts: [],
       loadingVisible: false,
       loadingMessage: 'Memuat data...',
-      // Data Master
+      pengaduanList: [],
+      suratTugasList: [],
       kategoriList: [],
       personilList: [],
       unitKerjaList: [],
@@ -332,63 +404,59 @@ createApp({
       peralatanList: [],
       lokasiList: [],
       standarBiayaList: [],
-      // Data Transaksional
-      pengaduanList: [],
-      suratTugasList: [],
       laporanList: [],
-      // Settings
-      settings: {}
+      settingsLoading: false,
+      settingsSaving: false,
+      settingsForm: {
+        SETTING_NAMA_INSTANSI:'', SETTING_NAMA_KABUPATEN:'', SETTING_NAMA_SATUAN:'', SETTING_ALAMAT:'',
+        SETTING_LOGO_KIRI:'', SETTING_LOGO_KANAN:'',
+        SETTING_NAMA_KEPALA:'', SETTING_NIP_KEPALA:'', SETTING_PANGKAT_KEPALA:'',
+        SETTING_NAMA_ADMIN:'', SETTING_NAMA_BENDAHARA:'', SETTING_NIP_BENDAHARA:'',
+        SETTING_JENIS_PERJALANAN:'Dalam Daerah',
+        SETTING_NOTIFIKASI:false, SETTING_AUTO_ASSIGN:false, SETTING_PUBLIC_VIEW:true, SETTING_WEEKLY_REPORT:true,
+        SETTING_WA_SATPOL:'', SETTING_WA_DAMKAR:'', SETTING_IG:'', SETTING_FB:''
+      }
     }
   },
   computed: {
     pageTitle() {
-      const titles = {
+      return {
         dashboard: 'Dashboard', pengaduan: 'Pengaduan', st: 'Surat Tugas',
         laporan: 'Laporan', peta: 'Peta & Crosstab', sppd: 'Cetak SPPD',
         master: 'Master Data', settings: 'Pengaturan', about: 'Tentang Aplikasi'
-      };
-      return titles[this.currentPage] || 'Dashboard';
+      }[this.currentPage] || 'Dashboard';
     },
     pageSubtitle() {
-      const subs = {
+      return {
         dashboard: 'Ringkasan operasional', pengaduan: 'Form & riwayat',
         st: 'Buat & pantau ST', laporan: 'Laporan kegiatan',
         peta: 'Analisis sebaran', sppd: 'SPPD & Kwitansi',
         master: 'Kelola data referensi', settings: 'Konfigurasi aplikasi',
         about: 'Informasi aplikasi'
-      };
-      return subs[this.currentPage] || '';
+      }[this.currentPage] || '';
     },
     currentComponent() {
-      const comps = {
-        dashboard: 'div', pengaduan: 'div', st: 'div', laporan: 'div',
-        peta: 'div', sppd: 'div', master: 'div', settings: 'div', about: 'div'
-      };
-      return comps[this.currentPage] || 'div';
+      if (this.currentPage === 'about') return 'AboutPage';
+      if (this.currentPage === 'settings') return 'SettingsPage';
+      return 'div'; // placeholder untuk halaman lain
     }
   },
   methods: {
-    // Toast
     addToast(message, type = 'success') {
       const id = Date.now();
       this.toasts.push({ id, message, type });
       setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 3000);
     },
-    // Loading
     showLoading(msg) {
       this.loadingVisible = true;
       this.loadingMessage = msg || 'Memuat data...';
     },
-    hideLoading() {
-      this.loadingVisible = false;
-    },
-    // Dark Mode
+    hideLoading() { this.loadingVisible = false; },
     toggleDarkMode() {
       this.isDark = !this.isDark;
       localStorage.setItem('darkMode', this.isDark);
       document.documentElement.classList.toggle('dark', this.isDark);
     },
-    // Auth
     async handleLogin() {
       this.loginLoading = true;
       this.loginError = '';
@@ -401,18 +469,14 @@ createApp({
         this.session = data.session;
         this.addToast('Login berhasil');
         await this.loadAllData();
-      } catch (e) {
-        this.loginError = e.message;
-      } finally {
-        this.loginLoading = false;
-      }
+      } catch (e) { this.loginError = e.message; }
+      finally { this.loginLoading = false; }
     },
     async handleLogout() {
       await supabaseClient.auth.signOut();
       this.session = null;
       this.addToast('Anda telah logout', 'info');
     },
-    // Data
     async loadAllData() {
       this.showLoading('Memuat data...');
       try {
@@ -436,11 +500,39 @@ createApp({
         this.peralatanList = alt.data||[]; this.lokasiList = lok.data||[];
         this.standarBiayaList = std.data||[]; this.pengaduanList = adu.data||[];
         this.suratTugasList = st.data||[]; this.laporanList = lap.data||[];
-      } catch (e) {
-        this.addToast('Gagal memuat data: '+e.message, 'error');
-      } finally {
-        this.hideLoading();
-      }
+      } catch (e) { this.addToast('Gagal memuat data: '+e.message, 'error'); }
+      finally { this.hideLoading(); }
+    },
+    // Settings methods
+    async loadSettings() {
+      this.settingsLoading = true;
+      try {
+        const { data, error } = await supabaseClient.from('settings').select('*');
+        if (error) throw error;
+        if (data) {
+          data.forEach(d => {
+            if (this.settingsForm.hasOwnProperty(d.key)) {
+              const boolKeys = ['SETTING_NOTIFIKASI','SETTING_AUTO_ASSIGN','SETTING_PUBLIC_VIEW','SETTING_WEEKLY_REPORT'];
+              this.settingsForm[d.key] = boolKeys.includes(d.key) ? d.value === 'true' : d.value || '';
+            }
+          });
+        }
+        this.addToast('Pengaturan dimuat ulang');
+      } catch (e) { this.addToast('Gagal memuat pengaturan: '+e.message, 'error'); }
+      finally { this.settingsLoading = false; }
+    },
+    async saveSettings() {
+      this.settingsSaving = true;
+      try {
+        const records = Object.entries(this.settingsForm).map(([key, val]) => ({
+          key,
+          value: typeof val === 'boolean' ? String(val) : (val || '')
+        }));
+        const { error } = await supabaseClient.from('settings').upsert(records, { onConflict: 'key' });
+        if (error) throw error;
+        this.addToast('✅ Pengaturan berhasil disimpan!');
+      } catch (e) { this.addToast('❌ Gagal menyimpan: '+e.message, 'error'); }
+      finally { this.settingsSaving = false; }
     },
     formatDate,
     statusBadge,
@@ -456,7 +548,10 @@ createApp({
 
     const { data: { session } } = await supabaseClient.auth.getSession();
     this.session = session;
-    if (session) await this.loadAllData();
+    if (session) {
+      await this.loadAllData();
+      this.loadSettings(); // muat pengaturan di background
+    }
 
     document.getElementById('app-loading')?.classList.add('hide');
     console.log('🚀 SI DILAN ready');
