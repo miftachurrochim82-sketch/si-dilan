@@ -104,19 +104,15 @@ const ToastContainer = {
 };
 
 const LoadingOverlay = {
+  props: { visible: Boolean, message: { type: String, default: 'Memuat data...' } },
   template: `
-    <div v-if="show" class="loading-overlay">
+    <div v-if="visible" class="loading-overlay">
       <div class="loading-box">
         <div class="spinner"></div>
         <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ message }}</p>
       </div>
     </div>
-  `,
-  data: () => ({ show: false, message: 'Memuat data...' }),
-  methods: {
-    open(msg) { this.message = msg || 'Memuat data...'; this.show = true; },
-    close() { this.show = false; }
-  }
+  `
 };
 
 // ========== APLIKASI UTAMA ==========
@@ -145,7 +141,10 @@ createApp({
       kendaraanList: [],
       peralatanList: [],
       lokasiList: [],
-      settings: {}
+      settings: {},
+      // Loading overlay (prop-based)
+      loadingVisible: false,
+      loadingMessage: 'Memuat data...'
     }
   },
   computed: {
@@ -173,30 +172,14 @@ createApp({
     }
   },
   methods: {
-    // Toast
-    addToast(m, t) {
-      this.$refs.toastContainer?.addToast(m, t);
-    },
-    // Loading (dengan pengaman)
-    showLoading(msg) {
-      if (this.$refs.loadingOverlay) {
-        this.$refs.loadingOverlay.open(msg);
-      } else {
-        console.warn('LoadingOverlay belum siap, pesan:', msg);
-      }
-    },
-    hideLoading() {
-      if (this.$refs.loadingOverlay) {
-        this.$refs.loadingOverlay.close();
-      }
-    },
-    // Dark Mode
+    addToast(m, t) { this.$refs.toastContainer?.addToast(m, t); },
+    showLoading(msg) { this.loadingVisible = true; this.loadingMessage = msg || 'Memuat data...'; },
+    hideLoading() { this.loadingVisible = false; },
     toggleDarkMode() {
       this.isDark = !this.isDark;
       localStorage.setItem('darkMode', this.isDark);
       document.documentElement.classList.toggle('dark', this.isDark);
     },
-    // Auth
     async handleLogin() {
       this.loginLoading = true;
       this.loginError = '';
@@ -220,7 +203,6 @@ createApp({
       this.session = null;
       this.addToast('Anda telah logout', 'info');
     },
-    // Data
     async loadAllData() {
       this.showLoading('Memuat data...');
       try {
@@ -252,7 +234,6 @@ createApp({
         this.hideLoading();
       }
     },
-    // Helpers
     formatDate: window.formatDate,
     statusBadge: window.statusBadge,
     getGambarArray: window.getGambarArray
@@ -264,9 +245,6 @@ createApp({
       this.isMobile = window.innerWidth < 768;
       if (!this.isMobile) this.sidebarOpen = true;
     });
-
-    // Tunggu render selesai sebelum memuat data
-    await this.$nextTick();
 
     const { data: { session } } = await supabase.auth.getSession();
     this.session = session;
